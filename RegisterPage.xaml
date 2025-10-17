@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.RegisterPage"
+             Title="RegisterPage">
+    <ScrollView>
+        <VerticalStackLayout Spacing="15" Padding="30">
+
+            <Label Text="Создание аккаунта" 
+                   FontSize="28" 
+                   HorizontalOptions="Center" 
+                   TextColor="#2E86AB"
+                   FontAttributes="Bold" />
+
+            <Frame BackgroundColor="#F8F9FA" Padding="20" CornerRadius="10">
+                <VerticalStackLayout Spacing="12">
+
+                    <!-- Личная информация -->
+                    <Label Text="Личная информация" 
+                           FontSize="16" 
+                           TextColor="#2E86AB"
+                           FontAttributes="Bold" />
+
+                    <Entry x:Name="FirstNameEntry" 
+                           Placeholder="Имя *" 
+                           BackgroundColor="White" />
+
+                    <Entry x:Name="LastNameEntry" 
+                           Placeholder="Фамилия *" 
+                           BackgroundColor="White" />
+
+                    <!-- Учетные данные -->
+                    <Label Text="Учетные данные" 
+                           FontSize="16" 
+                           TextColor="#2E86AB"
+                           FontAttributes="Bold"
+                           Margin="0,10,0,0" />
+
+                    <Entry x:Name="UsernameEntry" 
+                           Placeholder="Логин *" 
+                           BackgroundColor="White" />
+
+                    <Entry x:Name="EmailEntry" 
+                           Placeholder="Email *" 
+                           Keyboard="Email"
+                           BackgroundColor="White" />
+
+                    <Entry x:Name="PasswordEntry" 
+                           Placeholder="Пароль *" 
+                           IsPassword="True" 
+                           BackgroundColor="White" />
+
+                    <Entry x:Name="ConfirmPasswordEntry" 
+                           Placeholder="Подтверждение пароля *" 
+                           IsPassword="True" 
+                           BackgroundColor="White" />
+
+                    <!-- Настройки -->
+                    <Label Text="Настройки аккаунта" 
+                           FontSize="16" 
+                           TextColor="#2E86AB"
+                           FontAttributes="Bold"
+                           Margin="0,10,0,0" />
+
+                    <Picker x:Name="RolePicker" 
+                            Title="Выберите роль *"
+                            BackgroundColor="White" />
+
+                    <Picker x:Name="LanguagePicker" 
+                            Title="Язык интерфейса"
+                            BackgroundColor="White">
+                        <Picker.Items>
+                            <x:String>Русский</x:String>
+                            <x:String>English</x:String>
+                        </Picker.Items>
+                    </Picker>
+
+                    <Picker x:Name="InterfacePicker" 
+                            Title="Стиль интерфейса"
+                            BackgroundColor="White">
+                        <Picker.Items>
+                            <x:String>Стандартный</x:String>
+                            <x:String>Для подростков</x:String>
+                        </Picker.Items>
+                    </Picker>
+
+                    <!-- Кнопка регистрации -->
+                    <Button x:Name="RegisterButton" 
+                            Text="Зарегистрироваться" 
+                            Clicked="OnRegisterClicked"
+                            BackgroundColor="#2E86AB"
+                            TextColor="White"
+                            Margin="0,20,0,0"
+                            HeightRequest="50" />
+
+                    <Button x:Name="BackButton" 
+                            Text="Назад к входу" 
+                            Clicked="OnBackClicked"
+                            BackgroundColor="Transparent"
+                            TextColor="#2E86AB"
+                            BorderColor="#2E86AB"
+                            BorderWidth="1" />
+
+                    <!-- Индикатор загрузки -->
+                    <ActivityIndicator x:Name="LoadingIndicator" 
+                                       IsVisible="False"
+                                       Color="#2E86AB"
+                                       HorizontalOptions="Center" />
+
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

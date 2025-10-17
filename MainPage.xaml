@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.MainPage">
+
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30">
+
+            <Label Text="Платформа обучения" 
+                   FontSize="32" 
+                   HorizontalOptions="Center" 
+                   TextColor="#2E86AB" />
+
+            <Frame BackgroundColor="#F8F9FA" Padding="20" CornerRadius="10">
+                <VerticalStackLayout Spacing="15">
+
+                    <Label Text="Вход в систему" 
+                           FontSize="24" 
+                           HorizontalOptions="Center" 
+                           TextColor="#2E86AB" />
+
+                    <Entry x:Name="UsernameEntry" 
+                           Placeholder="Логин" 
+                           BackgroundColor="White" />
+
+                    <Entry x:Name="PasswordEntry" 
+                           Placeholder="Пароль" 
+                           IsPassword="True" 
+                           BackgroundColor="White" />
+
+                    <Button x:Name="LoginButton" 
+                            Text="Войти" 
+                            Clicked="OnLoginClicked"
+                            BackgroundColor="#2E86AB"
+                            TextColor="White" />
+
+                    <Button x:Name="RegisterButton" 
+                            Text="Зарегистрироваться" 
+                            Clicked="OnRegisterClicked"
+                            BackgroundColor="#A23B72"
+                            TextColor="White" />
+
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

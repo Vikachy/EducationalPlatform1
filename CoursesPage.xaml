@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.CoursesPage"
+             Title="CoursesPage">
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <Label x:Name="WelcomeLabel" 
+                   Text="Добро пожаловать!" 
+                   FontSize="20" 
+                   TextColor="#2E86AB" />
+
+            <CollectionView x:Name="CoursesCollectionView">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BackgroundColor="#F8F9FA" Padding="15" CornerRadius="10">
+                            <VerticalStackLayout Spacing="10">
+                                <Label Text="{Binding CourseName}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold" 
+                                       TextColor="#2E86AB" />
+
+                                <Label Text="{Binding Description}" 
+                                       FontSize="14" 
+                                       TextColor="#666" />
+
+                                <HorizontalStackLayout Spacing="10">
+                                    <Label Text="{Binding LanguageName}" 
+                                           FontSize="12" 
+                                           BackgroundColor="#A23B72"
+                                           TextColor="White"
+                                           Padding="5" />
+
+                                    <Label Text="{Binding DifficultyName}" 
+                                           FontSize="12" 
+                                           BackgroundColor="#F18F01"
+                                           TextColor="White"
+                                           Padding="5" />
+                                </HorizontalStackLayout>
+
+                                <Button Text="Начать курс" 
+                                        Clicked="OnStartCourseClicked"
+                                        BackgroundColor="#2E86AB"
+                                        TextColor="White" />
+
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
