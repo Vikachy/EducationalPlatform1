@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Resources.Styles.StandardStyles">
+
+    <!-- ЦВЕТА ДЛЯ СТАНДАРТНОЙ ТЕМЫ -->
+    <Color x:Key="PrimaryColor">#457b9d</Color>
+    <Color x:Key="SecondaryColor">#1d3557</Color>
+    <Color x:Key="BackgroundColor">#f1faee</Color>
+    <Color x:Key="AccentColor">#e63946</Color>
+    <Color x:Key="DangerColor">#e63946</Color>
+    <Color x:Key="TextColor">#1d3557</Color>
+    <Color x:Key="LightTextColor">#f1faee</Color>
+
+    <!-- СТИЛИ ДЛЯ СТАНДАРТНОЙ ТЕМЫ -->
+    <Style x:Key="StandardLabelStyle" TargetType="Label">
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+    </Style>
+
+    <Style x:Key="StandardEntryStyle" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="White" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="PlaceholderColor" Value="#666" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="HeightRequest" Value="45" />
+    </Style>
+
+    <Style x:Key="StandardButtonStyle" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="TextColor" Value="{DynamicResource LightTextColor}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="45" />
+    </Style>
+
+    <Style x:Key="StandardFrameStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundColor}" />
+        <Setter Property="Stroke" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="10" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+</ResourceDictionary>

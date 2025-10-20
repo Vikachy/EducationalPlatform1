@@ -6,103 +6,81 @@ namespace EducationalPlatform;
 public partial class RegisterPage : ContentPage
 {
     private DatabaseService _dbService;
+    private SettingsService _settingsService;
 
-    public RegisterPage()
+    public RegisterPage(DatabaseService dbService, SettingsService settingsService)
     {
         InitializeComponent();
-        _dbService = new DatabaseService();
-        LoadRoles();
-        SetDefaultValues();
+        _dbService = dbService;
+        _settingsService = settingsService;
     }
 
-    private async void LoadRoles()
+    private async void OnPolicyTapped(object sender, TappedEventArgs e)
     {
-        try
-        {
-            // Показываем индикатор загрузки
-            RolePicker.IsEnabled = false;
-
-            var roles = await _dbService.GetRolesAsync();
-
-            if (roles != null && roles.Any())
-            {
-                RolePicker.ItemsSource = roles;
-                RolePicker.ItemDisplayBinding = new Binding("RoleName");
-                RolePicker.SelectedIndex = 1; // Выбираем Student по умолчанию
-            }
-            else
-            {
-                await DisplayAlert("Внимание",
-                    "Не удалось загрузить список ролей. Пожалуйста, попробуйте позже.", "OK");
-                await Navigation.PopAsync();
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("Ошибка", $"Не удалось загрузить роли: {ex.Message}", "OK");
-
-
-            var tempRoles = new List<Role>
-        {
-            new Role { RoleId = 2, RoleName = "Teacher" },
-            new Role { RoleId = 3, RoleName = "Student" },
-            new Role { RoleId = 4, RoleName = "ContentManager" }
-        };
-
-            RolePicker.ItemsSource = tempRoles;
-            RolePicker.ItemDisplayBinding = new Binding("RoleName");
-            RolePicker.SelectedIndex = 1;
-        }
-        finally
-        {
-            RolePicker.IsEnabled = true;
-        }
-    }
-
-
-
-
-    private void SetDefaultValues()
-    {
-        LanguagePicker.SelectedIndex = 0; // Русский
-        InterfacePicker.SelectedIndex = 0; // Стандартный
+        await DisplayAlert("Политика обработки данных",
+            @"ПОЛИТИКА ОБРАБОТКИ ПЕРСОНАЛЬНЫХ ДАННЫХ
+                1. Сбор данных: Мы собираем только необходимые данные для работы платформы.
+                2. Использование: Данные используются для образовательного процесса.
+                3. Защита: Ваши данные защищены и не передаются третьим лицам.
+                4. Хранение: Данные хранятся в защищенной базе данных.
+                Нажимая 'Согласен', вы подтверждаете согласие с политикой.", "Понятно");
     }
 
     private async void OnRegisterClicked(object sender, EventArgs e)
     {
-        // ПРОВЕРКА ЗАПОЛНЕНИЯ ПОЛЕЙ
-        if (!ValidateInput())
+        // Проверяем все поля
+        if (FirstNameEntry == null || string.IsNullOrWhiteSpace(FirstNameEntry.Text) ||
+            LastNameEntry == null || string.IsNullOrWhiteSpace(LastNameEntry.Text) ||
+            UsernameEntry == null || string.IsNullOrWhiteSpace(UsernameEntry.Text) ||
+            EmailEntry == null || string.IsNullOrWhiteSpace(EmailEntry.Text) ||
+            PasswordEntry == null || string.IsNullOrWhiteSpace(PasswordEntry.Text) ||
+            ConfirmPasswordEntry == null || string.IsNullOrWhiteSpace(ConfirmPasswordEntry.Text))
+        {
+            await DisplayAlert("Ошибка", "Заполните все поля", "OK");
             return;
+        }
 
-        // ПОКАЗЫВАЕМ ИНДИКАТОР ЗАГРУЗКИ
-        LoadingIndicator.IsVisible = true;
-        RegisterButton.IsEnabled = false;
+        if (AgreementCheckBox == null || !AgreementCheckBox.IsChecked)
+        {
+            await DisplayAlert("Ошибка", "Необходимо согласие на обработку данных", "OK");
+            return;
+        }
+
+        if (PasswordEntry.Text != ConfirmPasswordEntry.Text)
+        {
+            await DisplayAlert("Ошибка", "Пароли не совпадают", "OK");
+            return;
+        }
+
+        if (PasswordEntry.Text.Length < 6)
+        {
+            await DisplayAlert("Ошибка", "Пароль должен содержать минимум 6 символов", "OK");
+            return;
+        }
+
+        // Показываем индикатор загрузки
+        if (LoadingIndicator != null)
+            LoadingIndicator.IsVisible = true;
+        if (RegisterButton != null)
+            RegisterButton.IsEnabled = false;
 
         try
         {
-            // ПОДГОТАВЛИВАЕМ ДАННЫЕ
-            var username = UsernameEntry.Text.Trim();
-            var email = EmailEntry.Text.Trim().ToLower();
-            var password = PasswordEntry.Text;
-            var firstName = FirstNameEntry.Text.Trim();
-            var lastName = LastNameEntry.Text.Trim();
-            var selectedRole = (Role)RolePicker.SelectedItem;
-            var languagePref = LanguagePicker.SelectedIndex == 0 ? "ru" : "en";
-            var interfaceStyle = InterfacePicker.SelectedIndex == 0 ? "standard" : "teen";
-
-            // РЕГИСТРИРУЕМ ПОЛЬЗОВАТЕЛЯ
-            var success = await _dbService.RegisterUserAsync(
-                username, email, password, firstName, lastName,
-                selectedRole.RoleId, languagePref, interfaceStyle);
+            bool success = await _dbService.RegisterUserAsync(
+                UsernameEntry.Text,
+                EmailEntry.Text,
+                PasswordEntry.Text,
+                FirstNameEntry.Text,
+                LastNameEntry.Text);
 
             if (success)
             {
-                await DisplayAlert("Успех",
-                    $"Аккаунт успешно создан!\nДобро пожаловать, {firstName}!", "OK");
-
-                // ВОЗВРАЩАЕМСЯ НА СТРАНИЦУ ВХОДА
+                await DisplayAlert("Успех", "Аккаунт успешно создан!", "OK");
                 await Navigation.PopAsync();
+            }
+            else
+            {
+                await DisplayAlert("Ошибка", "Пользователь с таким логином или email уже существует", "OK");
             }
         }
         catch (Exception ex)
@@ -111,72 +89,32 @@ public partial class RegisterPage : ContentPage
         }
         finally
         {
-            // СКРЫВАЕМ ИНДИКАТОР
-            LoadingIndicator.IsVisible = false;
-            RegisterButton.IsEnabled = true;
-        }
-    }
-
-    private bool ValidateInput()
-    {
-        // ПРОВЕРКА ОБЯЗАТЕЛЬНЫХ ПОЛЕЙ
-        if (string.IsNullOrWhiteSpace(FirstNameEntry.Text) ||
-            string.IsNullOrWhiteSpace(LastNameEntry.Text) ||
-            string.IsNullOrWhiteSpace(UsernameEntry.Text) ||
-            string.IsNullOrWhiteSpace(EmailEntry.Text) ||
-            string.IsNullOrWhiteSpace(PasswordEntry.Text) ||
-            string.IsNullOrWhiteSpace(ConfirmPasswordEntry.Text))
-        {
-            DisplayAlert("Ошибка", "Заполните все обязательные поля", "OK");
-            return false;
-        }
-
-        // ПРОВЕРКА ВЫБОРА РОЛИ
-        if (RolePicker.SelectedItem == null)
-        {
-            DisplayAlert("Ошибка", "Выберите роль", "OK");
-            return false;
-        }
-
-        // ПРОВЕРКА EMAIL
-        if (!IsValidEmail(EmailEntry.Text))
-        {
-            DisplayAlert("Ошибка", "Введите корректный email адрес", "OK");
-            return false;
-        }
-
-        // ПРОВЕРКА СОВПАДЕНИЯ ПАРОЛЕЙ
-        if (PasswordEntry.Text != ConfirmPasswordEntry.Text)
-        {
-            DisplayAlert("Ошибка", "Пароли не совпадают", "OK");
-            return false;
-        }
-
-        // ПРОВЕРКА ДЛИНЫ ПАРОЛЯ
-        if (PasswordEntry.Text.Length < 6)
-        {
-            DisplayAlert("Ошибка", "Пароль должен содержать минимум 6 символов", "OK");
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool IsValidEmail(string email)
-    {
-        try
-        {
-            var addr = new System.Net.Mail.MailAddress(email);
-            return addr.Address == email;
-        }
-        catch
-        {
-            return false;
+            if (LoadingIndicator != null)
+                LoadingIndicator.IsVisible = false;
+            if (RegisterButton != null)
+                RegisterButton.IsEnabled = true;
         }
     }
 
     private async void OnBackClicked(object sender, EventArgs e)
     {
         await Navigation.PopAsync();
+    }
+
+    protected override bool OnBackButtonPressed()
+    {
+        ShowExitConfirmation();
+        return true;
+    }
+
+    private async void ShowExitConfirmation()
+    {
+        bool result = await DisplayAlert("Подтверждение",
+            "Вы точно хотите выйти? Все несохраненные данные будут потеряны.", "Да", "Нет");
+
+        if (result)
+        {
+            await Navigation.PopAsync();
+        }
     }
 }

@@ -1,48 +1,102 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="EducationalPlatform.MainPage">
-
+             x:Class="EducationalPlatform.MainPage" 
+             Title="Вход в систему">
 
     <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="30">
+        <VerticalStackLayout Spacing="25" Padding="30">
 
             <Label Text="Платформа обучения" 
                    FontSize="32" 
                    HorizontalOptions="Center" 
-                   TextColor="#2E86AB" />
+                   TextColor="#2E86AB"
+                   FontAttributes="Bold" />
 
-            <Frame BackgroundColor="#F8F9FA" Padding="20" CornerRadius="10">
-                <VerticalStackLayout Spacing="15">
+            <Border Padding="25"
+                    Stroke="#2E86AB"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 15">
+                <VerticalStackLayout Spacing="20">
 
                     <Label Text="Вход в систему" 
                            FontSize="24" 
                            HorizontalOptions="Center" 
-                           TextColor="#2E86AB" />
+                           TextColor="#2E86AB"
+                           FontAttributes="Bold" />
 
                     <Entry x:Name="UsernameEntry" 
-                           Placeholder="Логин" 
-                           BackgroundColor="White" />
+                           Placeholder="Логин" />
 
                     <Entry x:Name="PasswordEntry" 
                            Placeholder="Пароль" 
-                           IsPassword="True" 
-                           BackgroundColor="White" />
+                           IsPassword="True" />
 
-                    <Button x:Name="LoginButton" 
+                    <!-- КАПЧА -->
+                    <Border x:Name="CaptchaContainer"
+                            IsVisible="False"
+                            BackgroundColor="#FFF3CD"
+                            Stroke="#856404"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Подтвердите, что вы не робот"
+                                   FontSize="14"
+                                   TextColor="#856404"
+                                   HorizontalOptions="Center" />
+
+                            <Grid ColumnDefinitions="*,Auto" 
+                                  ColumnSpacing="10"
+                                  VerticalOptions="Center">
+
+                                <Border Grid.Column="0"
+                                       BackgroundColor="White"
+                                       Stroke="#856404"
+                                       StrokeThickness="1"
+                                       StrokeShape="RoundRectangle 5"
+                                       Padding="10"
+                                       HeightRequest="40">
+                                    <Label x:Name="CaptchaLabel" 
+                                           Text="ABCD12"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="#333"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Border>
+
+                                <Button Grid.Column="1"
+                                        Text="🔄"
+                                        x:Name="RefreshCaptchaButton"
+                                        BackgroundColor="Transparent"
+                                        TextColor="#856404"
+                                        WidthRequest="40"
+                                        HeightRequest="40" />
+                            </Grid>
+
+                            <Entry x:Name="CaptchaEntry" 
+                                   Placeholder="Введите код с картинки" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- ИЗМЕНЯЕМ ИМЕНА КНОПОК чтобы избежать конфликтов -->
+                    <Button x:Name="LoginBtn" 
                             Text="Войти" 
-                            Clicked="OnLoginClicked"
                             BackgroundColor="#2E86AB"
-                            TextColor="White" />
+                            TextColor="White"
+                            HeightRequest="50" />
 
-                    <Button x:Name="RegisterButton" 
-                            Text="Зарегистрироваться" 
-                            Clicked="OnRegisterClicked"
-                            BackgroundColor="#A23B72"
-                            TextColor="White" />
+                    <Button x:Name="RegisterBtn" 
+                            Text="Создать аккаунт" 
+                            BackgroundColor="Transparent"
+                            TextColor="#2E86AB"
+                            BorderColor="#2E86AB"
+                            BorderWidth="2"
+                            HeightRequest="50" />
 
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
         </VerticalStackLayout>
     </ScrollView>
