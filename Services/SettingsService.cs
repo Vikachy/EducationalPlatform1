@@ -13,6 +13,7 @@ namespace EducationalPlatform.Services
         private const string DEFAULT_LANGUAGE = "ru";
         private const string DEFAULT_THEME = "standard";
 
+        // УБИРАЕМ вызовы методов в сеттерах - это вызывает рекурсию!
         public string CurrentLanguage
         {
             get => Preferences.Get(LANGUAGE_KEY, DEFAULT_LANGUAGE);
@@ -27,13 +28,17 @@ namespace EducationalPlatform.Services
 
         public void ApplyTheme(string theme)
         {
-            CurrentTheme = theme;
+            // Сначала сохраняем значение
+            Preferences.Set(THEME_KEY, theme);
+
+            // Затем применяем тему
             ApplyThemeToApp();
         }
 
         public void ApplyLanguage(string language)
         {
-            CurrentLanguage = language;
+            // Просто сохраняем язык
+            Preferences.Set(LANGUAGE_KEY, language);
         }
 
         private void ApplyThemeToApp()
@@ -43,21 +48,26 @@ namespace EducationalPlatform.Services
                 var mergedDictionaries = Application.Current.Resources.MergedDictionaries;
                 mergedDictionaries.Clear();
 
-                // Убедись что эти стили существуют в твоём проекте
-                if (CurrentTheme == "teen")
+                // Используем значение напрямую из Preferences, а не через свойство
+                string currentTheme = Preferences.Get(THEME_KEY, DEFAULT_THEME);
+
+                if (currentTheme == "teen")
                 {
-                    mergedDictionaries.Add(new Resources.Styles.TeenStyles());
+                    mergedDictionaries.Add(new TeenStyles());
                 }
                 else
                 {
-                    mergedDictionaries.Add(new Resources.Styles.StandardStyles());
+                    mergedDictionaries.Add(new StandardStyles());
                 }
             }
         }
 
         public string GetRandomGreeting(string userName)
         {
-            var greetings = CurrentLanguage == "ru" ?
+            // Используем значение напрямую из Preferences
+            string currentLanguage = Preferences.Get(LANGUAGE_KEY, DEFAULT_LANGUAGE);
+
+            var greetings = currentLanguage == "ru" ?
                 new[]
                 {
                     $"С возвращением, {userName}! 🔥",
@@ -81,7 +91,10 @@ namespace EducationalPlatform.Services
 
         public string GetStreakMessage(int streakDays)
         {
-            if (CurrentLanguage == "ru")
+            // Используем значение напрямую из Preferences
+            string currentLanguage = Preferences.Get(LANGUAGE_KEY, DEFAULT_LANGUAGE);
+
+            if (currentLanguage == "ru")
             {
                 return streakDays switch
                 {

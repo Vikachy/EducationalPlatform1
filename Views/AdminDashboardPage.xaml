@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.AdminDashboardPage"
+    Title="Админ панель">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20" VerticalOptions="Center">
+            <Label Text="🛠️ Админ панель"
+                   FontSize="28"
+                   TextColor="{DynamicResource TextColor}"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Label Text="Страница в разработке..."
+                   FontSize="16"
+                   TextColor="#666"
+                   HorizontalOptions="Center" />
+
+            <Button Text="Вернуться на главную"
+                    Clicked="OnBackClicked"
+                    BackgroundColor="{DynamicResource PrimaryColor}"
+                    TextColor="White"
+                    HeightRequest="50"
+                    CornerRadius="25"
+                    HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

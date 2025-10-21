@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.TeacherDashboardPage"
+              Title="Панель учителя">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="15" Padding="20">
+
+            <!-- ЗАГОЛОВОК -->
+            <Label Text="Панель управления курсами"
+                   FontSize="24"
+                   TextColor="{DynamicResource TextColor}"
+                   FontAttributes="Bold" />
+
+            <!-- СТАТИСТИКА -->
+            <Border BackgroundColor="{DynamicResource PrimaryColor}"
+                    Stroke="{DynamicResource SecondaryColor}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="15">
+                <HorizontalStackLayout Spacing="20">
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="{Binding TotalCourses}" 
+                               FontSize="20"
+                               TextColor="White"
+                               FontAttributes="Bold" />
+                        <Label Text="Курсов"
+                               FontSize="12"
+                               TextColor="White" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="{Binding TotalStudents}" 
+                               FontSize="20"
+                               TextColor="White"
+                               FontAttributes="Bold" />
+                        <Label Text="Студентов"
+                               FontSize="12"
+                               TextColor="White" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="{Binding AverageRating, StringFormat='{0:F1}'}" 
+                               FontSize="20"
+                               TextColor="White"
+                               FontAttributes="Bold" />
+                        <Label Text="Рейтинг"
+                               FontSize="12"
+                               TextColor="White" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- ДЕЙСТВИЯ -->
+            <Grid ColumnDefinitions="*,*" 
+                  ColumnSpacing="10" 
+                  RowSpacing="10">
+
+                <Button Grid.Row="0" Grid.Column="0"
+                        Text="➕ Создать курс"
+                        Clicked="OnCreateCourseClicked"
+                        BackgroundColor="{DynamicResource AccentColor}"
+                        TextColor="White"
+                        HeightRequest="40" />
+
+                <Button Grid.Row="0" Grid.Column="1"
+                        Text="📊 Отчеты"
+                        Clicked="OnReportsClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        HeightRequest="40" />
+            </Grid>
+
+            <!-- СПИСОК КУРСОВ -->
+            <Label Text="Мои курсы"
+                   FontSize="18"
+                   TextColor="{DynamicResource TextColor}"
+                   FontAttributes="Bold" />
+
+            <CollectionView x:Name="CoursesCollectionView">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,5"
+                                BackgroundColor="{DynamicResource BackgroundColor}"
+                                Stroke="{DynamicResource PrimaryColor}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="15">
+                            <VerticalStackLayout Spacing="10">
+
+                                <!-- Заголовок курса -->
+                                <HorizontalStackLayout>
+                                    <Label Text="{Binding CourseName}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource TextColor}"
+                                           VerticalOptions="Center" />
+
+                                    <Label Text="{Binding IsPublished, Converter={StaticResource PublishedConverter}}"
+                                           FontSize="10"
+                                           BackgroundColor="{Binding IsPublished, Converter={StaticResource StatusColorConverter}}"
+                                           TextColor="White"
+                                           Padding="5,2"
+                                           Margin="10,0,0,0" />
+                                </HorizontalStackLayout>
+
+                                <!-- Описание -->
+                                <Label Text="{Binding Description}"
+                                       FontSize="12"
+                                       TextColor="#666"
+                                       MaxLines="2" />
+
+                                <!-- Статистика -->
+                                <Grid ColumnDefinitions="*,*,*">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                        <Label Text="{Binding StudentCount}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource PrimaryColor}"
+                                               HorizontalOptions="Center" />
+                                        <Label Text="студентов"
+                                               FontSize="10"
+                                               TextColor="#666"
+                                               HorizontalOptions="Center" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                        <Label Text="{Binding AverageRating, StringFormat='{0:F1}'}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource AccentColor}"
+                                               HorizontalOptions="Center" />
+                                        <Label Text="рейтинг"
+                                               FontSize="10"
+                                               TextColor="#666"
+                                               HorizontalOptions="Center" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="2" Spacing="2">
+                                        <Label Text="{Binding Groups.Count}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource SecondaryColor}"
+                                               HorizontalOptions="Center" />
+                                        <Label Text="группы"
+                                               FontSize="10"
+                                               TextColor="#666"
+                                               HorizontalOptions="Center" />
+                                    </VerticalStackLayout>
+                                </Grid>
+
+                                <!-- Кнопки управления -->
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                    <Button Grid.Column="0"
+                                            Text="Управление"
+                                            Clicked="OnManageCourseClicked"
+                                            BackgroundColor="{DynamicResource PrimaryColor}"
+                                            TextColor="White"
+                                            HeightRequest="35" />
+
+                                    <Button Grid.Column="1"
+                                            Text="Группы"
+                                            Clicked="OnManageGroupsClicked"
+                                            BackgroundColor="{DynamicResource SecondaryColor}"
+                                            TextColor="White"
+                                            HeightRequest="35" />
+                                </Grid>
+
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

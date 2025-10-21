@@ -107,7 +107,7 @@ namespace EducationalPlatform.Services
                 // УПРОЩЕННЫЙ ЗАПРОС - только основные поля
                 var query = @"
             INSERT INTO Users (Username, Email, PasswordHash, FirstName, LastName, RoleId, LanguagePref, RegistrationDate)
-            VALUES (@Username, @Email, @PasswordHash, @FirstName, @LastName, 3, 'ru', GETDATE())";
+            VALUES (@Username, @Email, @PasswordHash, @FirstName, @LastName, 1, 'ru', GETDATE())";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Username", username ?? "");
@@ -279,5 +279,142 @@ namespace EducationalPlatform.Services
             var hash = sha256.ComputeHash(bytes);
             return Convert.ToBase64String(hash);
         }
+
+        // ДЛЯ УЧИТЕЛЯ
+        public async Task<List<TeacherCourse>> GetTeacherCoursesAsync(int teacherId)
+        {
+            var courses = new List<TeacherCourse>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT c.CourseId, c.CourseName, c.Description, c.IsPublished,
+                   l.LanguageName, d.DifficultyName,
+                   COUNT(DISTINCT ge.StudentId) as StudentCount,
+                   AVG(cr.Rating) as AverageRating
+            FROM Courses c
+            LEFT JOIN ProgrammingLanguages l ON c.LanguageId = l.LanguageId
+            LEFT JOIN CourseDifficulties d ON c.DifficultyId = d.DifficultyId
+            LEFT JOIN StudyGroups sg ON c.CourseId = sg.CourseId
+            LEFT JOIN GroupEnrollments ge ON sg.GroupId = ge.GroupId AND ge.Status = 'active'
+            LEFT JOIN CourseReviews cr ON c.CourseId = cr.CourseId AND cr.IsApproved = 1
+            WHERE c.CreatedByUserId = @TeacherId
+            GROUP BY c.CourseId, c.CourseName, c.Description, c.IsPublished, 
+                     l.LanguageName, d.DifficultyName";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var course = new TeacherCourse
+                    {
+                        CourseId = reader.GetInt32("CourseId"),
+                        CourseName = reader.GetString("CourseName"),
+                        Description = reader.IsDBNull("Description") ? "" : reader.GetString("Description"),
+                        LanguageName = reader.GetString("LanguageName"),
+                        DifficultyName = reader.GetString("DifficultyName"),
+                        IsPublished = reader.GetBoolean("IsPublished"),
+                        StudentCount = reader.IsDBNull("StudentCount") ? 0 : reader.GetInt32("StudentCount"),
+                        AverageRating = reader.IsDBNull("AverageRating") ? 0 : Math.Round(reader.GetDouble("AverageRating"), 1)
+                    };
+
+                    // Загружаем группы для курса
+                    course.Groups = await GetCourseGroupsAsync(course.CourseId);
+                    courses.Add(course);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки курсов учителя: {ex.Message}");
+            }
+            return courses;
+        }
+
+        private async Task<List<StudyGroup>> GetCourseGroupsAsync(int courseId)
+        {
+            var groups = new List<StudyGroup>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT sg.GroupId, sg.GroupName, sg.StartDate, sg.EndDate, sg.IsActive,
+                   COUNT(ge.StudentId) as StudentCount
+            FROM StudyGroups sg
+            LEFT JOIN GroupEnrollments ge ON sg.GroupId = ge.GroupId AND ge.Status = 'active'
+            WHERE sg.CourseId = @CourseId
+            GROUP BY sg.GroupId, sg.GroupName, sg.StartDate, sg.EndDate, sg.IsActive";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@CourseId", courseId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    groups.Add(new StudyGroup
+                    {
+                        GroupId = reader.GetInt32("GroupId"),
+                        GroupName = reader.GetString("GroupName"),
+                        StartDate = reader.GetDateTime("StartDate"),
+                        EndDate = reader.GetDateTime("EndDate"),
+                        IsActive = reader.GetBoolean("IsActive"),
+                        StudentCount = reader.IsDBNull("StudentCount") ? 0 : reader.GetInt32("StudentCount")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки групп: {ex.Message}");
+            }
+            return groups;
+        }
+
+        // ДЛЯ УЧЕНИКА - прогресс по курсам
+        public async Task<List<StudentProgress>> GetStudentProgressAsync(int studentId)
+        {
+            var progress = new List<StudentProgress>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT c.CourseName, sp.Status, sp.Score, sp.CompletionDate, sp.AttemptsCount
+            FROM StudentProgress sp
+            JOIN Courses c ON sp.CourseId = c.CourseId
+            WHERE sp.StudentId = @StudentId
+            ORDER BY sp.StartDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@StudentId", studentId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    progress.Add(new StudentProgress
+                    {
+                        CourseName = reader.GetString("CourseName"),
+                        Status = reader.GetString("Status"),
+                        Score = reader.IsDBNull("Score") ? 0 : reader.GetInt32("Score"),
+                        CompletionDate = reader.IsDBNull("CompletionDate") ? null : reader.GetDateTime("CompletionDate"),
+                        Attempts = reader.GetInt32("AttemptsCount")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки прогресса: {ex.Message}");
+            }
+            return progress;
+        }
+
+
+
+
     }
 }

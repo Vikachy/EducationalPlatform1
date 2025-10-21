@@ -3,13 +3,59 @@
     x:Class="EducationalPlatform.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:EducationalPlatform.Views"
     xmlns:local="clr-namespace:EducationalPlatform"
     Shell.FlyoutBehavior="Flyout"
     Title="EducationalPlatform">
 
+    <!-- РЕСУРСЫ -->
+    <Shell.Resources>
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#457b9d</Color>
+            <Color x:Key="SecondaryColor">#1d3557</Color>
+            <Color x:Key="AccentColor">#e63946</Color>
+            <Color x:Key="BackgroundColor">#f1faee</Color>
+            <Color x:Key="TextColor">#1d3557</Color>
+            <Color x:Key="LightTextColor">#f1faee</Color>
+        </ResourceDictionary>
+    </Shell.Resources>
+
+    <!-- СТРАНИЦА ВХОДА (СТАРТОВАЯ) -->
     <ShellContent
-        Title="Home"
+        Title="Вход"
         ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+        Route="Login" />
+
+    <!-- ОСНОВНОЕ МЕНЮ ДЛЯ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ (после входа) -->
+    <FlyoutItem x:Name="MainAppFlyout" Title="Главная" Icon="home.png" IsVisible="False">
+        <ShellContent Route="MainDashboard" ContentTemplate="{DataTemplate views:MainDashboardPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="CoursesFlyout" Title="Курсы" Icon="courses.png" IsVisible="False">
+        <ShellContent Route="Courses" ContentTemplate="{DataTemplate views:CoursesPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="ProgressFlyout" Title="Прогресс" Icon="progress.png" IsVisible="False">
+        <ShellContent Route="Progress" ContentTemplate="{DataTemplate views:ProgressPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="ProfileFlyout" Title="Профиль" Icon="profile.png" IsVisible="False">
+        <ShellContent Route="Profile" ContentTemplate="{DataTemplate views:ProfilePage}" />
+    </FlyoutItem>
+
+    <!-- ПАНЕЛЬ УЧИТЕЛЯ (ТОЛЬКО ДЛЯ УЧИТЕЛЕЙ И АДМИНОВ) -->
+    <FlyoutItem x:Name="TeacherFlyoutItem" Title="Панель учителя" Icon="teacher.png" IsVisible="False">
+        <ShellContent Route="TeacherDashboard" ContentTemplate="{DataTemplate views:TeacherDashboardPage}" />
+    </FlyoutItem>
+
+    <!-- АДМИН ПАНЕЛЬ (ТОЛЬКО ДЛЯ АДМИНОВ) -->
+    <FlyoutItem x:Name="AdminFlyoutItem" Title="Админ панель" Icon="admin.png" IsVisible="False">
+        <ShellContent Route="AdminDashboard" ContentTemplate="{DataTemplate views:AdminDashboardPage}" />
+    </FlyoutItem>
+
+    <!-- НАСТРОЙКИ -->
+    <FlyoutItem x:Name="SettingsFlyout" Title="Настройки" Icon="settings.png" IsVisible="False">
+        <ShellContent Route="Settings" ContentTemplate="{DataTemplate views:SettingsPage}" />
+    </FlyoutItem>
 
 </Shell>

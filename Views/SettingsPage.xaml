@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.SettingsPage"
+    Title="Настройки">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="25" Padding="20">
+
+            <!-- ЗАГОЛОВОК -->
+            <Label Text="⚙️ Настройки"
+                   FontSize="28"
+                   TextColor="{DynamicResource TextColor}"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <!-- НАСТРОЙКИ ВНЕШНЕГО ВИДА -->
+            <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                    Stroke="{DynamicResource PrimaryColor}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 15"
+                    Padding="20">
+                <VerticalStackLayout Spacing="20">
+                    <Label Text="🎨 Внешний вид"
+                           FontSize="20"
+                           TextColor="{DynamicResource TextColor}"
+                           FontAttributes="Bold" />
+
+                    <!-- ВЫБОР ЯЗЫКА -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="🌐 Язык интерфейса"
+                               FontSize="16"
+                               TextColor="{DynamicResource TextColor}"
+                               FontAttributes="Bold" />
+                        <Picker x:Name="LanguagePicker"
+                                Title="Выберите язык..."
+                                SelectedIndexChanged="OnLanguageChanged">
+                            <Picker.Items>
+                                <x:String>🇷🇺 Русский</x:String>
+                                <x:String>🇺🇸 English</x:String>
+                            </Picker.Items>
+                        </Picker>
+                        <Label x:Name="CurrentLanguageLabel"
+                               Text="Текущий: Русский"
+                               FontSize="12"
+                               TextColor="#666" />
+                    </VerticalStackLayout>
+
+                    <!-- ВЫБОР ТЕМЫ -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="🎭 Тема интерфейса"
+                               FontSize="16"
+                               TextColor="{DynamicResource TextColor}"
+                               FontAttributes="Bold" />
+                        <Picker x:Name="ThemePicker"
+                                Title="Выберите тему..."
+                                SelectedIndexChanged="OnThemeChanged">
+                            <Picker.Items>
+                                <x:String>💙 Стандартная</x:String>
+                                <x:String>🔥 Для подростков</x:String>
+                            </Picker.Items>
+                        </Picker>
+                        <Label x:Name="CurrentThemeLabel"
+                               Text="Текущая: Стандартная"
+                               FontSize="12"
+                               TextColor="#666" />
+                    </VerticalStackLayout>
+
+                    <!-- ПРЕВЬЮ ТЕМ -->
+                    <Border BackgroundColor="#F8F9FA"
+                            Stroke="#DDD"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="15">
+                        <HorizontalStackLayout Spacing="15">
+                            <!-- Стандартная тема -->
+                            <Border x:Name="StandardThemePreview"
+                                    BackgroundColor="#457b9d"
+                                    Stroke="#1d3557"
+                                    StrokeThickness="2"
+                                    StrokeShape="RoundRectangle 8"
+                                    WidthRequest="60"
+                                    HeightRequest="60">
+                                <VerticalStackLayout Spacing="2" Padding="5">
+                                    <BoxView Color="#f1faee" HeightRequest="8" CornerRadius="2" />
+                                    <BoxView Color="#a8dadc" HeightRequest="6" CornerRadius="2" />
+                                    <BoxView Color="#e63946" HeightRequest="4" CornerRadius="2" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <!-- Подростковая тема -->
+                            <Border x:Name="TeenThemePreview"
+                                    BackgroundColor="#669bbc"
+                                    Stroke="#003049"
+                                    StrokeThickness="2"
+                                    StrokeShape="RoundRectangle 8"
+                                    WidthRequest="60"
+                                    HeightRequest="60">
+                                <VerticalStackLayout Spacing="2" Padding="5">
+                                    <BoxView Color="#fdf0d5" HeightRequest="8" CornerRadius="2" />
+                                    <BoxView Color="#c1121f" HeightRequest="6" CornerRadius="2" />
+                                    <BoxView Color="#780000" HeightRequest="4" CornerRadius="2" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Label Text="Предпросмотр цветов тем"
+                                   FontSize="12"
+                                   TextColor="#666"
+                                   VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- НАСТРОЙКИ УВЕДОМЛЕНИЙ -->
+            <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                    Stroke="{DynamicResource PrimaryColor}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 15"
+                    Padding="20">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="🔔 Уведомления"
+                           FontSize="20"
+                           TextColor="{DynamicResource TextColor}"
+                           FontAttributes="Bold" />
+
+                    <HorizontalStackLayout Spacing="15">
+                        <CheckBox x:Name="EmailNotifications"
+                                  Color="{DynamicResource PrimaryColor}"
+                                  VerticalOptions="Center" />
+                        <Label Text="Email уведомления"
+                               FontSize="14"
+                               TextColor="{DynamicResource TextColor}"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+
+                    <HorizontalStackLayout Spacing="15">
+                        <CheckBox x:Name="PushNotifications"
+                                  Color="{DynamicResource PrimaryColor}"
+                                  VerticalOptions="Center" />
+                        <Label Text="Push уведомления"
+                               FontSize="14"
+                               TextColor="{DynamicResource TextColor}"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ДЕЙСТВИЯ -->
+            <VerticalStackLayout Spacing="10">
+                <Button Text="💾 Сохранить настройки"
+                        Clicked="OnSaveSettingsClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        FontAttributes="Bold" />
+
+                <Button Text="↩️ Назад"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        BorderColor="{DynamicResource PrimaryColor}"
+                        BorderWidth="2"
+                        HeightRequest="45"
+                        CornerRadius="22" />
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

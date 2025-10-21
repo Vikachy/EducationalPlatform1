@@ -1,5 +1,6 @@
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
+using EducationalPlatform.Views;
 
 namespace EducationalPlatform;
 

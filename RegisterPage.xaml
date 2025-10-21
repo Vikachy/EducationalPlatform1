@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="EducationalPlatform.RegisterPage"
-              Title="Регистрация"
-             BackgroundColor="{DynamicResource BackgroundColor}">
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.RegisterPage"
+    Title="Регистрация"
+    BackgroundColor="{DynamicResource BackgroundColor}">
 
     <ScrollView>
         <VerticalStackLayout Spacing="20" Padding="30">
-
-            <Label Text="Создание аккаунта" 
-                   FontSize="28" 
-                   HorizontalOptions="Center" 
+            <Label Text="Создание аккаунта"
+                   FontSize="28"
+                   HorizontalOptions="Center"
                    TextColor="#2E86AB"
                    FontAttributes="Bold" />
 
@@ -20,54 +20,55 @@
                     StrokeShape="RoundRectangle 15"
                     Padding="25">
                 <VerticalStackLayout Spacing="15">
-
-                    <Entry x:Name="FirstNameEntry" 
-                           Placeholder="Имя" 
+                    <Entry x:Name="FirstNameEntry"
+                           Placeholder="Имя"
                            BackgroundColor="White"
                            HeightRequest="50" />
 
-                    <Entry x:Name="LastNameEntry" 
-                           Placeholder="Фамилия" 
+                    <Entry x:Name="LastNameEntry"
+                           Placeholder="Фамилия"
                            BackgroundColor="White"
                            HeightRequest="50" />
 
-                    <Entry x:Name="UsernameEntry" 
-                           Placeholder="Логин" 
+                    <Entry x:Name="UsernameEntry"
+                           Placeholder="Логин"
                            BackgroundColor="White"
                            HeightRequest="50" />
 
-                    <Entry x:Name="EmailEntry" 
-                           Placeholder="Email" 
+                    <Entry x:Name="EmailEntry"
+                           Placeholder="Email"
                            Keyboard="Email"
                            BackgroundColor="White"
                            HeightRequest="50" />
 
-                    <Entry x:Name="PasswordEntry" 
-                           Placeholder="Пароль" 
-                           IsPassword="True" 
+                    <Entry x:Name="PasswordEntry"
+                           Placeholder="Пароль"
+                           IsPassword="True"
                            BackgroundColor="White"
                            HeightRequest="50" />
 
-                    <Entry x:Name="ConfirmPasswordEntry" 
-                           Placeholder="Подтверждение пароля" 
-                           IsPassword="True" 
+                    <Entry x:Name="ConfirmPasswordEntry"
+                           Placeholder="Подтверждение пароля"
+                           IsPassword="True"
                            BackgroundColor="White"
                            HeightRequest="50" />
 
-                    <CheckBox x:Name="AgreementCheckBox" 
-                              Color="#2E86AB"
-                              HorizontalOptions="Start" />
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                        <CheckBox x:Name="AgreementCheckBox"
+                                  Color="#2E86AB"
+                                  VerticalOptions="Center" />
+                        <Label Text="Я согласен с политикой обработки данных"
+                               FontSize="12"
+                               TextColor="#2E86AB"
+                               VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPolicyTapped" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </HorizontalStackLayout>
 
-                    <Label Text="Я согласен с политикой обработки данных" 
-                           FontSize="12" 
-                           TextColor="#2E86AB">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnPolicyTapped" />
-                        </Label.GestureRecognizers>
-                    </Label>
-
-                    <Button x:Name="RegisterButton" 
-                            Text="Зарегистрироваться" 
+                    <Button x:Name="RegisterButton"
+                            Text="Зарегистрироваться"
                             Clicked="OnRegisterClicked"
                             BackgroundColor="#2E86AB"
                             TextColor="White"
@@ -75,8 +76,8 @@
                             CornerRadius="25"
                             Margin="0,20,0,0" />
 
-                    <Button x:Name="BackButton" 
-                            Text="Назад" 
+                    <Button x:Name="BackButton"
+                            Text="Назад"
                             Clicked="OnBackClicked"
                             BackgroundColor="Transparent"
                             TextColor="#2E86AB"
@@ -84,14 +85,11 @@
                             BorderWidth="2"
                             HeightRequest="50" />
 
-                    <ActivityIndicator x:Name="LoadingIndicator" 
+                    <ActivityIndicator x:Name="LoadingIndicator"
                                        IsVisible="False"
                                        Color="#2E86AB" />
-
                 </VerticalStackLayout>
             </Border>
-
         </VerticalStackLayout>
     </ScrollView>
-
 </ContentPage>
