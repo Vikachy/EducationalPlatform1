@@ -142,21 +142,64 @@ namespace EducationalPlatform.Views
                 StreakLabel.Text = _settingsService.GetStreakMessage(_currentUser.StreakDays);
         }
 
+        // Обновленный метод для начала курса
+        private async void OnStartCourseClicked(object? sender, EventArgs e)
+        {
+            if (sender is Button button && button.BindingContext is Course course)
+            {
+                try
+                {
+                    // Записываем студента на курс
+                    bool success = await _dbService.EnrollStudentInCourseAsync(_currentUser.UserId, course.CourseId);
+
+                    if (success)
+                    {
+                        await DisplayAlert(
+                            _settingsService?.GetLocalizedString("Success") ?? "Успех",
+                            _settingsService?.CurrentLanguage == "ru"
+                                ? $"Вы успешно записались на курс '{course.CourseName}'!"
+                                : $"You have successfully enrolled in '{course.CourseName}' course!",
+                            "OK");
+
+                        // Обновляем список курсов
+                        LoadCourses();
+                    }
+                    else
+                    {
+                        await DisplayAlert(
+                            _settingsService?.GetLocalizedString("Info") ?? "Информация",
+                            _settingsService?.CurrentLanguage == "ru"
+                                ? $"Вы уже записаны на курс '{course.CourseName}'"
+                                : $"You are already enrolled in '{course.CourseName}' course",
+                            "OK");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert(
+                        _settingsService?.GetLocalizedString("Error") ?? "Ошибка",
+                        _settingsService?.CurrentLanguage == "ru"
+                            ? $"Не удалось записаться на курс: {ex.Message}"
+                            : $"Failed to enroll in course: {ex.Message}",
+                        "OK");
+                }
+            }
+        }
+
+
+        // Обновленный метод загрузки курсов
         private async void LoadCourses()
         {
             try
             {
-                var courses = await _dbService.GetCoursesAsync();
+                var courses = await _dbService.GetAvailableCoursesAsync();
                 Courses.Clear();
+
                 foreach (var course in courses)
                 {
-                    // Можно адаптировать названия курсов под язык
-                    if (_settingsService?.CurrentLanguage == "en")
-                    {
-                        // Здесь можно добавить перевод названий курсов
-                    }
                     Courses.Add(course);
                 }
+
                 CoursesCollectionView.ItemsSource = Courses;
             }
             catch (Exception ex)
@@ -170,46 +213,8 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private async void OnStartCourseClicked(object? sender, EventArgs e)
-        {
-            if (sender is Button button && button.BindingContext is Course course)
-            {
-                try
-                {
-                    bool success = await _dbService.UpdateProgressAsync(_currentUser.UserId, course.CourseId, "started");
-                    if (success)
-                    {
-                        await DisplayAlert(
-                            _settingsService?.GetLocalizedString("Success") ?? "Успех",
-                            _settingsService?.CurrentLanguage == "ru"
-                                ? $"Курс '{course.CourseName}' начат!"
-                                : $"Course '{course.CourseName}' started!",
-                            "OK");
 
-                        // Переход на MainDashboardPage с передачей параметров без Shell
-                        await Navigation.PushAsync(new MainDashboardPage(_currentUser, _dbService, _settingsService));
-                    }
-                    else
-                    {
-                        await DisplayAlert(
-                            _settingsService?.GetLocalizedString("Error") ?? "Ошибка",
-                            _settingsService?.CurrentLanguage == "ru"
-                                ? "Не удалось обновить прогресс"
-                                : "Failed to update progress",
-                            "OK");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await DisplayAlert(
-                        _settingsService?.GetLocalizedString("Error") ?? "Ошибка",
-                        _settingsService?.CurrentLanguage == "ru"
-                            ? $"Не удалось начать курс: {ex.Message}"
-                            : $"Failed to start course: {ex.Message}",
-                        "OK");
-                }
-            }
-        }
+        
 
         private void OnLanguageChanged(object? sender, EventArgs e)
         {

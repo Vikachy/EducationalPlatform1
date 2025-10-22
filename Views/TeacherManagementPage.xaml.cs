@@ -85,27 +85,19 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private void LoadPickersData()
+        private async void LoadPickersData()
         {
             try
             {
-                // Временно добавляем тестовые данные
-                var languages = new List<ProgrammingLanguage>
-                {
-                    new ProgrammingLanguage { LanguageId = 1, LanguageName = "C#" },
-                    new ProgrammingLanguage { LanguageId = 2, LanguageName = "Python" },
-                    new ProgrammingLanguage { LanguageId = 3, LanguageName = "Java" }
-                };
+                // Загружаем языки программирования
+                var languages = await _dbService.GetProgrammingLanguagesAsync();
                 LanguagePicker.ItemsSource = languages;
 
-                var difficulties = new List<CourseDifficulty>
-                {
-                    new CourseDifficulty { DifficultyId = 1, DifficultyName = "Легкий" },
-                    new CourseDifficulty { DifficultyId = 2, DifficultyName = "Средний" },
-                    new CourseDifficulty { DifficultyId = 3, DifficultyName = "Сложный" }
-                };
+                // Загружаем сложности
+                var difficulties = await _dbService.GetCourseDifficultiesAsync();
                 DifficultyPicker.ItemsSource = difficulties;
 
+                // Загружаем курсы для тестов
                 CourseForTestPicker.ItemsSource = MyCourses;
             }
             catch (Exception ex)
@@ -115,6 +107,7 @@ namespace EducationalPlatform.Views
         }
 
         // СОЗДАНИЕ КУРСА
+        // Исправленный метод создания курса
         private async void OnCreateCourseClicked(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(NewCourseNameEntry.Text))
@@ -145,6 +138,7 @@ namespace EducationalPlatform.Views
                 if (success)
                 {
                     await DisplayAlert("Успех", "Курс успешно создан!", "OK");
+
                     // Очищаем поля
                     NewCourseNameEntry.Text = "";
                     NewCourseDescriptionEditor.Text = "";
@@ -164,7 +158,7 @@ namespace EducationalPlatform.Views
             {
                 await DisplayAlert("Ошибка", $"Ошибка создания курса: {ex.Message}", "OK");
             }
-        }
+        }  
 
         // СОЗДАНИЕ ТЕСТА
         private async void OnCreateTestClicked(object sender, EventArgs e)

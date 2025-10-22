@@ -183,11 +183,11 @@
                                            Padding="8,4" />
                                     </HorizontalStackLayout>
 
-                                    <Button Text="Начать курс"
-                                        Clicked="OnStartCourseClicked"
-                                        BackgroundColor="#2E86AB"
-                                        TextColor="White"
-                                        HeightRequest="40" />
+                                    <Button Text="Записаться на курс"
+                                    Clicked="OnStartCourseClicked"
+                                    BackgroundColor="#2E86AB"
+                                    TextColor="White"
+                                    HeightRequest="40" />
                                 </VerticalStackLayout>
                             </Border>
                         </DataTemplate>

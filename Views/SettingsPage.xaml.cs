@@ -72,8 +72,29 @@ namespace EducationalPlatform.Views
 
         private async void OnSaveSettingsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Сохранено", "Настройки успешно сохранены! ✅", "OK");
-            await Navigation.PopAsync();
+            try
+            {
+                // Сохраняем настройки в базу данных
+                bool success = await _dbService.SaveUserSettingsAsync(
+                    _currentUser.UserId,
+                    _settingsService.CurrentLanguage,
+                    _settingsService.CurrentTheme);
+
+                if (success)
+                {
+                    await DisplayAlert("Сохранено", "Настройки успешно сохранены! ✅", "OK");
+                }
+                else
+                {
+                    await DisplayAlert("Ошибка", "Не удалось сохранить настройки в базу данных", "OK");
+                }
+
+                await Navigation.PopAsync();
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Ошибка сохранения: {ex.Message}", "OK");
+            }
         }
 
         private async void OnBackClicked(object sender, EventArgs e)

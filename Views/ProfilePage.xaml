@@ -67,20 +67,23 @@
                     <HorizontalStackLayout Grid.Row="0" Spacing="15" VerticalOptions="Center">
                         <!-- АВАТАР С РАМКОЙ -->
                         <Border WidthRequest="80"
-                                HeightRequest="80"
-                                BackgroundColor="{DynamicResource PrimaryColor}"
-                                Stroke="{DynamicResource AccentColor}"
-                                StrokeThickness="3"
-                                StrokeShape="RoundRectangle 40"
-                                Padding="2">
+                            HeightRequest="80"
+                            BackgroundColor="{DynamicResource PrimaryColor}"
+                            Stroke="{DynamicResource AccentColor}"
+                            StrokeThickness="3"
+                            StrokeShape="RoundRectangle 40"
+                            Padding="2">
                             <Border BackgroundColor="White"
-                                    Stroke="{DynamicResource SecondaryColor}"
-                                    StrokeThickness="2"
-                                    StrokeShape="RoundRectangle 38">
-                                <Label Text="👨‍💻"
-                                       FontSize="32"
-                                       HorizontalOptions="Center"
-                                       VerticalOptions="Center" />
+                            Stroke="{DynamicResource SecondaryColor}"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 38">
+                                <Image x:Name="AvatarImage"
+                                Source="default_avatar.png"
+                                Aspect="AspectFill"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"
+                                WidthRequest="76"
+                                HeightRequest="76" />
                             </Border>
                         </Border>
 

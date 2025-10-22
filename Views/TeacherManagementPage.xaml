@@ -63,14 +63,24 @@
                             Placeholder="Описание курса" 
                             HeightRequest="80" />
 
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <Picker x:Name="LanguagePicker" 
-                                Title="Язык программирования" />
-                        <Picker x:Name="DifficultyPicker" 
-                                Title="Сложность" />
+                    <!-- Расположение Pickers в две строки -->
+                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*" ColumnSpacing="10" RowSpacing="10">
+
+                        <Picker x:Name="LanguagePicker"
+                                Title="Язык программирования"
+                                ItemDisplayBinding="{Binding LanguageName}"
+                                Grid.Row="0"
+                                HorizontalOptions="FillAndExpand" />
+
+                        <Picker x:Name="DifficultyPicker"
+                                Title="Уровень сложности"
+                                ItemDisplayBinding="{Binding DifficultyName}"
+                                Grid.Row="1"
+                                HorizontalOptions="FillAndExpand" />
+
                     </Grid>
 
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10,0,0">
                         <CheckBox x:Name="IsGroupCourseCheckBox" />
                         <Label Text="Для учебных групп" 
                                VerticalOptions="Center" />
@@ -95,8 +105,9 @@
                            FontSize="16" 
                            FontAttributes="Bold" />
 
-                    <Picker x:Name="CourseForTestPicker" 
-                            Title="Выберите курс" />
+                    <Picker x:Name="CourseForTestPicker"
+                            Title="Выберите курс"
+                            ItemDisplayBinding="{Binding CourseName}" />
                     <Entry x:Name="NewTestTitleEntry" 
                            Placeholder="Название теста" />
                     <Editor x:Name="NewTestDescriptionEditor" 

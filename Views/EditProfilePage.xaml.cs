@@ -1,5 +1,7 @@
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Storage;
 
 namespace EducationalPlatform.Views
 {
@@ -21,21 +23,33 @@ namespace EducationalPlatform.Views
             LoadUserData();
         }
 
-        private void LoadUserData()
+        private async void LoadUserData()
         {
-            FirstNameEntry.Text = _currentUser.FirstName ?? "";
-            LastNameEntry.Text = _currentUser.LastName ?? "";
-            UsernameEntry.Text = _currentUser.Username ?? "";
-            EmailEntry.Text = _currentUser.Email ?? "";
+            try
+            {
+                FirstNameEntry.Text = _currentUser.FirstName ?? "";
+                LastNameEntry.Text = _currentUser.LastName ?? "";
+                UsernameEntry.Text = _currentUser.Username ?? "";
+                EmailEntry.Text = _currentUser.Email ?? "";
 
-            // Загружаем аватар если есть
-            if (!string.IsNullOrEmpty(_currentUser.AvatarUrl))
-            {
-                AvatarPreview.Source = ImageSource.FromUri(new Uri(_currentUser.AvatarUrl));
+                // Загружаем актуальный аватар из базы
+                var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
+
+                if (!string.IsNullOrEmpty(currentAvatar))
+                {
+                    AvatarPreview.Source = ImageSource.FromFile(currentAvatar);
+                    _avatarUrl = currentAvatar;
+                    _currentUser.AvatarUrl = currentAvatar;
+                }
+                else
+                {
+                    AvatarPreview.Source = "default_avatar.png";
+                    _avatarUrl = null;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                AvatarPreview.Source = "default_avatar.png";
+                await DisplayAlert("Ошибка", $"Не удалось загрузить данные: {ex.Message}", "OK");
             }
         }
 
@@ -61,10 +75,10 @@ namespace EducationalPlatform.Views
                 {
                     _selectedImage = result;
 
-                    // Показываем превью выбранного изображения
+                    // Показываем превью ВО ВРЕМЯ ВЫБОРА
                     AvatarPreview.Source = ImageSource.FromFile(result.FullPath);
 
-                    await DisplayAlert("Успех", "Изображение выбрано!", "OK");
+                    Console.WriteLine($"Выбран файл: {result.FileName}, путь: {result.FullPath}");
                 }
             }
             catch (Exception ex)
@@ -75,10 +89,30 @@ namespace EducationalPlatform.Views
 
         private void OnRemoveImageClicked(object sender, EventArgs e)
         {
-            _selectedImage = null;
-            _avatarUrl = null;
-            AvatarPreview.Source = "default_avatar.png";
-            DisplayAlert("Успех", "Аватар удален!", "OK");
+            try
+            {
+                _selectedImage = null;
+                _avatarUrl = null;
+                AvatarPreview.Source = "default_avatar.png";
+
+                // Удаляем аватар из базы данных
+                _ = Task.Run(async () =>
+                {
+                    await _dbService.UpdateUserAsync(
+                        _currentUser.UserId,
+                        _currentUser.FirstName ?? "",
+                        _currentUser.LastName ?? "",
+                        _currentUser.Username ?? "",
+                        _currentUser.Email ?? "",
+                        null);
+                });
+
+                DisplayAlert("Успех", "Аватар удален!", "OK");
+            }
+            catch (Exception ex)
+            {
+                DisplayAlert("Ошибка", $"Не удалось удалить аватар: {ex.Message}", "OK");
+            }
         }
 
         private async void OnSaveClicked(object sender, EventArgs e)
@@ -105,12 +139,8 @@ namespace EducationalPlatform.Views
             }
 
             // Показываем индикатор загрузки
-            var loadingIndicator = this.FindByName<ActivityIndicator>("LoadingIndicator");
-            if (loadingIndicator != null)
-            {
-                loadingIndicator.IsVisible = true;
-                loadingIndicator.IsRunning = true;
-            }
+            LoadingIndicator.IsVisible = true;
+            LoadingIndicator.IsRunning = true;
 
             try
             {
@@ -119,14 +149,21 @@ namespace EducationalPlatform.Views
                 // Загружаем новое изображение если выбрано
                 if (_selectedImage != null)
                 {
+                    Console.WriteLine($"Начинаем загрузку аватара: {_selectedImage.FileName}");
+
                     using var stream = await _selectedImage.OpenReadAsync();
                     finalAvatarUrl = await _dbService.UploadAvatarAsync(stream, _selectedImage.FileName, _currentUser.UserId);
 
                     if (string.IsNullOrEmpty(finalAvatarUrl))
                     {
                         await DisplayAlert("Ошибка", "Не удалось загрузить аватар", "OK");
+                        LoadingIndicator.IsVisible = false;
+                        LoadingIndicator.IsRunning = false;
                         return;
                     }
+
+                    Console.WriteLine($"Аватар успешно загружен: {finalAvatarUrl}");
+                    await DisplayAlert("Успех", "Аватар успешно загружен!", "OK");
                 }
 
                 // Обновляем данные пользователя
@@ -150,10 +187,19 @@ namespace EducationalPlatform.Views
                     await DisplayAlert("Успех", "Профиль успешно обновлен!", "OK");
 
                     // Возвращаемся на страницу профиля с обновленными данными
-                    await Navigation.PushAsync(new ProfilePage(_currentUser, _dbService, _settingsService));
+                    var profilePage = new ProfilePage(_currentUser, _dbService, _settingsService);
+                    await Navigation.PushAsync(profilePage);
 
                     // Удаляем текущую страницу из стека навигации
-                    Navigation.RemovePage(this);
+                    var existingPages = Navigation.NavigationStack.ToList();
+                    foreach (var page in existingPages)
+                    {
+                        if (page is EditProfilePage)
+                        {
+                            Navigation.RemovePage(page);
+                            break;
+                        }
+                    }
                 }
                 else
                 {
@@ -163,28 +209,124 @@ namespace EducationalPlatform.Views
             catch (Exception ex)
             {
                 await DisplayAlert("Ошибка", $"Не удалось сохранить изменения: {ex.Message}", "OK");
+                Console.WriteLine($"Ошибка сохранения: {ex}");
             }
             finally
             {
                 // Скрываем индикатор загрузки
-                if (loadingIndicator != null)
-                {
-                    loadingIndicator.IsVisible = false;
-                    loadingIndicator.IsRunning = false;
-                }
+                LoadingIndicator.IsVisible = false;
+                LoadingIndicator.IsRunning = false;
             }
         }
 
         private async void OnCancelClicked(object sender, EventArgs e)
         {
-            await Navigation.PushAsync(new ProfilePage(_currentUser, _dbService, _settingsService));
-            Navigation.RemovePage(this);
+            try
+            {
+                // Возвращаемся на страницу профиля без сохранения
+                var profilePage = new ProfilePage(_currentUser, _dbService, _settingsService);
+                await Navigation.PushAsync(profilePage);
+
+                // Удаляем текущую страницу из стека навигации
+                var existingPages = Navigation.NavigationStack.ToList();
+                foreach (var page in existingPages)
+                {
+                    if (page is EditProfilePage)
+                    {
+                        Navigation.RemovePage(page);
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось вернуться: {ex.Message}", "OK");
+            }
         }
 
         protected override bool OnBackButtonPressed()
         {
+            // Блокируем стандартное поведение кнопки назад
             OnCancelClicked(null, null);
             return true;
+        }
+
+        // Обработчик изменения текста в полях для валидации в реальном времени
+        private void OnEntryTextChanged(object sender, TextChangedEventArgs e)
+        {
+            ValidateForm();
+        }
+
+        private void ValidateForm()
+        {
+            bool isValid = !string.IsNullOrWhiteSpace(FirstNameEntry.Text) &&
+                          !string.IsNullOrWhiteSpace(LastNameEntry.Text) &&
+                          !string.IsNullOrWhiteSpace(UsernameEntry.Text) &&
+                          !string.IsNullOrWhiteSpace(EmailEntry.Text) &&
+                          IsValidEmail(EmailEntry.Text);
+
+            // Можно добавить визуальную индикацию валидности формы
+            if (isValid)
+            {
+                // Форма валидна
+            }
+            else
+            {
+                // Форма невалидна
+            }
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // Обработчик для проверки email при потере фокуса
+        private async void OnEmailUnfocused(object sender, FocusEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(EmailEntry.Text) && !IsValidEmail(EmailEntry.Text))
+            {
+                await DisplayAlert("Ошибка", "Введите корректный email адрес", "OK");
+                EmailEntry.Focus();
+            }
+        }
+
+        // Обработчик для проверки username при потере фокуса
+        private async void OnUsernameUnfocused(object sender, FocusEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(UsernameEntry.Text))
+            {
+                // Проверяем минимальную длину username
+                if (UsernameEntry.Text.Length < 3)
+                {
+                    await DisplayAlert("Ошибка", "Логин должен содержать минимум 3 символа", "OK");
+                    UsernameEntry.Focus();
+                    return;
+                }
+
+                // Проверяем уникальность username (кроме текущего пользователя)
+                bool userExists = await _dbService.CheckUserExistsAsync(
+                    UsernameEntry.Text,
+                    "", // Пустой email для проверки только username
+                    _currentUser.UserId);
+
+                if (userExists)
+                {
+                    await DisplayAlert("Ошибка", "Пользователь с таким логином уже существует", "OK");
+                    UsernameEntry.Focus();
+                }
+            }
         }
     }
 }

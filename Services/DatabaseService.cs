@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Data;
+using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using System.Data;
 using EducationalPlatform.Models;
 
 namespace EducationalPlatform.Services
@@ -18,7 +19,110 @@ namespace EducationalPlatform.Services
             _connectionString = "Server=EducationalPlatform.mssql.somee.com;Database=EducationalPlatform;User Id=yyullechkaaa_SQLLogin_1;Password=xtbnfhvyqu;TrustServerCertificate=true;";
         }
 
-        // ПРОВЕРКА ПОДКЛЮЧЕНИЯ
+        // АВАТАРЫ
+        public async Task<string> UploadAvatarAsync(Stream imageStream, string fileName, int userId)
+        {
+            try
+            {
+                // Сохраняем файл локально
+                var filePath = await SaveAvatarAsync(imageStream, fileName, userId);
+
+                if (string.IsNullOrEmpty(filePath))
+                    return null;
+
+                // Обновляем путь в базе данных
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "UPDATE Users SET AvatarUrl = @AvatarUrl WHERE UserId = @UserId";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@AvatarUrl", filePath);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                await command.ExecuteNonQueryAsync();
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки аватара: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async Task<string> SaveAvatarAsync(Stream fileStream, string fileName, int userId)
+        {
+            try
+            {
+                // Создаем папку для аватаров, если её нет
+                var avatarsFolder = Path.Combine(FileSystem.AppDataDirectory, "Avatars");
+                if (!Directory.Exists(avatarsFolder))
+                {
+                    Directory.CreateDirectory(avatarsFolder);
+                }
+
+                // Генерируем уникальное имя файла
+                var fileExtension = Path.GetExtension(fileName);
+                var newFileName = $"avatar_{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
+                var fullPath = Path.Combine(avatarsFolder, newFileName);
+
+                // Сохраняем файл
+                using (var file = File.Create(fullPath))
+                {
+                    await fileStream.CopyToAsync(file);
+                }
+
+                Console.WriteLine($"Аватар сохранен: {fullPath}");
+                return fullPath;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения аватара: {ex.Message}");
+                return null;
+            }
+        }
+
+        public string GetAvatarPath(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return null;
+
+            if (File.Exists(fileName))
+                return fileName;
+
+            return null;
+        }
+
+        public async Task<string> GetUserAvatarAsync(int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "SELECT AvatarUrl FROM Users WHERE UserId = @UserId";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteScalarAsync();
+                var avatarPath = result?.ToString();
+
+                // Проверяем, существует ли файл
+                if (!string.IsNullOrEmpty(avatarPath) && File.Exists(avatarPath))
+                {
+                    return avatarPath;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка получения аватара: {ex.Message}");
+                return null;
+            }
+        }
+
+        // АУТЕНТИФИКАЦИЯ И ПОЛЬЗОВАТЕЛИ
         public async Task<bool> TestConnection()
         {
             try
@@ -29,13 +133,11 @@ namespace EducationalPlatform.Services
             }
             catch (Exception ex)
             {
-                // Используем текущую страницу вместо Application.Current.MainPage
                 Console.WriteLine($"Ошибка подключения: {ex.Message}");
                 return false;
             }
         }
 
-        // ПРОВЕРКА УНИКАЛЬНОСТИ EMAIL И USERNAME
         public async Task<bool> CheckUserExistsAsync(string username, string email)
         {
             try
@@ -62,7 +164,6 @@ namespace EducationalPlatform.Services
             }
         }
 
-        // ПОЛУЧЕНИЕ СПИСКА РОЛЕЙ
         public async Task<List<Role>> GetRolesAsync()
         {
             var roles = new List<Role>();
@@ -93,7 +194,6 @@ namespace EducationalPlatform.Services
             return roles;
         }
 
-        // РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ
         public async Task<bool> RegisterUserAsync(string username, string email, string password, string firstName, string lastName)
         {
             try
@@ -104,10 +204,9 @@ namespace EducationalPlatform.Services
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // УПРОЩЕННЫЙ ЗАПРОС - только основные поля
                 var query = @"
-            INSERT INTO Users (Username, Email, PasswordHash, FirstName, LastName, RoleId, LanguagePref, RegistrationDate)
-            VALUES (@Username, @Email, @PasswordHash, @FirstName, @LastName, 1, 'ru', GETDATE())";
+                    INSERT INTO Users (Username, Email, PasswordHash, FirstName, LastName, RoleId, LanguagePref, RegistrationDate)
+                    VALUES (@Username, @Email, @PasswordHash, @FirstName, @LastName, 1, 'ru', GETDATE())";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Username", username ?? "");
@@ -126,7 +225,6 @@ namespace EducationalPlatform.Services
             }
         }
 
-        // АВТОРИЗАЦИЯ
         public async Task<User?> LoginAsync(string? username, string? password)
         {
             try
@@ -135,11 +233,11 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            SELECT UserId, Username, Email, FirstName, LastName, RoleId,
-                   LanguagePref, GameCurrency, StreakDays, RegistrationDate, 
-                   IsActive, AvatarUrl
-            FROM Users
-            WHERE Username = @Username AND PasswordHash = @PasswordHash AND IsActive = 1";
+                    SELECT UserId, Username, Email, FirstName, LastName, RoleId,
+                           LanguagePref, GameCurrency, StreakDays, RegistrationDate, 
+                           IsActive, AvatarUrl
+                    FROM Users
+                    WHERE Username = @Username AND PasswordHash = @PasswordHash AND IsActive = 1";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Username", username ?? "");
@@ -156,7 +254,7 @@ namespace EducationalPlatform.Services
                         Email = reader.IsDBNull(reader.GetOrdinal("Email")) ? null : reader.GetString("Email"),
                         FirstName = reader.IsDBNull(reader.GetOrdinal("FirstName")) ? null : reader.GetString("FirstName"),
                         LastName = reader.IsDBNull(reader.GetOrdinal("LastName")) ? null : reader.GetString("LastName"),
-                        AvatarUrl = reader.IsDBNull(reader.GetOrdinal("AvatarUrl")) ? null : reader.GetString("AvatarUrl"), // Добавьте эту строку
+                        AvatarUrl = reader.IsDBNull(reader.GetOrdinal("AvatarUrl")) ? null : reader.GetString("AvatarUrl"),
                         RoleId = reader.GetInt32("RoleId"),
                         LanguagePref = reader.IsDBNull(reader.GetOrdinal("LanguagePref")) ? "ru" : reader.GetString("LanguagePref"),
                         GameCurrency = reader.GetInt32("GameCurrency"),
@@ -174,7 +272,6 @@ namespace EducationalPlatform.Services
             }
         }
 
-        // ОБНОВЛЕНИЕ СЕРИИ ВХОДОВ
         public async Task UpdateLoginStreakAsync(int userId)
         {
             try
@@ -201,8 +298,70 @@ namespace EducationalPlatform.Services
             }
         }
 
+        public async Task<bool> UpdateUserAsync(int userId, string firstName, string lastName, string username, string email, string avatarUrl = null)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-        // ПОЛУЧЕНИЕ КУРСОВ
+                var query = @"
+                    UPDATE Users 
+                    SET FirstName = @FirstName, 
+                        LastName = @LastName, 
+                        Username = @Username, 
+                        Email = @Email,
+                        AvatarUrl = @AvatarUrl
+                    WHERE UserId = @UserId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@FirstName", firstName ?? "");
+                command.Parameters.AddWithValue("@LastName", lastName ?? "");
+                command.Parameters.AddWithValue("@Username", username ?? "");
+                command.Parameters.AddWithValue("@Email", email ?? "");
+                command.Parameters.AddWithValue("@AvatarUrl", avatarUrl ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обновления пользователя: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> CheckUserExistsAsync(string username, string email, int excludeUserId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT COUNT(*) FROM Users
+                    WHERE (Username = @Username OR Email = @Email)
+                    AND UserId != @ExcludeUserId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Username", username ?? "");
+                command.Parameters.AddWithValue("@Email", email ?? "");
+                command.Parameters.AddWithValue("@ExcludeUserId", excludeUserId);
+
+                var result = await command.ExecuteScalarAsync();
+                var count = result is null ? 0 : (int)result;
+
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка проверки пользователя: {ex.Message}");
+                return true;
+            }
+        }
+
+        // КУРСЫ
         public async Task<List<Course>> GetCoursesAsync()
         {
             var courses = new List<Course>();
@@ -213,12 +372,12 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            SELECT c.CourseId, c.CourseName, c.Description, c.IsPublished, 
-                   l.LanguageName, d.DifficultyName
-            FROM Courses c
-            LEFT JOIN ProgrammingLanguages l ON c.LanguageId = l.LanguageId
-            LEFT JOIN CourseDifficulties d ON c.DifficultyId = d.DifficultyId
-            WHERE c.IsPublished = 1";
+                    SELECT c.CourseId, c.CourseName, c.Description, c.IsPublished, 
+                           l.LanguageName, d.DifficultyName
+                    FROM Courses c
+                    LEFT JOIN ProgrammingLanguages l ON c.LanguageId = l.LanguageId
+                    LEFT JOIN CourseDifficulties d ON c.DifficultyId = d.DifficultyId
+                    WHERE c.IsPublished = 1";
 
                 using var command = new SqlCommand(query, connection);
                 using var reader = await command.ExecuteReaderAsync();
@@ -272,13 +431,102 @@ namespace EducationalPlatform.Services
             }
         }
 
-
-        private string HashPassword(string password)
+        public async Task<List<Course>> GetAvailableCoursesAsync()
         {
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
-            var bytes = System.Text.Encoding.UTF8.GetBytes(password);
-            var hash = sha256.ComputeHash(bytes);
-            return Convert.ToBase64String(hash);
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT 
+                        c.CourseId,
+                        c.CourseName,
+                        c.Description,
+                        pl.LanguageName,
+                        cd.DifficultyName,
+                        c.IsPublished,
+                        c.IsGroupCourse,
+                        c.Price,
+                        c.EstimatedHours,
+                        COUNT(DISTINCT sp.StudentId) as EnrolledStudents
+                    FROM Courses c
+                    LEFT JOIN ProgrammingLanguages pl ON c.LanguageId = pl.LanguageId
+                    LEFT JOIN CourseDifficulties cd ON c.DifficultyId = cd.DifficultyId
+                    LEFT JOIN StudentProgress sp ON c.CourseId = sp.CourseId
+                    WHERE c.IsPublished = 1
+                    GROUP BY 
+                        c.CourseId, c.CourseName, c.Description, 
+                        pl.LanguageName, cd.DifficultyName, c.IsPublished,
+                        c.IsGroupCourse, c.Price, c.EstimatedHours
+                    ORDER BY c.CourseName";
+
+                using var command = new SqlCommand(query, connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                var courses = new List<Course>();
+                while (await reader.ReadAsync())
+                {
+                    courses.Add(new Course
+                    {
+                        CourseId = reader.GetInt32("CourseId"),
+                        CourseName = reader.GetString("CourseName"),
+                        Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? "" : reader.GetString("Description"),
+                        LanguageName = reader.GetString("LanguageName"),
+                        DifficultyName = reader.GetString("DifficultyName"),
+                        IsPublished = reader.GetBoolean("IsPublished")
+                    });
+                }
+
+                return courses;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка получения курсов: {ex.Message}");
+                return new List<Course>();
+            }
+        }
+
+        public async Task<bool> EnrollStudentInCourseAsync(int studentId, int courseId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Проверяем, не записан ли студент уже на курс
+                var checkQuery = @"
+                    SELECT COUNT(*) 
+                    FROM StudentProgress 
+                    WHERE StudentId = @StudentId AND CourseId = @CourseId";
+
+                using var checkCommand = new SqlCommand(checkQuery, connection);
+                checkCommand.Parameters.AddWithValue("@StudentId", studentId);
+                checkCommand.Parameters.AddWithValue("@CourseId", courseId);
+
+                var existingCount = (int)await checkCommand.ExecuteScalarAsync();
+                if (existingCount > 0)
+                {
+                    return false; // Уже записан
+                }
+
+                // Записываем студента на курс
+                var enrollQuery = @"
+                    INSERT INTO StudentProgress (StudentId, CourseId, Status, StartDate)
+                    VALUES (@StudentId, @CourseId, 'not_started', GETDATE())";
+
+                using var enrollCommand = new SqlCommand(enrollQuery, connection);
+                enrollCommand.Parameters.AddWithValue("@StudentId", studentId);
+                enrollCommand.Parameters.AddWithValue("@CourseId", courseId);
+
+                var result = await enrollCommand.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка записи на курс: {ex.Message}");
+                return false;
+            }
         }
 
         // ДЛЯ УЧИТЕЛЯ
@@ -291,19 +539,19 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            SELECT c.CourseId, c.CourseName, c.Description, c.IsPublished,
-                   l.LanguageName, d.DifficultyName,
-                   COUNT(DISTINCT ge.StudentId) as StudentCount,
-                   AVG(cr.Rating) as AverageRating
-            FROM Courses c
-            LEFT JOIN ProgrammingLanguages l ON c.LanguageId = l.LanguageId
-            LEFT JOIN CourseDifficulties d ON c.DifficultyId = d.DifficultyId
-            LEFT JOIN StudyGroups sg ON c.CourseId = sg.CourseId
-            LEFT JOIN GroupEnrollments ge ON sg.GroupId = ge.GroupId AND ge.Status = 'active'
-            LEFT JOIN CourseReviews cr ON c.CourseId = cr.CourseId AND cr.IsApproved = 1
-            WHERE c.CreatedByUserId = @TeacherId
-            GROUP BY c.CourseId, c.CourseName, c.Description, c.IsPublished, 
-                     l.LanguageName, d.DifficultyName";
+                    SELECT c.CourseId, c.CourseName, c.Description, c.IsPublished,
+                           l.LanguageName, d.DifficultyName,
+                           COUNT(DISTINCT ge.StudentId) as StudentCount,
+                           AVG(cr.Rating) as AverageRating
+                    FROM Courses c
+                    LEFT JOIN ProgrammingLanguages l ON c.LanguageId = l.LanguageId
+                    LEFT JOIN CourseDifficulties d ON c.DifficultyId = d.DifficultyId
+                    LEFT JOIN StudyGroups sg ON c.CourseId = sg.CourseId
+                    LEFT JOIN GroupEnrollments ge ON sg.GroupId = ge.GroupId AND ge.Status = 'active'
+                    LEFT JOIN CourseReviews cr ON c.CourseId = cr.CourseId AND cr.IsApproved = 1
+                    WHERE c.CreatedByUserId = @TeacherId
+                    GROUP BY c.CourseId, c.CourseName, c.Description, c.IsPublished, 
+                             l.LanguageName, d.DifficultyName";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@TeacherId", teacherId);
@@ -344,12 +592,12 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            SELECT sg.GroupId, sg.GroupName, sg.StartDate, sg.EndDate, sg.IsActive,
-                   COUNT(ge.StudentId) as StudentCount
-            FROM StudyGroups sg
-            LEFT JOIN GroupEnrollments ge ON sg.GroupId = ge.GroupId AND ge.Status = 'active'
-            WHERE sg.CourseId = @CourseId
-            GROUP BY sg.GroupId, sg.GroupName, sg.StartDate, sg.EndDate, sg.IsActive";
+                    SELECT sg.GroupId, sg.GroupName, sg.StartDate, sg.EndDate, sg.IsActive,
+                           COUNT(ge.StudentId) as StudentCount
+                    FROM StudyGroups sg
+                    LEFT JOIN GroupEnrollments ge ON sg.GroupId = ge.GroupId AND ge.Status = 'active'
+                    WHERE sg.CourseId = @CourseId
+                    GROUP BY sg.GroupId, sg.GroupName, sg.StartDate, sg.EndDate, sg.IsActive";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@CourseId", courseId);
@@ -375,7 +623,6 @@ namespace EducationalPlatform.Services
             return groups;
         }
 
-        // ДЛЯ УЧЕНИКА - прогресс по курсам
         public async Task<List<StudentProgress>> GetStudentProgressAsync(int studentId)
         {
             var progress = new List<StudentProgress>();
@@ -385,11 +632,11 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            SELECT c.CourseName, sp.Status, sp.Score, sp.CompletionDate, sp.AttemptsCount
-            FROM StudentProgress sp
-            JOIN Courses c ON sp.CourseId = c.CourseId
-            WHERE sp.StudentId = @StudentId
-            ORDER BY sp.StartDate DESC";
+                    SELECT c.CourseName, sp.Status, sp.Score, sp.CompletionDate, sp.AttemptsCount
+                    FROM StudentProgress sp
+                    JOIN Courses c ON sp.CourseId = c.CourseId
+                    WHERE sp.StudentId = @StudentId
+                    ORDER BY sp.StartDate DESC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@StudentId", studentId);
@@ -414,8 +661,7 @@ namespace EducationalPlatform.Services
             return progress;
         }
 
-        // Добавляем методы для учителя в DatabaseService class
-        public async Task<bool> CreateCourseAsync(string courseName, string description, int languageId, int difficultyId, int teacherId)
+        public async Task<bool> CreateCourseAsync(string courseName, string description, int languageId, int difficultyId, int createdByUserId, bool isGroupCourse)
         {
             try
             {
@@ -423,15 +669,21 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            INSERT INTO Courses (CourseName, Description, LanguageId, DifficultyId, CreatedByUserId, IsPublished)
-            VALUES (@CourseName, @Description, @LanguageId, @DifficultyId, @TeacherId, 0)";
+                    INSERT INTO Courses (
+                        CourseName, Description, LanguageId, DifficultyId, 
+                        CreatedByUserId, IsPublished, IsGroupCourse, CreatedDate
+                    ) VALUES (
+                        @CourseName, @Description, @LanguageId, @DifficultyId,
+                        @CreatedByUserId, 0, @IsGroupCourse, GETDATE()
+                    )";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@CourseName", courseName ?? "");
                 command.Parameters.AddWithValue("@Description", description ?? "");
                 command.Parameters.AddWithValue("@LanguageId", languageId);
                 command.Parameters.AddWithValue("@DifficultyId", difficultyId);
-                command.Parameters.AddWithValue("@TeacherId", teacherId);
+                command.Parameters.AddWithValue("@CreatedByUserId", createdByUserId);
+                command.Parameters.AddWithValue("@IsGroupCourse", isGroupCourse);
 
                 var result = await command.ExecuteNonQueryAsync();
                 return result > 0;
@@ -451,9 +703,9 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            UPDATE Courses 
-            SET IsPublished = 1 
-            WHERE CourseId = @CourseId AND CreatedByUserId = @TeacherId";
+                    UPDATE Courses 
+                    SET IsPublished = 1 
+                    WHERE CourseId = @CourseId AND CreatedByUserId = @TeacherId";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@CourseId", courseId);
@@ -477,8 +729,8 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            INSERT INTO StudyGroups (GroupName, CourseId, StartDate, EndDate, IsActive, CreatedByUserId)
-            VALUES (@GroupName, @CourseId, @StartDate, @EndDate, 1, @TeacherId)";
+                    INSERT INTO StudyGroups (GroupName, CourseId, StartDate, EndDate, IsActive, CreatedByUserId)
+                    VALUES (@GroupName, @CourseId, @StartDate, @EndDate, 1, @TeacherId)";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@GroupName", groupName ?? "");
@@ -497,7 +749,6 @@ namespace EducationalPlatform.Services
             }
         }
 
-        // Добавляем в DatabaseService класс
         public async Task<List<ProgrammingLanguage>> GetProgrammingLanguagesAsync()
         {
             var languages = new List<ProgrammingLanguage>();
@@ -558,35 +809,6 @@ namespace EducationalPlatform.Services
             return difficulties;
         }
 
-        public async Task<bool> CreateCourseAsync(string courseName, string description, int languageId, int difficultyId, int teacherId, bool isGroupCourse = false)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-            INSERT INTO Courses (CourseName, Description, LanguageId, DifficultyId, CreatedByUserId, IsGroupCourse)
-            VALUES (@CourseName, @Description, @LanguageId, @DifficultyId, @TeacherId, @IsGroupCourse)";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@CourseName", courseName ?? "");
-                command.Parameters.AddWithValue("@Description", description ?? "");
-                command.Parameters.AddWithValue("@LanguageId", languageId);
-                command.Parameters.AddWithValue("@DifficultyId", difficultyId);
-                command.Parameters.AddWithValue("@TeacherId", teacherId);
-                command.Parameters.AddWithValue("@IsGroupCourse", isGroupCourse);
-
-                var result = await command.ExecuteNonQueryAsync();
-                return result > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка создания курса: {ex.Message}");
-                return false;
-            }
-        }
-
         public async Task<bool> CreateTestAsync(int courseId, string title, string description, int timeLimit, int passingScore)
         {
             try
@@ -596,8 +818,8 @@ namespace EducationalPlatform.Services
 
                 // Сначала создаем урок типа "test", затем тест
                 var lessonQuery = @"
-            INSERT INTO Lessons (ModuleId, LessonType, Title, LessonOrder)
-            VALUES ((SELECT TOP 1 ModuleId FROM CourseModules WHERE CourseId = @CourseId), 'test', @Title, 1)";
+                    INSERT INTO Lessons (ModuleId, LessonType, Title, LessonOrder)
+                    VALUES ((SELECT TOP 1 ModuleId FROM CourseModules WHERE CourseId = @CourseId), 'test', @Title, 1)";
 
                 using var lessonCommand = new SqlCommand(lessonQuery, connection);
                 lessonCommand.Parameters.AddWithValue("@CourseId", courseId);
@@ -611,8 +833,8 @@ namespace EducationalPlatform.Services
 
                 // Создаем тест
                 var testQuery = @"
-            INSERT INTO Tests (LessonId, Title, Description, TimeLimitMinutes, PassingScore)
-            VALUES (@LessonId, @Title, @Description, @TimeLimit, @PassingScore)";
+                    INSERT INTO Tests (LessonId, Title, Description, TimeLimitMinutes, PassingScore)
+                    VALUES (@LessonId, @Title, @Description, @TimeLimit, @PassingScore)";
 
                 using var testCommand = new SqlCommand(testQuery, connection);
                 testCommand.Parameters.AddWithValue("@LessonId", lessonId);
@@ -640,15 +862,15 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            SELECT ta.AttemptId, u.FirstName + ' ' + u.LastName as StudentName, 
-                   c.CourseName, t.Title as TestTitle, ta.Score
-            FROM TestAttempts ta
-            JOIN Tests t ON ta.TestId = t.TestId
-            JOIN Lessons l ON t.LessonId = l.LessonId
-            JOIN CourseModules cm ON l.ModuleId = cm.ModuleId
-            JOIN Courses c ON cm.CourseId = c.CourseId
-            JOIN Users u ON ta.StudentId = u.UserId
-            WHERE c.CreatedByUserId = @TeacherId AND ta.IsDisputed = 1";
+                    SELECT ta.AttemptId, u.FirstName + ' ' + u.LastName as StudentName, 
+                           c.CourseName, t.Title as TestTitle, ta.Score
+                    FROM TestAttempts ta
+                    JOIN Tests t ON ta.TestId = t.TestId
+                    JOIN Lessons l ON t.LessonId = l.LessonId
+                    JOIN CourseModules cm ON l.ModuleId = cm.ModuleId
+                    JOIN Courses c ON cm.CourseId = c.CourseId
+                    JOIN Users u ON ta.StudentId = u.UserId
+                    WHERE c.CreatedByUserId = @TeacherId AND ta.IsDisputed = 1";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@TeacherId", teacherId);
@@ -673,8 +895,7 @@ namespace EducationalPlatform.Services
             return disputedTests;
         }
 
-        // ОБНОВЛЕНИЕ ПОЛЬЗОВАТЕЛЯ
-        public async Task<bool> UpdateUserAsync(int userId, string firstName, string lastName, string username, string email, string avatarUrl = null)
+        public async Task<bool> SaveUserSettingsAsync(int userId, string language, string theme)
         {
             try
             {
@@ -682,20 +903,13 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            UPDATE Users 
-            SET FirstName = @FirstName, 
-                LastName = @LastName, 
-                Username = @Username, 
-                Email = @Email,
-                AvatarUrl = @AvatarUrl
-            WHERE UserId = @UserId";
+                    UPDATE Users 
+                    SET LanguagePref = @Language, InterfaceStyle = @Theme
+                    WHERE UserId = @UserId";
 
                 using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@FirstName", firstName ?? "");
-                command.Parameters.AddWithValue("@LastName", lastName ?? "");
-                command.Parameters.AddWithValue("@Username", username ?? "");
-                command.Parameters.AddWithValue("@Email", email ?? "");
-                command.Parameters.AddWithValue("@AvatarUrl", avatarUrl ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Language", language);
+                command.Parameters.AddWithValue("@Theme", theme);
                 command.Parameters.AddWithValue("@UserId", userId);
 
                 var result = await command.ExecuteNonQueryAsync();
@@ -703,66 +917,18 @@ namespace EducationalPlatform.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка обновления пользователя: {ex.Message}");
+                Console.WriteLine($"Ошибка сохранения настроек: {ex.Message}");
                 return false;
             }
         }
 
-        // ПРОВЕРКА УНИКАЛЬНОСТИ USERNAME И EMAIL (исключая текущего пользователя)
-        public async Task<bool> CheckUserExistsAsync(string username, string email, int excludeUserId)
+        // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+        private string HashPassword(string password)
         {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-            SELECT COUNT(*) FROM Users
-            WHERE (Username = @Username OR Email = @Email)
-            AND UserId != @ExcludeUserId";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@Username", username ?? "");
-                command.Parameters.AddWithValue("@Email", email ?? "");
-                command.Parameters.AddWithValue("@ExcludeUserId", excludeUserId);
-
-                var result = await command.ExecuteScalarAsync();
-                var count = result is null ? 0 : (int)result;
-
-                return count > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка проверки пользователя: {ex.Message}");
-                return true;
-            }
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(password);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
         }
-
-        // ЗАГРУЗКА АВАТАРА
-        public async Task<string> UploadAvatarAsync(Stream imageStream, string fileName, int userId)
-        {
-            try
-            {
-                // В реальном приложении здесь была бы загрузка в облачное хранилище
-                // Для демонстрации сохраняем локально или генерируем URL
-
-                // Генерируем уникальное имя файла
-                var fileExtension = Path.GetExtension(fileName);
-                var newFileName = $"avatar_{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
-
-                // В реальном приложении:
-                // 1. Загружаем в Azure Blob Storage, AWS S3 и т.д.
-                // 2. Возвращаем URL загруженного файла
-
-                // Для демонстрации возвращаем фиктивный URL
-                return $"https://example.com/avatars/{newFileName}";
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка загрузки аватара: {ex.Message}");
-                return null;
-            }
-        }
-
     }
 }

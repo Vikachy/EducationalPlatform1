@@ -29,6 +29,43 @@ namespace EducationalPlatform.Views
             LoadUserData();
             LoadAchievements();
             LoadActiveCourses();
+            LoadUserAvatar();
+        }
+
+        // Загрузка аватара пользователя
+        // Загрузка аватара пользователя
+        private async void LoadUserAvatar()
+        {
+            try
+            {
+                // Получаем актуальный аватар из базы
+                var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
+
+                if (!string.IsNullOrEmpty(currentAvatar))
+                {
+                    AvatarImage.Source = ImageSource.FromFile(currentAvatar);
+                    _currentUser.AvatarUrl = currentAvatar;
+                }
+                else
+                {
+                    AvatarImage.Source = "default_avatar.png";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки аватара: {ex.Message}");
+                AvatarImage.Source = "default_avatar.png";
+            }
+        }
+
+        // Обновите метод OnAppearing чтобы аватар обновлялся при возврате на страницу
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            LoadUserAvatar(); // Перезагружаем аватар каждый раз при показе страницы
+            LoadUserData();
+            LoadAchievements();
+            LoadActiveCourses();
         }
 
         protected override void OnDisappearing()

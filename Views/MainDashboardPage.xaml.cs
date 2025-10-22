@@ -42,15 +42,6 @@ namespace EducationalPlatform.Views
             InitializeDashboard();
         }
 
-        protected override void OnAppearing()
-        {
-            base.OnAppearing();
-            if (_currentUser != null)
-            {
-                InitializeDashboard();
-            }
-        }
-
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
@@ -92,16 +83,47 @@ namespace EducationalPlatform.Views
             // Обновляем заголовки секций
         }
 
-        private void InitializeDashboard()
+
+        private async Task LoadUserAvatar()
+        {
+            try
+            {
+                var avatarImage = this.FindByName<Image>("AvatarImage");
+                if (avatarImage != null)
+                {
+                    // Получаем актуальный аватар из базы
+                    var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
+
+                    if (!string.IsNullOrEmpty(currentAvatar))
+                    {
+                        avatarImage.Source = ImageSource.FromFile(currentAvatar);
+                        _currentUser.AvatarUrl = currentAvatar;
+                    }
+                    else
+                    {
+                        avatarImage.Source = "default_avatar.png";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки аватара: {ex.Message}");
+            }
+        }
+
+        // Обновите InitializeDashboard
+        private async void InitializeDashboard()
         {
             if (_currentUser == null || _settingsService == null) return;
 
             UpdatePageTexts();
 
+            // Загружаем аватар пользователя
+            await LoadUserAvatar();
+
             // Показываем панель учителя если пользователь - учитель, админ или контент-менеджер
             if (_currentUser.RoleId == 2 || _currentUser.RoleId == 3 || _currentUser.RoleId == 4)
             {
-                // Находим TeacherPanel по имени
                 var teacherPanel = this.FindByName<Border>("TeacherPanel");
                 if (teacherPanel != null)
                 {
@@ -113,6 +135,17 @@ namespace EducationalPlatform.Views
             LoadTodayTasks();
             LoadNews();
         }
+
+        // Обновите OnAppearing
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            if (_currentUser != null)
+            {
+                InitializeDashboard();
+            }
+        }
+
         private async void OnTeacherGroupsClicked(object sender, EventArgs e)
         {
             if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
