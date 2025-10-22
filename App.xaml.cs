@@ -1,8 +1,9 @@
-﻿namespace EducationalPlatform
+﻿using EducationalPlatform.Services;
+
+namespace EducationalPlatform
 {
     public partial class App : Application
     {
-
         public App()
         {
             InitializeComponent();

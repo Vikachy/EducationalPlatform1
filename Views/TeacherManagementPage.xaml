@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.TeacherManagementPage"
+    Title="Управление курсами">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <!-- Заголовок -->
+            <Label Text="👨‍🏫 Панель преподавателя" 
+                   FontSize="24" 
+                   FontAttributes="Bold" 
+                   HorizontalOptions="Center" />
+
+            <!-- Быстрый доступ -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowSpacing="10">
+                <Button Grid.Row="0" Grid.Column="0"
+                        Text="📊 Отчеты"
+                        Clicked="OnReportsClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        HeightRequest="60"
+                        CornerRadius="10" />
+                <Button Grid.Row="0" Grid.Column="1"
+                        Text="👥 Группы"
+                        Clicked="OnGroupsClicked"
+                        BackgroundColor="{DynamicResource SecondaryColor}"
+                        TextColor="White"
+                        HeightRequest="60"
+                        CornerRadius="10" />
+                <Button Grid.Row="1" Grid.Column="0"
+                        Text="📝 Тесты"
+                        Clicked="OnTestsClicked"
+                        BackgroundColor="{DynamicResource AccentColor}"
+                        TextColor="White"
+                        HeightRequest="60"
+                        CornerRadius="10" />
+                <Button Grid.Row="1" Grid.Column="1"
+                        Text="💬 Чаты"
+                        Clicked="OnChatsClicked"
+                        BackgroundColor="#4CAF50"
+                        TextColor="White"
+                        HeightRequest="60"
+                        CornerRadius="10" />
+            </Grid>
+
+            <!-- Создание нового курса -->
+            <Border BackgroundColor="#F8F9FA" 
+                    Stroke="#2E86AB" 
+                    StrokeThickness="1" 
+                    StrokeShape="RoundRectangle 15" 
+                    Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="➕ Создать новый курс" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+
+                    <Entry x:Name="NewCourseNameEntry" 
+                           Placeholder="Название курса" />
+                    <Editor x:Name="NewCourseDescriptionEditor" 
+                            Placeholder="Описание курса" 
+                            HeightRequest="80" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Picker x:Name="LanguagePicker" 
+                                Title="Язык программирования" />
+                        <Picker x:Name="DifficultyPicker" 
+                                Title="Сложность" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <CheckBox x:Name="IsGroupCourseCheckBox" />
+                        <Label Text="Для учебных групп" 
+                               VerticalOptions="Center" />
+                    </Grid>
+
+                    <Button x:Name="CreateCourseButton" 
+                            Text="Создать курс" 
+                            BackgroundColor="#2E86AB" 
+                            TextColor="White" 
+                            Clicked="OnCreateCourseClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Создание теста -->
+            <Border BackgroundColor="#F8F9FA" 
+                    Stroke="#FF9800" 
+                    StrokeThickness="1" 
+                    StrokeShape="RoundRectangle 15" 
+                    Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📝 Создать тест" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+
+                    <Picker x:Name="CourseForTestPicker" 
+                            Title="Выберите курс" />
+                    <Entry x:Name="NewTestTitleEntry" 
+                           Placeholder="Название теста" />
+                    <Editor x:Name="NewTestDescriptionEditor" 
+                            Placeholder="Описание теста" 
+                            HeightRequest="60" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Entry x:Name="TimeLimitEntry" 
+                               Placeholder="Лимит времени (мин)" 
+                               Keyboard="Numeric" />
+                        <Entry x:Name="PassingScoreEntry" 
+                               Placeholder="Проходной балл" 
+                               Keyboard="Numeric" />
+                    </Grid>
+
+                    <Button x:Name="CreateTestButton" 
+                            Text="Создать тест" 
+                            BackgroundColor="#FF9800" 
+                            TextColor="White" 
+                            Clicked="OnCreateTestClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Мои курсы -->
+            <Label Text="📚 Мои курсы" 
+                   FontSize="20" 
+                   FontAttributes="Bold" />
+
+            <CollectionView x:Name="MyCoursesCollectionView">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,5" 
+                                BackgroundColor="#F8F9FA" 
+                                Stroke="#DDD" 
+                                StrokeThickness="1" 
+                                StrokeShape="RoundRectangle 10" 
+                                Padding="15">
+                            <VerticalStackLayout Spacing="10">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="{Binding CourseName}" 
+                                           FontSize="16" 
+                                           FontAttributes="Bold" />
+                                    <Label Grid.Column="1"
+                                           Text="{Binding IsPublished, Converter={StaticResource PublishedConverter}}" 
+                                           BackgroundColor="{Binding IsPublished, Converter={StaticResource StatusColorConverter}}"
+                                           TextColor="White" 
+                                           Padding="5,2"
+                                           FontSize="10" />
+                                </Grid>
+
+                                <Label Text="{Binding Description}" 
+                                       FontSize="12" 
+                                       TextColor="#666" />
+
+                                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="5">
+                                    <Button Text="👥 Группы"
+                                            BackgroundColor="#4CAF50" 
+                                            TextColor="White" 
+                                            FontSize="10"
+                                            HeightRequest="30"
+                                            Clicked="OnManageGroupsClicked" />
+                                    <Button Text="📊 Статистика"
+                                            BackgroundColor="#2196F3" 
+                                            TextColor="White" 
+                                            FontSize="10"
+                                            HeightRequest="30"
+                                            Clicked="OnCourseStatsClicked" />
+                                    <Button Text="{Binding IsPublished, Converter={StaticResource PublishButtonConverter}}"
+                                            BackgroundColor="{Binding IsPublished, Converter={StaticResource PublishButtonColorConverter}}"
+                                            TextColor="White" 
+                                            FontSize="10"
+                                            HeightRequest="30"
+                                            Clicked="OnPublishCourseClicked" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Работы на проверку -->
+            <Border BackgroundColor="#FFF3E0" 
+                    Stroke="#FF9800" 
+                    StrokeThickness="1" 
+                    StrokeShape="RoundRectangle 15" 
+                    Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📋 Работы на проверку" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+
+                    <CollectionView x:Name="PendingReviewsCollectionView" 
+                                   HeightRequest="120">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="2" 
+                                        BackgroundColor="White" 
+                                        Stroke="#FF9800" 
+                                        StrokeThickness="1" 
+                                        StrokeShape="RoundRectangle 5" 
+                                        Padding="10">
+                                    <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
+                                        <VerticalStackLayout>
+                                            <Label Text="{Binding StudentName}" 
+                                                   FontSize="12" 
+                                                   FontAttributes="Bold" />
+                                            <Label Text="{Binding CourseName}" 
+                                                   FontSize="10" 
+                                                   TextColor="#666" />
+                                        </VerticalStackLayout>
+                                        <Button Grid.Column="1"
+                                                Text="Проверить"
+                                                BackgroundColor="#FF9800" 
+                                                TextColor="White" 
+                                                FontSize="10"
+                                                HeightRequest="25"
+                                                Clicked="OnReviewWorkClicked" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Назад" 
+                    Clicked="OnBackClicked" 
+                    BackgroundColor="Transparent" 
+                    TextColor="#2E86AB" 
+                    BorderColor="#2E86AB" 
+                    BorderWidth="1" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -413,8 +413,263 @@ namespace EducationalPlatform.Services
             return progress;
         }
 
+        // Добавляем методы для учителя в DatabaseService class
+        public async Task<bool> CreateCourseAsync(string courseName, string description, int languageId, int difficultyId, int teacherId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
+                var query = @"
+            INSERT INTO Courses (CourseName, Description, LanguageId, DifficultyId, CreatedByUserId, IsPublished)
+            VALUES (@CourseName, @Description, @LanguageId, @DifficultyId, @TeacherId, 0)";
 
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@CourseName", courseName ?? "");
+                command.Parameters.AddWithValue("@Description", description ?? "");
+                command.Parameters.AddWithValue("@LanguageId", languageId);
+                command.Parameters.AddWithValue("@DifficultyId", difficultyId);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
 
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка создания курса: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> PublishCourseAsync(int courseId, int teacherId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE Courses 
+            SET IsPublished = 1 
+            WHERE CourseId = @CourseId AND CreatedByUserId = @TeacherId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@CourseId", courseId);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка публикации курса: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> CreateStudyGroupAsync(string groupName, int courseId, DateTime startDate, DateTime endDate, int teacherId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            INSERT INTO StudyGroups (GroupName, CourseId, StartDate, EndDate, IsActive, CreatedByUserId)
+            VALUES (@GroupName, @CourseId, @StartDate, @EndDate, 1, @TeacherId)";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@GroupName", groupName ?? "");
+                command.Parameters.AddWithValue("@CourseId", courseId);
+                command.Parameters.AddWithValue("@StartDate", startDate);
+                command.Parameters.AddWithValue("@EndDate", endDate);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка создания группы: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Добавляем в DatabaseService класс
+        public async Task<List<ProgrammingLanguage>> GetProgrammingLanguagesAsync()
+        {
+            var languages = new List<ProgrammingLanguage>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "SELECT LanguageId, LanguageName, IconUrl FROM ProgrammingLanguages WHERE IsActive = 1";
+                using var command = new SqlCommand(query, connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    languages.Add(new ProgrammingLanguage
+                    {
+                        LanguageId = reader.GetInt32("LanguageId"),
+                        LanguageName = reader.GetString("LanguageName"),
+                        IconUrl = reader.IsDBNull("IconUrl") ? null : reader.GetString("IconUrl")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки языков: {ex.Message}");
+            }
+            return languages;
+        }
+
+        public async Task<List<CourseDifficulty>> GetCourseDifficultiesAsync()
+        {
+            var difficulties = new List<CourseDifficulty>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "SELECT DifficultyId, DifficultyName, Description, HasTheory, HasPractice FROM CourseDifficulties";
+                using var command = new SqlCommand(query, connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    difficulties.Add(new CourseDifficulty
+                    {
+                        DifficultyId = reader.GetInt32("DifficultyId"),
+                        DifficultyName = reader.GetString("DifficultyName"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        HasTheory = reader.GetBoolean("HasTheory"),
+                        HasPractice = reader.GetBoolean("HasPractice")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки сложностей: {ex.Message}");
+            }
+            return difficulties;
+        }
+
+        public async Task<bool> CreateCourseAsync(string courseName, string description, int languageId, int difficultyId, int teacherId, bool isGroupCourse = false)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            INSERT INTO Courses (CourseName, Description, LanguageId, DifficultyId, CreatedByUserId, IsGroupCourse)
+            VALUES (@CourseName, @Description, @LanguageId, @DifficultyId, @TeacherId, @IsGroupCourse)";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@CourseName", courseName ?? "");
+                command.Parameters.AddWithValue("@Description", description ?? "");
+                command.Parameters.AddWithValue("@LanguageId", languageId);
+                command.Parameters.AddWithValue("@DifficultyId", difficultyId);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
+                command.Parameters.AddWithValue("@IsGroupCourse", isGroupCourse);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка создания курса: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> CreateTestAsync(int courseId, string title, string description, int timeLimit, int passingScore)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Сначала создаем урок типа "test", затем тест
+                var lessonQuery = @"
+            INSERT INTO Lessons (ModuleId, LessonType, Title, LessonOrder)
+            VALUES ((SELECT TOP 1 ModuleId FROM CourseModules WHERE CourseId = @CourseId), 'test', @Title, 1)";
+
+                using var lessonCommand = new SqlCommand(lessonQuery, connection);
+                lessonCommand.Parameters.AddWithValue("@CourseId", courseId);
+                lessonCommand.Parameters.AddWithValue("@Title", title);
+                await lessonCommand.ExecuteNonQueryAsync();
+
+                // Получаем ID созданного урока
+                var getLessonIdQuery = "SELECT SCOPE_IDENTITY()";
+                using var idCommand = new SqlCommand(getLessonIdQuery, connection);
+                var lessonId = Convert.ToInt32(await idCommand.ExecuteScalarAsync());
+
+                // Создаем тест
+                var testQuery = @"
+            INSERT INTO Tests (LessonId, Title, Description, TimeLimitMinutes, PassingScore)
+            VALUES (@LessonId, @Title, @Description, @TimeLimit, @PassingScore)";
+
+                using var testCommand = new SqlCommand(testQuery, connection);
+                testCommand.Parameters.AddWithValue("@LessonId", lessonId);
+                testCommand.Parameters.AddWithValue("@Title", title);
+                testCommand.Parameters.AddWithValue("@Description", description ?? "");
+                testCommand.Parameters.AddWithValue("@TimeLimit", timeLimit);
+                testCommand.Parameters.AddWithValue("@PassingScore", passingScore);
+
+                var result = await testCommand.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка создания теста: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<List<DisputedTestAttempt>> GetDisputedTestAttemptsAsync(int teacherId)
+        {
+            var disputedTests = new List<DisputedTestAttempt>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT ta.AttemptId, u.FirstName + ' ' + u.LastName as StudentName, 
+                   c.CourseName, t.Title as TestTitle, ta.Score
+            FROM TestAttempts ta
+            JOIN Tests t ON ta.TestId = t.TestId
+            JOIN Lessons l ON t.LessonId = l.LessonId
+            JOIN CourseModules cm ON l.ModuleId = cm.ModuleId
+            JOIN Courses c ON cm.CourseId = c.CourseId
+            JOIN Users u ON ta.StudentId = u.UserId
+            WHERE c.CreatedByUserId = @TeacherId AND ta.IsDisputed = 1";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    disputedTests.Add(new DisputedTestAttempt
+                    {
+                        AttemptId = reader.GetInt32("AttemptId"),
+                        StudentName = reader.GetString("StudentName"),
+                        CourseName = reader.GetString("CourseName"),
+                        TestTitle = reader.GetString("TestTitle"),
+                        Score = reader.IsDBNull("Score") ? 0 : reader.GetInt32("Score")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки оспоренных тестов: {ex.Message}");
+            }
+            return disputedTests;
+        }
     }
 }

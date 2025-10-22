@@ -3,45 +3,382 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="EducationalPlatform.Views.ProfilePage"
-    Title="Профиль">
+    Title="Профиль"
+    BackgroundColor="{DynamicResource BackgroundColor}">
 
     <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="20" VerticalOptions="Center">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="0">
 
-            <Border WidthRequest="100"
-                    HeightRequest="100"
+            <!-- ШАПКА ПРОФИЛЯ -->
+            <Border Grid.Row="0"
                     BackgroundColor="{DynamicResource PrimaryColor}"
                     Stroke="{DynamicResource SecondaryColor}"
-                    StrokeThickness="3"
-                    StrokeShape="RoundRectangle 50"
-                    HorizontalOptions="Center">
-                <Label Text="👤"
-                       FontSize="40"
-                       TextColor="White"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center" />
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 0,0,0,30"
+                    Padding="0,40,0,20">
+                <Grid ColumnDefinitions="Auto,*,Auto" 
+                      Padding="20,0"
+                      VerticalOptions="Center">
+
+                    <!-- КНОПКА НАЗАД -->
+                    <Button Grid.Column="0"
+                            Text="←"
+                            Clicked="OnBackClicked"
+                            BackgroundColor="Transparent"
+                            TextColor="White"
+                            FontSize="20"
+                            WidthRequest="45"
+                            HeightRequest="45"
+                            CornerRadius="22" />
+
+                    <!-- ЗАГОЛОВОК -->
+                    <Label Grid.Column="1"
+                           Text="👤 Мой профиль"
+                           FontSize="20"
+                           TextColor="White"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+                    <!-- КНОПКА РЕДАКТИРОВАНИЯ -->
+                    <Button Grid.Column="2"
+                            Text="✏️"
+                            Clicked="OnEditProfileClicked"
+                            BackgroundColor="Transparent"
+                            TextColor="White"
+                            FontSize="18"
+                            WidthRequest="45"
+                            HeightRequest="45"
+                            CornerRadius="22" />
+                </Grid>
             </Border>
 
-            <Label Text="Ваш профиль"
-                   FontSize="28"
-                   TextColor="{DynamicResource TextColor}"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center" />
+            <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
+            <Border Grid.Row="1"
+                    Margin="20,-30,20,0"
+                    BackgroundColor="{DynamicResource BackgroundColor}"
+                    Stroke="{DynamicResource PrimaryColor}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 20"
+                    Padding="0">
+                <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="15" Padding="20,30,20,20">
 
-            <Label Text="Страница в разработке..."
-                   FontSize="16"
-                   TextColor="#666"
-                   HorizontalOptions="Center" />
+                    <!-- АВАТАР И ОСНОВНАЯ ИНФОРМАЦИЯ -->
+                    <HorizontalStackLayout Grid.Row="0" Spacing="15" VerticalOptions="Center">
+                        <!-- АВАТАР С РАМКОЙ -->
+                        <Border WidthRequest="80"
+                                HeightRequest="80"
+                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                Stroke="{DynamicResource AccentColor}"
+                                StrokeThickness="3"
+                                StrokeShape="RoundRectangle 40"
+                                Padding="2">
+                            <Border BackgroundColor="White"
+                                    Stroke="{DynamicResource SecondaryColor}"
+                                    StrokeThickness="2"
+                                    StrokeShape="RoundRectangle 38">
+                                <Label Text="👨‍💻"
+                                       FontSize="32"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center" />
+                            </Border>
+                        </Border>
 
-            <Button Text="Настройки"
-                    Clicked="OnSettingsClicked"
-                    BackgroundColor="{DynamicResource PrimaryColor}"
-                    TextColor="White"
-                    HeightRequest="50"
-                    CornerRadius="25"
-                    HorizontalOptions="Center" />
+                        <!-- ИНФОРМАЦИЯ ПОЛЬЗОВАТЕЛЯ -->
+                        <VerticalStackLayout Spacing="5" VerticalOptions="Center">
+                            <Label x:Name="UserNameLabel"
+                                   Text="Иван Иванов"
+                                   FontSize="18"
+                                   TextColor="{DynamicResource TextColor}"
+                                   FontAttributes="Bold" />
+                            <Label x:Name="UserTitleLabel"
+                                   Text="🎯 Новичок программиста"
+                                   FontSize="12"
+                                   TextColor="{DynamicResource PrimaryColor}"
+                                   FontAttributes="Bold" />
+                            <Label x:Name="UserSinceLabel"
+                                   Text="С нами с 15.12.2024"
+                                   FontSize="10"
+                                   TextColor="#666" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
 
-        </VerticalStackLayout>
+                    <!-- СТАТИСТИКА -->
+                    <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <Border BackgroundColor="#E3F2FD"
+                                Stroke="{DynamicResource PrimaryColor}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="10,8">
+                            <VerticalStackLayout Spacing="2">
+                                <Label x:Name="CompletedCoursesLabel"
+                                       Text="3"
+                                       FontSize="16"
+                                       TextColor="{DynamicResource PrimaryColor}"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center" />
+                                <Label Text="Курсов"
+                                       FontSize="10"
+                                       TextColor="#666"
+                                       HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <Border BackgroundColor="#E8F5E8"
+                                Stroke="#4CAF50"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="10,8">
+                            <VerticalStackLayout Spacing="2">
+                                <Label x:Name="StreakDaysLabel"
+                                       Text="7"
+                                       FontSize="16"
+                                       TextColor="#4CAF50"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center" />
+                                <Label Text="Дней серии"
+                                       FontSize="10"
+                                       TextColor="#666"
+                                       HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <Border BackgroundColor="#FFF3E0"
+                                Stroke="#FF9800"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="10,8">
+                            <VerticalStackLayout Spacing="2">
+                                <Label x:Name="GameCurrencyLabel"
+                                       Text="150"
+                                       FontSize="16"
+                                       TextColor="#FF9800"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center" />
+                                <Label Text="🪙 Монет"
+                                       FontSize="10"
+                                       TextColor="#666"
+                                       HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+
+                    <!-- ПРОГРЕСС БАР -->
+                    <Border Grid.Row="2"
+                            BackgroundColor="#F8F9FA"
+                            Stroke="#DDD"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="15,10">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="📊 Общий прогресс обучения"
+                                   FontSize="14"
+                                   TextColor="{DynamicResource TextColor}"
+                                   FontAttributes="Bold" />
+                            <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
+                                <ProgressBar x:Name="OverallProgressBar"
+                                             Progress="0.65"
+                                             ProgressColor="{DynamicResource PrimaryColor}"
+                                             BackgroundColor="#E0E0E0"
+                                             HeightRequest="8"
+                                             VerticalOptions="Center" />
+                                <Label Grid.Column="1"
+                                       x:Name="ProgressPercentLabel"
+                                       Text="65%"
+                                       FontSize="12"
+                                       TextColor="{DynamicResource TextColor}"
+                                       FontAttributes="Bold"
+                                       Margin="10,0,0,0"
+                                       VerticalOptions="Center" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ДОСТИЖЕНИЯ -->
+            <Border Grid.Row="2"
+                    Margin="20,15,20,10"
+                    BackgroundColor="{DynamicResource BackgroundColor}"
+                    Stroke="{DynamicResource AccentColor}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 15"
+                    Padding="0">
+                <VerticalStackLayout Spacing="0">
+                    <Border BackgroundColor="{DynamicResource AccentColor}"
+                            StrokeThickness="0"
+                            Padding="15,12">
+                        <HorizontalStackLayout>
+                            <Label Text="🏆 Мои достижения"
+                                   FontSize="16"
+                                   TextColor="White"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center" />
+                            <Button Text="Все →"
+                                    Clicked="OnAllAchievementsClicked"
+                                    BackgroundColor="Transparent"
+                                    TextColor="White"
+                                    BorderColor="White"
+                                    BorderWidth="1"
+                                    HeightRequest="30"
+                                    CornerRadius="12"
+                                    FontSize="12"
+                                    Margin="20,0,0,0" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <CollectionView x:Name="AchievementsCollectionView"
+                                  HeightRequest="120"
+                                  SelectionMode="None"
+                                  ItemsLayout="HorizontalList"
+                                  >
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border WidthRequest="100"
+                                        HeightRequest="100"
+                                        BackgroundColor="#F8F9FA"
+                                        Stroke="#E0E0E0"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="10"
+                                        Margin="5">
+                                    <VerticalStackLayout Spacing="5" HorizontalOptions="Center">
+                                        <Label Text="{Binding Icon}"
+                                               FontSize="24"
+                                               HorizontalOptions="Center" />
+                                        <Label Text="{Binding Name}"
+                                               FontSize="10"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextColor}"
+                                               HorizontalOptions="Center"
+                                               HorizontalTextAlignment="Center"
+                                               MaxLines="2" />
+                                        <Label Text="{Binding Description}"
+                                               FontSize="8"
+                                               TextColor="#666"
+                                               HorizontalOptions="Center"
+                                               HorizontalTextAlignment="Center"
+                                               MaxLines="2" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- АКТИВНЫЕ КУРСЫ -->
+            <Border Grid.Row="3"
+                    Margin="20,0,20,10"
+                    BackgroundColor="{DynamicResource BackgroundColor}"
+                    Stroke="{DynamicResource PrimaryColor}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 15"
+                    Padding="0">
+                <VerticalStackLayout Spacing="0">
+                    <Border BackgroundColor="{DynamicResource PrimaryColor}"
+                            StrokeThickness="0"
+                            Padding="15,12">
+                        <HorizontalStackLayout>
+                            <Label Text="📚 Активные курсы"
+                                   FontSize="16"
+                                   TextColor="White"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center" />
+                            <Button Text="Все →"
+                                    Clicked="OnAllCoursesClicked"
+                                    BackgroundColor="Transparent"
+                                    TextColor="White"
+                                    BorderColor="White"
+                                    BorderWidth="1"
+                                    HeightRequest="30"
+                                    CornerRadius="12"
+                                    FontSize="12"
+                                    Margin="20,0,0,0" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <CollectionView x:Name="ActiveCoursesCollectionView"
+                                  HeightRequest="150"
+                                  SelectionMode="None"
+                                  ItemsLayout="VerticalList">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,5"
+                                        BackgroundColor="#F8F9FA"
+                                        Stroke="#E0E0E0"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="15">
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" 
+                                          RowSpacing="5" ColumnSpacing="10">
+                                        <Label Grid.Row="0" Grid.Column="0"
+                                               Text="{Binding CourseName}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextColor}" />
+                                        <Label Grid.Row="0" Grid.Column="1"
+                                               Text="{Binding Progress, StringFormat='{0}%'}"
+                                               FontSize="12"
+                                               TextColor="{DynamicResource PrimaryColor}"
+                                               FontAttributes="Bold" />
+                                        <ProgressBar Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                     Progress="{Binding ProgressDecimal}"
+                                                     ProgressColor="{DynamicResource PrimaryColor}"
+                                                     BackgroundColor="#E0E0E0"
+                                                     HeightRequest="6"
+                                                     VerticalOptions="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- БЫСТРЫЕ ДЕЙСТВИЯ -->
+            <Grid Grid.Row="4"
+                  Margin="20,0,20,20"
+                  ColumnDefinitions="*,*"
+                  ColumnSpacing="15"
+                  RowSpacing="15">
+
+                <Button Grid.Row="0" Grid.Column="0"
+                        Text="⚙️ Настройки"
+                        Clicked="OnSettingsClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        FontAttributes="Bold" />
+
+                <Button Grid.Row="0" Grid.Column="1"
+                        Text="🛒 Магазин"
+                        Clicked="OnShopClicked"
+                        BackgroundColor="{DynamicResource AccentColor}"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        FontAttributes="Bold" />
+
+                <Button Grid.Row="1" Grid.Column="0"
+                        Text="📊 Статистика"
+                        Clicked="OnStatisticsClicked"
+                        BackgroundColor="{DynamicResource SecondaryColor}"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        FontAttributes="Bold" />
+
+                <Button Grid.Row="1" Grid.Column="1"
+                        Text="🎨 Внешний вид"
+                        Clicked="OnAppearanceClicked"
+                        BackgroundColor="#669BBC"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        FontAttributes="Bold" />
+            </Grid>
+        </Grid>
     </ScrollView>
-
 </ContentPage>

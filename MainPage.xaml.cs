@@ -25,11 +25,10 @@ namespace EducationalPlatform
             RefreshCaptcha();
         }
 
-        private void OnEntryCompleted(object sender, EventArgs e)
+        private void OnEntryCompleted(object? sender, EventArgs e)
         {
             OnLoginClicked(sender, e);
         }
-
 
         private async void OnLoginClicked(object? sender, EventArgs e)
         {
@@ -54,16 +53,14 @@ namespace EducationalPlatform
             try
             {
                 var user = await _dbService.LoginAsync(UsernameEntry.Text, PasswordEntry.Text);
+
                 if (user != null)
                 {
                     _captchaService.ResetAttempts();
                     await _dbService.UpdateLoginStreakAsync(user.UserId);
 
-                    // ПОКАЗЫВАЕМ GIF-АНИМАЦИЮ ПЕРЕД ПЕРЕХОДОМ
-                    await ShowWelcomeAnimation(user);
-
-                    // ПЕРЕХОДИМ НА ГЛАВНУЮ ПАНЕЛЬ
-                    await Navigation.PushAsync(new Views.MainDashboardPage(user, _dbService, _settingsService));
+                    // ПЕРЕХОДИМ НА ГЛАВНУЮ ПАНЕЛЬ через Navigation
+                    await Navigation.PushAsync(new MainDashboardPage(user, _dbService, _settingsService));
                 }
                 else
                 {
@@ -83,65 +80,6 @@ namespace EducationalPlatform
             {
                 await DisplayAlert("Ошибка", $"Ошибка при входе: {ex.Message}", "OK");
             }
-        }
-
-        private async Task ShowWelcomeAnimation(User user)
-        {
-            // Создаем страницу с GIF-анимацией
-            var animationPage = new ContentPage
-            {
-                BackgroundColor = Color.FromArgb("#000000"),
-                Content = new Grid
-                {
-                    VerticalOptions = LayoutOptions.Fill,
-                    HorizontalOptions = LayoutOptions.Fill,
-                    Children =
-            {
-                // GIF анимация огня
-                new Image
-                {
-                    Source = "fire_animation.gif",
-                    Aspect = Aspect.AspectFill,
-                    HorizontalOptions = LayoutOptions.Fill,
-                    VerticalOptions = LayoutOptions.Fill
-                },
-                // Наложение с текстом
-                new VerticalStackLayout
-                {
-                    VerticalOptions = LayoutOptions.Center,
-                    HorizontalOptions = LayoutOptions.Center,
-                    Spacing = 20,
-                    Children =
-                    {
-                        new Label
-                        {
-                            Text = "🔥 CODING FIRE 🔥",
-                            TextColor = Colors.White,
-                            FontSize = 24,
-                            FontAttributes = FontAttributes.Bold,
-                            HorizontalOptions = LayoutOptions.Center
-                        },
-                        new Label
-                        {
-                            Text = $"Добро пожаловать, {user.FirstName}!",
-                            TextColor = Colors.White,
-                            FontSize = 18,
-                            HorizontalOptions = LayoutOptions.Center
-                        }
-                    }
-                }
-            }
-                }
-            };
-
-            // Показываем анимацию
-            await Navigation.PushModalAsync(animationPage);
-
-            // Ждем 3 секунды
-            await Task.Delay(3000);
-
-            // Закрываем анимацию
-            await Navigation.PopModalAsync();
         }
 
         private void ShowCaptcha()
@@ -187,7 +125,5 @@ namespace EducationalPlatform
                 Application.Current.Quit();
             }
         }
-
-      
     }
 }
