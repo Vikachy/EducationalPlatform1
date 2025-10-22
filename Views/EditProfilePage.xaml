@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.EditProfilePage"
+    Title="Редактирование профиля">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <!-- ЗАГОЛОВОК -->
+            <Label Text="✏️ Редактирование профиля"
+                   FontSize="24"
+                   TextColor="{DynamicResource TextColor}"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <!-- АВАТАР -->
+            <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                    Stroke="{DynamicResource PrimaryColor}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 15"
+                    Padding="20"
+                    HorizontalOptions="Center">
+                <VerticalStackLayout Spacing="15" HorizontalOptions="Center">
+
+                    <Label Text="🖼️ Аватар"
+                           FontSize="16"
+                           TextColor="{DynamicResource TextColor}"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+
+                    <!-- ПРЕВЬЮ АВАТАРА -->
+                    <Border WidthRequest="120"
+                            HeightRequest="120"
+                            BackgroundColor="{DynamicResource PrimaryColor}"
+                            Stroke="{DynamicResource AccentColor}"
+                            StrokeThickness="3"
+                            StrokeShape="RoundRectangle 60"
+                            Padding="2"
+                            HorizontalOptions="Center">
+                        <Border BackgroundColor="White"
+                                Stroke="{DynamicResource SecondaryColor}"
+                                StrokeThickness="2"
+                                StrokeShape="RoundRectangle 58">
+                            <Image x:Name="AvatarPreview"
+                                   Source="default_avatar.png"
+                                   Aspect="AspectFill"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Border>
+                    </Border>
+
+                    <!-- КНОПКИ ДЛЯ АВАТАРА -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="📁 Выбрать"
+                                Clicked="OnSelectImageClicked"
+                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                TextColor="White"
+                                HeightRequest="40"
+                                CornerRadius="20" />
+
+                        <Button Grid.Column="1"
+                                Text="🗑️ Удалить"
+                                Clicked="OnRemoveImageClicked"
+                                BackgroundColor="{DynamicResource AccentColor}"
+                                TextColor="White"
+                                HeightRequest="40"
+                                CornerRadius="20" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
+            <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                    Stroke="{DynamicResource PrimaryColor}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 15"
+                    Padding="20">
+                <VerticalStackLayout Spacing="15">
+
+                    <Label Text="👤 Основная информация"
+                           FontSize="16"
+                           TextColor="{DynamicResource TextColor}"
+                           FontAttributes="Bold" />
+
+                    <Entry x:Name="FirstNameEntry"
+                           Placeholder="Имя"
+                           BackgroundColor="White"
+                           HeightRequest="50" />
+
+                    <Entry x:Name="LastNameEntry"
+                           Placeholder="Фамилия"
+                           BackgroundColor="White"
+                           HeightRequest="50" />
+
+                    <Entry x:Name="UsernameEntry"
+                           Placeholder="Логин"
+                           BackgroundColor="White"
+                           HeightRequest="50" />
+
+                    <Entry x:Name="EmailEntry"
+                           Placeholder="Email"
+                           Keyboard="Email"
+                           BackgroundColor="White"
+                           HeightRequest="50" />
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ДЕЙСТВИЯ -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Grid.Column="0"
+                        Text="💾 Сохранить"
+                        Clicked="OnSaveClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        FontAttributes="Bold" />
+
+                <Button Grid.Column="1"
+                        Text="❌ Отмена"
+                        Clicked="OnCancelClicked"
+                        BackgroundColor="{DynamicResource AccentColor}"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        FontAttributes="Bold" />
+            </Grid>
+            <ActivityIndicator x:Name="LoadingIndicator"
+                   IsVisible="False"
+                   IsRunning="False"
+                   Color="{DynamicResource PrimaryColor}"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

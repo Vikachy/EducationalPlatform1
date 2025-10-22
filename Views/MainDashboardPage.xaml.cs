@@ -101,14 +101,38 @@ namespace EducationalPlatform.Views
             // Показываем панель учителя если пользователь - учитель, админ или контент-менеджер
             if (_currentUser.RoleId == 2 || _currentUser.RoleId == 3 || _currentUser.RoleId == 4)
             {
-                // Убедитесь что TeacherPanel существует в XAML
-                // TeacherPanel.IsVisible = true;
+                // Находим TeacherPanel по имени
+                var teacherPanel = this.FindByName<Border>("TeacherPanel");
+                if (teacherPanel != null)
+                {
+                    teacherPanel.IsVisible = true;
+                }
             }
 
             LoadMyCourses();
             LoadTodayTasks();
             LoadNews();
         }
+        private async void OnTeacherGroupsClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    await DisplayAlert("Группы", "Управление учебными группами", "OK");
+                    // Здесь можно добавить навигацию на страницу управления группами
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось перейти к группам: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям и администраторам", "OK");
+            }
+        }
+
 
         private async void LoadMyCourses()
         {

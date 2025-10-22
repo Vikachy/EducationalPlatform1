@@ -135,10 +135,11 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-                    SELECT UserId, Username, Email, FirstName, LastName, RoleId, 
-                           LanguagePref, GameCurrency, StreakDays, RegistrationDate, IsActive
-                    FROM Users 
-                    WHERE Username = @Username AND PasswordHash = @PasswordHash AND IsActive = 1";
+            SELECT UserId, Username, Email, FirstName, LastName, RoleId,
+                   LanguagePref, GameCurrency, StreakDays, RegistrationDate, 
+                   IsActive, AvatarUrl
+            FROM Users
+            WHERE Username = @Username AND PasswordHash = @PasswordHash AND IsActive = 1";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Username", username ?? "");
@@ -155,6 +156,7 @@ namespace EducationalPlatform.Services
                         Email = reader.IsDBNull(reader.GetOrdinal("Email")) ? null : reader.GetString("Email"),
                         FirstName = reader.IsDBNull(reader.GetOrdinal("FirstName")) ? null : reader.GetString("FirstName"),
                         LastName = reader.IsDBNull(reader.GetOrdinal("LastName")) ? null : reader.GetString("LastName"),
+                        AvatarUrl = reader.IsDBNull(reader.GetOrdinal("AvatarUrl")) ? null : reader.GetString("AvatarUrl"), // Добавьте эту строку
                         RoleId = reader.GetInt32("RoleId"),
                         LanguagePref = reader.IsDBNull(reader.GetOrdinal("LanguagePref")) ? "ru" : reader.GetString("LanguagePref"),
                         GameCurrency = reader.GetInt32("GameCurrency"),
@@ -163,7 +165,6 @@ namespace EducationalPlatform.Services
                         IsActive = reader.GetBoolean("IsActive")
                     };
                 }
-
                 return null;
             }
             catch (Exception ex)
@@ -671,5 +672,97 @@ namespace EducationalPlatform.Services
             }
             return disputedTests;
         }
+
+        // ОБНОВЛЕНИЕ ПОЛЬЗОВАТЕЛЯ
+        public async Task<bool> UpdateUserAsync(int userId, string firstName, string lastName, string username, string email, string avatarUrl = null)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE Users 
+            SET FirstName = @FirstName, 
+                LastName = @LastName, 
+                Username = @Username, 
+                Email = @Email,
+                AvatarUrl = @AvatarUrl
+            WHERE UserId = @UserId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@FirstName", firstName ?? "");
+                command.Parameters.AddWithValue("@LastName", lastName ?? "");
+                command.Parameters.AddWithValue("@Username", username ?? "");
+                command.Parameters.AddWithValue("@Email", email ?? "");
+                command.Parameters.AddWithValue("@AvatarUrl", avatarUrl ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обновления пользователя: {ex.Message}");
+                return false;
+            }
+        }
+
+        // ПРОВЕРКА УНИКАЛЬНОСТИ USERNAME И EMAIL (исключая текущего пользователя)
+        public async Task<bool> CheckUserExistsAsync(string username, string email, int excludeUserId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT COUNT(*) FROM Users
+            WHERE (Username = @Username OR Email = @Email)
+            AND UserId != @ExcludeUserId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Username", username ?? "");
+                command.Parameters.AddWithValue("@Email", email ?? "");
+                command.Parameters.AddWithValue("@ExcludeUserId", excludeUserId);
+
+                var result = await command.ExecuteScalarAsync();
+                var count = result is null ? 0 : (int)result;
+
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка проверки пользователя: {ex.Message}");
+                return true;
+            }
+        }
+
+        // ЗАГРУЗКА АВАТАРА
+        public async Task<string> UploadAvatarAsync(Stream imageStream, string fileName, int userId)
+        {
+            try
+            {
+                // В реальном приложении здесь была бы загрузка в облачное хранилище
+                // Для демонстрации сохраняем локально или генерируем URL
+
+                // Генерируем уникальное имя файла
+                var fileExtension = Path.GetExtension(fileName);
+                var newFileName = $"avatar_{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
+
+                // В реальном приложении:
+                // 1. Загружаем в Azure Blob Storage, AWS S3 и т.д.
+                // 2. Возвращаем URL загруженного файла
+
+                // Для демонстрации возвращаем фиктивный URL
+                return $"https://example.com/avatars/{newFileName}";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки аватара: {ex.Message}");
+                return null;
+            }
+        }
+
     }
 }

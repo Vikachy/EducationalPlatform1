@@ -29,6 +29,54 @@ namespace EducationalPlatform.Views
             LoadCourses();
             UpdateUserInfo();
         }
+        private async void OnHomeClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                await Navigation.PushAsync(new MainDashboardPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти на главную: {ex.Message}", "OK");
+            }
+        }
+
+        private async void OnProfileClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                await Navigation.PushAsync(new ProfilePage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти к профилю: {ex.Message}", "OK");
+            }
+        }
+
+        private async void OnSettingsClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                await Navigation.PushAsync(new SettingsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти к настройкам: {ex.Message}", "OK");
+            }
+        }
+
+        private async void OnBackClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                await Navigation.PushAsync(new MainDashboardPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось вернуться: {ex.Message}", "OK");
+            }
+        }
+
 
         protected override void OnDisappearing()
         {
@@ -206,18 +254,7 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private async void OnBackClicked(object sender, EventArgs e)
-        {
-            try
-            {
-                // Переход назад без Shell, с передачей параметров
-                await Navigation.PushAsync(new MainDashboardPage(_currentUser, _dbService, _settingsService));
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", $"Не удалось вернуться: {ex.Message}", "OK");
-            }
-        }
+
 
         private async void OnNewsClicked(object sender, EventArgs e)
         {

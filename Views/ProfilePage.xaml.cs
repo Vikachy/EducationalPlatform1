@@ -139,7 +139,8 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                await Shell.Current.GoToAsync("///MainDashboard");
+                // Переход на MainDashboardPage через Navigation.PushAsync с передачей необходимых параметров
+                await Navigation.PushAsync(new MainDashboardPage(_currentUser, _dbService, _settingsService));
             }
             catch (Exception ex)
             {
@@ -147,11 +148,13 @@ namespace EducationalPlatform.Views
             }
         }
 
+
         private async void OnAllCoursesClicked(object sender, EventArgs e)
         {
             try
             {
-                await Shell.Current.GoToAsync("///Courses");
+                // Переход к странице CoursesPage без Shell
+                await Navigation.PushAsync(new CoursesPage(_currentUser, _dbService, _settingsService));
             }
             catch (Exception ex)
             {
@@ -159,11 +162,13 @@ namespace EducationalPlatform.Views
             }
         }
 
+
         private async void OnSettingsClicked(object sender, EventArgs e)
         {
             try
             {
-                await Shell.Current.GoToAsync("///Settings");
+                // Переход на SettingsPage без использования Shell
+                await Navigation.PushAsync(new SettingsPage(_currentUser, _dbService, _settingsService));
             }
             catch (Exception ex)
             {
@@ -171,9 +176,17 @@ namespace EducationalPlatform.Views
             }
         }
 
+
         private async void OnEditProfileClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Редактирование", "Функция редактирования профиля скоро будет доступна!", "OK");
+            try
+            {
+                await Navigation.PushAsync(new EditProfilePage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось открыть редактирование: {ex.Message}", "OK");
+            }
         }
 
         private async void OnAllAchievementsClicked(object sender, EventArgs e)
@@ -202,6 +215,7 @@ namespace EducationalPlatform.Views
             return true;
         }
     }
+
 
     // МОДЕЛИ ДЛЯ ПРИВЯЗКИ ДАННЫХ
     public class Achievement
