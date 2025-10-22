@@ -187,7 +187,14 @@ namespace EducationalPlatform.Services
                     $"С возвращением! Мы скучали 💙",
                     $"Привет, {userName}! Новые знания ждут! 🌟",
                     $"Рад тебя видеть, {userName}! 💪",
-                    $"С возвращением! Время кодить! 💻"
+                    $"С возвращением! Время кодить! 💻",
+                    $"Спасибо, что не забыл про меня, {userName}! 💕",
+                    $"Ты вернулся! Мы так ждали! 🎉",
+                    $"Привет, {userName}! Твоя серия продолжается! 🔥",
+                    $"С возвращением, {userName}! Готов к новым вызовам? ⚡",
+                    $"Мы скучали по тебе, {userName}! 💙",
+                    $"Привет, {userName}! Время стать лучше! 🌟",
+                    $"С возвращением! Твои навыки ждут! 💻"
                 } :
                 new[]
                 {
@@ -198,7 +205,14 @@ namespace EducationalPlatform.Services
                     $"Welcome back! We missed you 💙",
                     $"Hello {userName}! New knowledge awaits! 🌟",
                     $"Glad to see you, {userName}! 💪",
-                    $"Welcome back! Time to code! 💻"
+                    $"Welcome back! Time to code! 💻",
+                    $"Thanks for not forgetting me, {userName}! 💕",
+                    $"You're back! We've been waiting! 🎉",
+                    $"Hello {userName}! Your streak continues! 🔥",
+                    $"Welcome back, {userName}! Ready for new challenges? ⚡",
+                    $"We missed you, {userName}! 💙",
+                    $"Hello {userName}! Time to get better! 🌟",
+                    $"Welcome back! Your skills are waiting! 💻"
                 };
 
             var random = new Random();

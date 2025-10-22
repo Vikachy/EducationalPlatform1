@@ -33,7 +33,6 @@ namespace EducationalPlatform.Views
         }
 
         // Загрузка аватара пользователя
-        // Загрузка аватара пользователя
         private async void LoadUserAvatar()
         {
             try
@@ -185,7 +184,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-
         private async void OnAllCoursesClicked(object sender, EventArgs e)
         {
             try
@@ -199,7 +197,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-
         private async void OnSettingsClicked(object sender, EventArgs e)
         {
             try
@@ -212,7 +209,6 @@ namespace EducationalPlatform.Views
                 await DisplayAlert("Ошибка", $"Не удалось перейти к настройкам: {ex.Message}", "OK");
             }
         }
-
 
         private async void OnEditProfileClicked(object sender, EventArgs e)
         {
@@ -252,16 +248,6 @@ namespace EducationalPlatform.Views
             return true;
         }
     }
-
-
-    // МОДЕЛИ ДЛЯ ПРИВЯЗКИ ДАННЫХ
-    public class Achievement
-    {
-        public string Icon { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-    }
-
     public class ActiveCourse
     {
         public string CourseName { get; set; } = string.Empty;

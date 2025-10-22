@@ -70,7 +70,7 @@ namespace EducationalPlatform.Views
 
             WelcomeLabel.Text = _settingsService.GetRandomGreeting(_currentUser.FirstName ?? "Пользователь");
             StatsLabel.Text = _settingsService.GetLocalizedString("Streak") + $": {_currentUser.StreakDays} дней 🔥 | " +
-                            _settingsService.GetLocalizedString("Currency") + $": {_currentUser.GameCurrency} 🪙";
+                            _settingsService.GetLocalizedString("Currency") + $": {_currentUser.GameCurrency} 💰";
             StreakFireLabel.Text = _settingsService.GetLocalizedString("Streak") + $": {_currentUser.StreakDays} дней";
 
             UpdateSectionTitles();
@@ -81,8 +81,22 @@ namespace EducationalPlatform.Views
             if (_settingsService == null) return;
 
             // Обновляем заголовки секций
+            var myCoursesLabel = this.FindByName<Label>("MyCoursesLabel");
+            if (myCoursesLabel != null)
+                myCoursesLabel.Text = _settingsService.GetLocalizedString("MyCourses");
+            
+            var todayTasksLabel = this.FindByName<Label>("TodayTasksLabel");
+            if (todayTasksLabel != null)
+                todayTasksLabel.Text = _settingsService.GetLocalizedString("TodayTasks");
+            
+            var newsLabel = this.FindByName<Label>("NewsLabel");
+            if (newsLabel != null)
+                newsLabel.Text = _settingsService.GetLocalizedString("News");
+            
+            var quickActionsLabel = this.FindByName<Label>("QuickActionsLabel");
+            if (quickActionsLabel != null)
+                quickActionsLabel.Text = _settingsService.GetLocalizedString("QuickActions");
         }
-
 
         private async Task LoadUserAvatar()
         {
@@ -111,7 +125,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Обновите InitializeDashboard
         private async void InitializeDashboard()
         {
             if (_currentUser == null || _settingsService == null) return;
@@ -136,7 +149,6 @@ namespace EducationalPlatform.Views
             LoadNews();
         }
 
-        // Обновите OnAppearing
         protected override void OnAppearing()
         {
             base.OnAppearing();
@@ -153,7 +165,6 @@ namespace EducationalPlatform.Views
                 try
                 {
                     await DisplayAlert("Группы", "Управление учебными группами", "OK");
-                    // Здесь можно добавить навигацию на страницу управления группами
                 }
                 catch (Exception ex)
                 {
@@ -165,7 +176,6 @@ namespace EducationalPlatform.Views
                 await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям и администраторам", "OK");
             }
         }
-
 
         private async void LoadMyCourses()
         {
@@ -183,7 +193,7 @@ namespace EducationalPlatform.Views
                         {
                             CourseName = item.CourseName,
                             Progress = item.Score,
-                            Language = "C#", // Нужно получать из курса
+                            Language = "C#",
                             Difficulty = item.Status,
                             TimeLeft = "7 дней"
                         });
@@ -197,7 +207,7 @@ namespace EducationalPlatform.Views
                         MyCourses.Add(new MyCourse
                         {
                             CourseName = course.CourseName,
-                            Progress = (int)(course.AverageRating * 20), // Конвертируем рейтинг в прогресс
+                            Progress = (int)(course.AverageRating * 20),
                             Language = course.LanguageName,
                             Difficulty = course.DifficultyName,
                             TimeLeft = $"{course.StudentCount} студентов"
@@ -307,7 +317,7 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // НАВИГАЦИЯ
+        // ОСНОВНАЯ НАВИГАЦИЯ
         private async void OnCoursesClicked(object sender, EventArgs e)
         {
             try
@@ -325,7 +335,8 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                await Navigation.PushAsync(new ProgressPage());
+                if (_currentUser != null && _dbService != null && _settingsService != null)
+                    await Navigation.PushAsync(new ProgressPage(_currentUser, _dbService, _settingsService));
             }
             catch (Exception ex)
             {
@@ -356,6 +367,46 @@ namespace EducationalPlatform.Views
             catch (Exception ex)
             {
                 await DisplayAlert("Ошибка", $"Не удалось перейти к настройкам: {ex.Message}", "OK");
+            }
+        }
+
+        // ДОПОЛНИТЕЛЬНАЯ НАВИГАЦИЯ
+        private async void OnStatisticsClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_currentUser != null && _dbService != null && _settingsService != null)
+                    await Navigation.PushAsync(new StatisticsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти к статистике: {ex.Message}", "OK");
+            }
+        }
+
+        private async void OnShopClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_currentUser != null && _dbService != null && _settingsService != null)
+                    await Navigation.PushAsync(new ShopPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти в магазин: {ex.Message}", "OK");
+            }
+        }
+
+        private async void OnAchievementsClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_currentUser != null && _dbService != null && _settingsService != null)
+                    await Navigation.PushAsync(new StatisticsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти к достижениям: {ex.Message}", "OK");
             }
         }
 
@@ -419,16 +470,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private async void OnAchievementsClicked(object sender, EventArgs e)
-        {
-            await DisplayAlert("Достижения", "🏆 Система достижений скоро будет доступна!", "OK");
-        }
-
-        private async void OnShopClicked(object sender, EventArgs e)
-        {
-            await DisplayAlert("Магазин", "🛒 Магазин внутриигровых предметов в разработке", "OK");
-        }
-
         private async void OnTeacherManagementClicked(object sender, EventArgs e)
         {
             if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
@@ -452,6 +493,27 @@ namespace EducationalPlatform.Views
         private async void OnAllNewsClicked(object sender, EventArgs e)
         {
             await DisplayAlert("Все новости", "📢 Полная лента новостей будет доступна в следующем обновлении", "OK");
+        }
+
+        // БЫСТРЫЕ ДЕЙСТВИЯ
+        private async void OnQuickAction1Clicked(object sender, EventArgs e)
+        {
+            await Navigation.PushAsync(new CoursesPage(_currentUser, _dbService, _settingsService));
+        }
+
+        private async void OnQuickAction2Clicked(object sender, EventArgs e)
+        {
+            await Navigation.PushAsync(new StatisticsPage(_currentUser, _dbService, _settingsService));
+        }
+
+        private async void OnQuickAction3Clicked(object sender, EventArgs e)
+        {
+            await Navigation.PushAsync(new ShopPage(_currentUser, _dbService, _settingsService));
+        }
+
+        private async void OnQuickAction4Clicked(object sender, EventArgs e)
+        {
+            await Navigation.PushAsync(new ProfilePage(_currentUser, _dbService, _settingsService));
         }
 
         protected override bool OnBackButtonPressed()

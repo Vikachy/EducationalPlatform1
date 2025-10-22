@@ -59,8 +59,18 @@ namespace EducationalPlatform
                     _captchaService.ResetAttempts();
                     await _dbService.UpdateLoginStreakAsync(user.UserId);
 
-                    // ПЕРЕХОДИМ НА ГЛАВНУЮ ПАНЕЛЬ через Navigation
-                    await Navigation.PushAsync(new MainDashboardPage(user, _dbService, _settingsService));
+                    // ПРОВЕРЯЕМ СОГЛАСИЕ НА ОБРАБОТКУ ДАННЫХ
+                    bool hasConsent = await _dbService.CheckUserPrivacyConsentAsync(user.UserId);
+
+                    if (hasConsent)
+                    {
+                        await Navigation.PushAsync(new MainDashboardPage(user, _dbService, _settingsService));
+                    }
+                    else
+                    {
+                        // ПЕРЕНАПРАВЛЯЕМ НА СТРАНИЦУ СОГЛАСИЯ
+                        await Navigation.PushAsync(new PrivacyConsentPage(user, _dbService, _settingsService));
+                    }
                 }
                 else
                 {

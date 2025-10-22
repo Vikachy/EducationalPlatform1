@@ -158,7 +158,7 @@
                                        TextColor="#FF9800"
                                        FontAttributes="Bold"
                                        HorizontalOptions="Center" />
-                                <Label Text="🪙 Монет"
+                                <Label Text="💰 Монет"
                                        FontSize="10"
                                        TextColor="#666"
                                        HorizontalOptions="Center" />

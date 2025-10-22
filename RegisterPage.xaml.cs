@@ -76,8 +76,13 @@ public partial class RegisterPage : ContentPage
 
             if (success)
             {
-                await DisplayAlert("Успех", "Аккаунт успешно создан!", "OK");
-                await Navigation.PopAsync();
+                // ПОСЛЕ УСПЕШНОЙ РЕГИСТРАЦИИ ПЕРЕНАПРАВЛЯЕМ НА СОГЛАСИЕ
+                var newUser = await _dbService.LoginAsync(UsernameEntry.Text, PasswordEntry.Text);
+                if (newUser != null)
+                {
+                    await DisplayAlert("Успех", "Аккаунт успешно создан!", "OK");
+                    await Navigation.PushAsync(new PrivacyConsentPage(newUser, _dbService, _settingsService));
+                }
             }
             else
             {

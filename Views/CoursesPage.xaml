@@ -5,115 +5,116 @@
     x:Class="EducationalPlatform.Views.CoursesPage"
     Title="Курсы"
     BackgroundColor="{DynamicResource BackgroundColor}">
-    
-    <Grid RowDefinitions="Auto,*">
 
+    <Grid RowDefinitions="Auto,*">
         <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
         <Border Grid.Row="0"
-        BackgroundColor="{DynamicResource PrimaryColor}"
-        Stroke="{DynamicResource SecondaryColor}"
-        StrokeThickness="1"
-        StrokeShape="RoundRectangle 0,0,0,20"
-        Padding="15">
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Stroke="{DynamicResource SecondaryColor}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 0,0,0,20"
+                Padding="15">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="10">
                 <!-- КНОПКА НАЗАД -->
                 <Button Grid.Column="0"
-                Text="←"
-                Clicked="OnBackClicked"
-                BackgroundColor="Transparent"
-                TextColor="White"
-                FontSize="20"
-                WidthRequest="45"
-                HeightRequest="45"
-                CornerRadius="22" />
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource LightTextColor}"
+                        FontSize="20"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
 
                 <!-- ЗАГОЛОВОК -->
                 <Label Grid.Column="1"
-               Text="📚 Все курсы"
-               FontSize="20"
-               TextColor="White"
-               FontAttributes="Bold"
-               HorizontalOptions="Center"
-               VerticalOptions="Center" />
+                       Text="📚 Все курсы"
+                       FontSize="20"
+                       TextColor="{DynamicResource LightTextColor}"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
 
                 <!-- КНОПКА ГЛАВНОЙ -->
                 <Button Grid.Column="2"
-                Text="🏠"
-                Clicked="OnHomeClicked"
-                BackgroundColor="Transparent"
-                TextColor="White"
-                FontSize="18"
-                WidthRequest="45"
-                HeightRequest="45"
-                CornerRadius="22" />
+                        Text="🏠"
+                        Clicked="OnHomeClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource LightTextColor}"
+                        FontSize="18"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
 
                 <!-- КНОПКА ПРОФИЛЯ -->
                 <Button Grid.Column="3"
-                Text="👤"
-                Clicked="OnProfileClicked"
-                BackgroundColor="Transparent"
-                TextColor="White"
-                FontSize="18"
-                WidthRequest="45"
-                HeightRequest="45"
-                CornerRadius="22" />
+                        Text="👤"
+                        Clicked="OnProfileClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource LightTextColor}"
+                        FontSize="18"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
 
                 <!-- КНОПКА НАСТРОЕК -->
                 <Button Grid.Column="4"
-                Text="⚙️"
-                Clicked="OnSettingsClicked"
-                BackgroundColor="Transparent"
-                TextColor="White"
-                FontSize="16"
-                WidthRequest="45"
-                HeightRequest="45"
-                CornerRadius="22" />
+                        Text="⚙️"
+                        Clicked="OnSettingsClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource LightTextColor}"
+                        FontSize="16"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
             </Grid>
         </Border>
 
-        <ScrollView>
+        <ScrollView Grid.Row="1">
             <VerticalStackLayout Spacing="15" Padding="20">
                 <Border Padding="15"
-                    Stroke="#2E86AB"
-                    StrokeThickness="1"
-                    StrokeShape="RoundRectangle 15">
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 15"
+                        BackgroundColor="{DynamicResource BackgroundColor}">
                     <VerticalStackLayout Spacing="10">
                         <Label x:Name="WelcomeLabel"
-                           Text="Добро пожаловать!"
-                           FontSize="18"
-                           TextColor="#2E86AB"
-                           FontAttributes="Bold" />
+                               Text="Добро пожаловать!"
+                               FontSize="18"
+                               TextColor="{DynamicResource PrimaryColor}"
+                               FontAttributes="Bold" />
 
                         <Label x:Name="StreakLabel"
-                           Text="Серия: 0 дней"
-                           FontSize="14"
-                           TextColor="#666" />
+                               Text="Серия: 0 дней"
+                               FontSize="14"
+                               TextColor="{DynamicResource TextColor}" />
 
-                        <Border BackgroundColor="#F8F9FA"
-                            Stroke="#2E86AB"
-                            StrokeThickness="1"
-                            StrokeShape="RoundRectangle 10"
-                            Padding="10"
-                            Margin="0,10,0,0">
+                        <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                                Stroke="{DynamicResource PrimaryColor}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="10"
+                                Margin="0,10,0,0">
                             <Grid ColumnDefinitions="*,*"
-                              ColumnSpacing="10"
-                              RowDefinitions="Auto,Auto,Auto"
-                              RowSpacing="5">
+                                  ColumnSpacing="10"
+                                  RowDefinitions="Auto,Auto,Auto"
+                                  RowSpacing="5">
 
                                 <Label Grid.Row="0" Grid.Column="0"
-                                   Text="Язык:"
-                                   FontSize="12"
-                                   TextColor="#333" />
+                                       Text="Язык:"
+                                       FontSize="12"
+                                       TextColor="{DynamicResource TextColor}" />
 
                                 <Label Grid.Row="0" Grid.Column="1"
-                                   Text="Тема:"
-                                   FontSize="12"
-                                   TextColor="#333" />
+                                       Text="Тема:"
+                                       FontSize="12"
+                                       TextColor="{DynamicResource TextColor}" />
 
                                 <Picker Grid.Row="1" Grid.Column="0"
-                                    x:Name="LanguagePicker"
-                                    Title="Выберите язык"
-                                    HeightRequest="40">
+                                        x:Name="LanguagePicker"
+                                        Title="Выберите язык"
+                                        HeightRequest="40"
+                                        TextColor="{DynamicResource TextColor}" >
                                     <Picker.Items>
                                         <x:String>Русский</x:String>
                                         <x:String>English</x:String>
@@ -121,9 +122,10 @@
                                 </Picker>
 
                                 <Picker Grid.Row="1" Grid.Column="1"
-                                    x:Name="ThemePicker"
-                                    Title="Выберите тему"
-                                    HeightRequest="40">
+                                        x:Name="ThemePicker"
+                                        Title="Выберите тему"
+                                        HeightRequest="40"
+                                        TextColor="{DynamicResource TextColor}">
                                     <Picker.Items>
                                         <x:String>Стандартная</x:String>
                                         <x:String>Для подростков</x:String>
@@ -131,63 +133,66 @@
                                 </Picker>
 
                                 <Label Grid.Row="2" Grid.Column="0"
-                                   x:Name="CurrentLanguageLabel"
-                                   Text="Текущий: Русский"
-                                   FontSize="10"
-                                   TextColor="#666" />
+                                       x:Name="CurrentLanguageLabel"
+                                       Text="Текущий: Русский"
+                                       FontSize="10"
+                                       TextColor="{DynamicResource TextColor}" />
 
                                 <Label Grid.Row="2" Grid.Column="1"
-                                   x:Name="CurrentThemeLabel"
-                                   Text="Текущая: Стандартная"
-                                   FontSize="10"
-                                   TextColor="#666" />
+                                       x:Name="CurrentThemeLabel"
+                                       Text="Текущая: Стандартная"
+                                       FontSize="10"
+                                       TextColor="{DynamicResource TextColor}" />
                             </Grid>
                         </Border>
                     </VerticalStackLayout>
                 </Border>
 
                 <Label Text="Доступные курсы:"
-                   FontSize="18"
-                   TextColor="#333"
-                   FontAttributes="Bold" />
+                       FontSize="18"
+                       TextColor="{DynamicResource TextColor}"
+                       FontAttributes="Bold" />
 
-                <CollectionView x:Name="CoursesCollectionView">
+                <CollectionView x:Name="CoursesCollectionView"
+                                BackgroundColor="{DynamicResource BackgroundColor}"
+                                SelectionMode="Single">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Border Margin="0,5"
-                                Stroke="#DDD"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 10"
-                                Padding="0">
+                                    Stroke="{DynamicResource PrimaryColor}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 10"
+                                    Padding="0">
                                 <VerticalStackLayout Spacing="10" Padding="15">
                                     <Label Text="{Binding CourseName}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#2E86AB" />
+                                           FontSize="18"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource PrimaryColor}" />
 
                                     <Label Text="{Binding Description}"
-                                       FontSize="14"
-                                       TextColor="#666" />
+                                           FontSize="14"
+                                           TextColor="{DynamicResource TextColor}" />
 
                                     <HorizontalStackLayout Spacing="10">
                                         <Label Text="{Binding LanguageName}"
-                                           FontSize="12"
-                                           BackgroundColor="#2E86AB"
-                                           TextColor="White"
-                                           Padding="8,4" />
+                                               FontSize="12"
+                                               BackgroundColor="{DynamicResource PrimaryColor}"
+                                               TextColor="{DynamicResource LightTextColor}"
+                                               Padding="8,4" />
 
                                         <Label Text="{Binding DifficultyName}"
-                                           FontSize="12"
-                                           BackgroundColor="#666"
-                                           TextColor="White"
-                                           Padding="8,4" />
+                                               FontSize="12"
+                                               BackgroundColor="{DynamicResource SecondaryColor}"
+                                               TextColor="{DynamicResource LightTextColor}"
+                                               Padding="8,4" />
                                     </HorizontalStackLayout>
 
                                     <Button Text="Записаться на курс"
-                                    Clicked="OnStartCourseClicked"
-                                    BackgroundColor="#2E86AB"
-                                    TextColor="White"
-                                    HeightRequest="40" />
+                                            Clicked="OnStartCourseClicked"
+                                            BackgroundColor="{DynamicResource PrimaryColor}"
+                                            TextColor="{DynamicResource LightTextColor}"
+                                            HeightRequest="40"
+                                            CornerRadius="10" />
                                 </VerticalStackLayout>
                             </Border>
                         </DataTemplate>

@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.ShopPage"
+             Title="Магазин">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ШАПКА -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Stroke="{DynamicResource SecondaryColor}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 0,0,0,20"
+                Padding="15">
+
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20" />
+
+                <Label Grid.Column="1"
+                       Text="🛒 Магазин"
+                       FontSize="20"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+
+                <Border Grid.Column="2"
+                        BackgroundColor="{DynamicResource AccentColor}"
+                        StrokeThickness="0"
+                        Padding="10,5"
+                        StrokeShape="RoundRectangle 10">
+
+                    <HorizontalStackLayout Spacing="5">
+                        <Label Text="{Binding UserGameCurrency}"
+                               FontSize="14"
+                               TextColor="White"
+                               FontAttributes="Bold" />
+                        <Label Text="💰"
+                               FontSize="14"
+                               TextColor="White" />
+                    </HorizontalStackLayout>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="20" Padding="15">
+
+                <!-- АВАТАРНЫЕ РАМКИ -->
+                <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="0">
+
+                    <VerticalStackLayout Spacing="0">
+                        <Border BackgroundColor="{DynamicResource PrimaryColor}"
+                                Padding="15">
+                            <Label Text="🖼️ Рамки профиля"
+                                   FontSize="18"
+                                   TextColor="White"
+                                   FontAttributes="Bold" />
+                        </Border>
+
+                        <FlexLayout BindableLayout.ItemsSource="{Binding AvatarFrames}"
+                                    Wrap="Wrap"
+                                    JustifyContent="SpaceAround"
+                                    Padding="10">
+
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Border WidthRequest="150"
+                                            HeightRequest="180"
+                                            BackgroundColor="{DynamicResource CardColor}"
+                                            Stroke="{Binding BorderColor}"
+                                            StrokeThickness="3"
+                                            StrokeShape="RoundRectangle 10"
+                                            Padding="10"
+                                            Margin="5">
+
+                                        <VerticalStackLayout Spacing="10">
+                                            <Border BackgroundColor="{Binding PreviewColor}"
+                                                    HeightRequest="80"
+                                                    Stroke="{Binding BorderColor}"
+                                                    StrokeThickness="2"
+                                                    StrokeShape="RoundRectangle 5">
+                                                <Label Text="👤"
+                                                       FontSize="24"
+                                                       HorizontalOptions="Center"
+                                                       VerticalOptions="Center" />
+                                            </Border>
+
+                                            <Label Text="{Binding Name}"
+                                                   FontSize="14"
+                                                   FontAttributes="Bold"
+                                                   HorizontalOptions="Center" />
+
+                                            <HorizontalStackLayout Spacing="5" HorizontalOptions="Center">
+                                                <Label Text="{Binding Price}"
+                                                       FontSize="12"
+                                                       TextColor="{DynamicResource TextColor}" />
+                                                <Label Text="💰"
+                                                       FontSize="12" />
+                                            </HorizontalStackLayout>
+
+                                            <Button Text="{Binding ButtonText}"
+                                                    BackgroundColor="{Binding ButtonColor}"
+                                                    TextColor="White"
+                                                    HeightRequest="30"
+                                                    FontSize="10"
+                                                    Clicked="OnFramePurchaseClicked" />
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ЭМОДЗИ ДЛЯ ПРОФИЛЯ -->
+                <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                        Stroke="{DynamicResource AccentColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="0">
+
+                    <VerticalStackLayout Spacing="0">
+                        <Border BackgroundColor="{DynamicResource AccentColor}"
+                                Padding="15">
+                            <Label Text="😊 Эмодзи для профиля"
+                                   FontSize="18"
+                                   TextColor="White"
+                                   FontAttributes="Bold" />
+                        </Border>
+
+                        <FlexLayout BindableLayout.ItemsSource="{Binding ProfileEmojis}"
+                                    Wrap="Wrap"
+                                    JustifyContent="SpaceAround"
+                                    Padding="10">
+
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Border WidthRequest="120"
+                                            HeightRequest="150"
+                                            BackgroundColor="{DynamicResource CardColor}"
+                                            Stroke="#DDD"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 10"
+                                            Padding="10"
+                                            Margin="5">
+
+                                        <VerticalStackLayout Spacing="10">
+                                            <Label Text="{Binding Emoji}"
+                                                   FontSize="32"
+                                                   HorizontalOptions="Center" />
+
+                                            <Label Text="{Binding Name}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold"
+                                                   HorizontalOptions="Center" />
+
+                                            <HorizontalStackLayout Spacing="5" HorizontalOptions="Center">
+                                                <Label Text="{Binding Price}"
+                                                       FontSize="11"
+                                                       TextColor="{DynamicResource TextColor}" />
+                                                <Label Text="💰"
+                                                       FontSize="11" />
+                                            </HorizontalStackLayout>
+
+                                            <Button Text="{Binding ButtonText}"
+                                                    BackgroundColor="{Binding ButtonColor}"
+                                                    TextColor="White"
+                                                    HeightRequest="25"
+                                                    FontSize="9"
+                                                    Clicked="OnEmojiPurchaseClicked" />
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ТЕМЫ ОФОРМЛЕНИЯ -->
+                <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                        Stroke="{DynamicResource SecondaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="0">
+
+                    <VerticalStackLayout Spacing="0">
+                        <Border BackgroundColor="{DynamicResource SecondaryColor}"
+                                Padding="15">
+                            <Label Text="🎨 Темы оформления"
+                                   FontSize="18"
+                                   TextColor="White"
+                                   FontAttributes="Bold" />
+                        </Border>
+
+                        <FlexLayout BindableLayout.ItemsSource="{Binding Themes}"
+                                    Wrap="Wrap"
+                                    JustifyContent="SpaceAround"
+                                    Padding="10">
+
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Border WidthRequest="140"
+                                            HeightRequest="170"
+                                            BackgroundColor="{DynamicResource CardColor}"
+                                            Stroke="#DDD"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 10"
+                                            Padding="10"
+                                            Margin="5">
+
+                                        <VerticalStackLayout Spacing="8">
+                                            <Border BackgroundColor="{Binding PreviewPrimaryColor}"
+                                                    HeightRequest="60"
+                                                    Stroke="{Binding PreviewSecondaryColor}"
+                                                    StrokeThickness="2"
+                                                    StrokeShape="RoundRectangle 5">
+                                                <VerticalStackLayout Spacing="2" Padding="3">
+                                                    <BoxView Color="{Binding PreviewAccentColor}" 
+                                                             HeightRequest="8" 
+                                                             CornerRadius="2" />
+                                                    <BoxView Color="{Binding PreviewBackgroundColor}" 
+                                                             HeightRequest="6" 
+                                                             CornerRadius="2" />
+                                                    <BoxView Color="{Binding PreviewTextColor}" 
+                                                             HeightRequest="4" 
+                                                             CornerRadius="2" />
+                                                </VerticalStackLayout>
+                                            </Border>
+
+                                            <Label Text="{Binding Name}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold"
+                                                   HorizontalOptions="Center" />
+
+                                            <HorizontalStackLayout Spacing="5" HorizontalOptions="Center">
+                                                <Label Text="{Binding Price}"
+                                                       FontSize="11"
+                                                       TextColor="{DynamicResource TextColor}" />
+                                                <Label Text="💰"
+                                                       FontSize="11" />
+                                            </HorizontalStackLayout>
+
+                                            <Button Text="{Binding ButtonText}"
+                                                    BackgroundColor="{Binding ButtonColor}"
+                                                    TextColor="White"
+                                                    HeightRequest="25"
+                                                    FontSize="9"
+                                                    Clicked="OnThemePurchaseClicked" />
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- НИЖНЯЯ ПАНЕЛЬ -->
+        <Border Grid.Row="2"
+                BackgroundColor="{DynamicResource CardColor}"
+                Stroke="#DDD"
+                StrokeThickness="1"
+                Padding="15">
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Grid.Column="0"
+                        Text="💼 Мой инвентарь"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        HeightRequest="45"
+                        CornerRadius="20"
+                        Clicked="OnInventoryClicked" />
+
+                <Button Grid.Column="1"
+                        Text="📈 Получить монеты"
+                        BackgroundColor="{DynamicResource AccentColor}"
+                        TextColor="White"
+                        HeightRequest="45"
+                        CornerRadius="20"
+                        Clicked="OnEarnCoinsClicked" />
+            </Grid>
+        </Border>
+
+    </Grid>
+</ContentPage>

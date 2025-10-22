@@ -10,8 +10,8 @@ namespace EducationalPlatform.Views
         private User _currentUser;
         private DatabaseService _dbService;
         private SettingsService _settingsService;
-        private FileResult _selectedImage;
-        private string _avatarUrl;
+        private FileResult? _selectedImage;
+        private string? _avatarUrl;
 
         public EditProfilePage(User user, DatabaseService dbService, SettingsService settingsService)
         {
@@ -32,7 +32,7 @@ namespace EducationalPlatform.Views
                 UsernameEntry.Text = _currentUser.Username ?? "";
                 EmailEntry.Text = _currentUser.Email ?? "";
 
-                // Загружаем актуальный аватар из базы
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ
                 var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
 
                 if (!string.IsNullOrEmpty(currentAvatar))
@@ -49,7 +49,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить данные: {ex.Message}", "OK");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", $"пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ: {ex.Message}", "OK");
             }
         }
 
@@ -57,17 +57,17 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Проверяем разрешения
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var status = await Permissions.RequestAsync<Permissions.Photos>();
                 if (status != PermissionStatus.Granted)
                 {
-                    await DisplayAlert("Ошибка", "Необходимо разрешение на доступ к фотографиям", "OK");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ", "OK");
                     return;
                 }
 
                 var result = await FilePicker.PickAsync(new PickOptions
                 {
-                    PickerTitle = "Выберите аватар",
+                    PickerTitle = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ",
                     FileTypes = FilePickerFileType.Images
                 });
 
@@ -75,15 +75,15 @@ namespace EducationalPlatform.Views
                 {
                     _selectedImage = result;
 
-                    // Показываем превью ВО ВРЕМЯ ВЫБОРА
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                     AvatarPreview.Source = ImageSource.FromFile(result.FullPath);
 
-                    Console.WriteLine($"Выбран файл: {result.FileName}, путь: {result.FullPath}");
+                    Console.WriteLine($"пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ: {result.FileName}, пїЅпїЅпїЅпїЅ: {result.FullPath}");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось выбрать изображение: {ex.Message}", "OK");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", $"пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {ex.Message}", "OK");
             }
         }
 
@@ -95,7 +95,7 @@ namespace EducationalPlatform.Views
                 _avatarUrl = null;
                 AvatarPreview.Source = "default_avatar.png";
 
-                // Удаляем аватар из базы данных
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                 _ = Task.Run(async () =>
                 {
                     await _dbService.UpdateUserAsync(
@@ -107,11 +107,11 @@ namespace EducationalPlatform.Views
                         null);
                 });
 
-                DisplayAlert("Успех", "Аватар удален!", "OK");
+                DisplayAlert("пїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ!", "OK");
             }
             catch (Exception ex)
             {
-                DisplayAlert("Ошибка", $"Не удалось удалить аватар: {ex.Message}", "OK");
+                DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", $"пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ: {ex.Message}", "OK");
             }
         }
 
@@ -122,11 +122,11 @@ namespace EducationalPlatform.Views
                 string.IsNullOrWhiteSpace(UsernameEntry.Text) ||
                 string.IsNullOrWhiteSpace(EmailEntry.Text))
             {
-                await DisplayAlert("Ошибка", "Заполните все поля", "OK");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ", "OK");
                 return;
             }
 
-            // Проверяем уникальность username и email
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ username пїЅ email
             bool userExists = await _dbService.CheckUserExistsAsync(
                 UsernameEntry.Text,
                 EmailEntry.Text,
@@ -134,11 +134,11 @@ namespace EducationalPlatform.Views
 
             if (userExists)
             {
-                await DisplayAlert("Ошибка", "Пользователь с таким логином или email уже существует", "OK");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ email пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ", "OK");
                 return;
             }
 
-            // Показываем индикатор загрузки
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             LoadingIndicator.IsVisible = true;
             LoadingIndicator.IsRunning = true;
 
@@ -146,27 +146,27 @@ namespace EducationalPlatform.Views
             {
                 string finalAvatarUrl = _avatarUrl;
 
-                // Загружаем новое изображение если выбрано
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 if (_selectedImage != null)
                 {
-                    Console.WriteLine($"Начинаем загрузку аватара: {_selectedImage.FileName}");
+                    Console.WriteLine($"пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {_selectedImage.FileName}");
 
                     using var stream = await _selectedImage.OpenReadAsync();
                     finalAvatarUrl = await _dbService.UploadAvatarAsync(stream, _selectedImage.FileName, _currentUser.UserId);
 
                     if (string.IsNullOrEmpty(finalAvatarUrl))
                     {
-                        await DisplayAlert("Ошибка", "Не удалось загрузить аватар", "OK");
+                        await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ", "OK");
                         LoadingIndicator.IsVisible = false;
                         LoadingIndicator.IsRunning = false;
                         return;
                     }
 
-                    Console.WriteLine($"Аватар успешно загружен: {finalAvatarUrl}");
-                    await DisplayAlert("Успех", "Аватар успешно загружен!", "OK");
+                    Console.WriteLine($"пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {finalAvatarUrl}");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!", "OK");
                 }
 
-                // Обновляем данные пользователя
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 bool success = await _dbService.UpdateUserAsync(
                     _currentUser.UserId,
                     FirstNameEntry.Text,
@@ -177,20 +177,20 @@ namespace EducationalPlatform.Views
 
                 if (success)
                 {
-                    // Обновляем данные в текущем пользователе
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                     _currentUser.FirstName = FirstNameEntry.Text;
                     _currentUser.LastName = LastNameEntry.Text;
                     _currentUser.Username = UsernameEntry.Text;
                     _currentUser.Email = EmailEntry.Text;
                     _currentUser.AvatarUrl = finalAvatarUrl;
 
-                    await DisplayAlert("Успех", "Профиль успешно обновлен!", "OK");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!", "OK");
 
-                    // Возвращаемся на страницу профиля с обновленными данными
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                     var profilePage = new ProfilePage(_currentUser, _dbService, _settingsService);
                     await Navigation.PushAsync(profilePage);
 
-                    // Удаляем текущую страницу из стека навигации
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                     var existingPages = Navigation.NavigationStack.ToList();
                     foreach (var page in existingPages)
                     {
@@ -203,17 +203,17 @@ namespace EducationalPlatform.Views
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось обновить профиль", "OK");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось сохранить изменения: {ex.Message}", "OK");
-                Console.WriteLine($"Ошибка сохранения: {ex}");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", $"пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {ex.Message}", "OK");
+                Console.WriteLine($"пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {ex}");
             }
             finally
             {
-                // Скрываем индикатор загрузки
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 LoadingIndicator.IsVisible = false;
                 LoadingIndicator.IsRunning = false;
             }
@@ -223,11 +223,11 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Возвращаемся на страницу профиля без сохранения
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var profilePage = new ProfilePage(_currentUser, _dbService, _settingsService);
                 await Navigation.PushAsync(profilePage);
 
-                // Удаляем текущую страницу из стека навигации
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var existingPages = Navigation.NavigationStack.ToList();
                 foreach (var page in existingPages)
                 {
@@ -240,18 +240,18 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось вернуться: {ex.Message}", "OK");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", $"пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {ex.Message}", "OK");
             }
         }
 
         protected override bool OnBackButtonPressed()
         {
-            // Блокируем стандартное поведение кнопки назад
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
             OnCancelClicked(null, null);
             return true;
         }
 
-        // Обработчик изменения текста в полях для валидации в реальном времени
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         private void OnEntryTextChanged(object sender, TextChangedEventArgs e)
         {
             ValidateForm();
@@ -265,14 +265,14 @@ namespace EducationalPlatform.Views
                           !string.IsNullOrWhiteSpace(EmailEntry.Text) &&
                           IsValidEmail(EmailEntry.Text);
 
-            // Можно добавить визуальную индикацию валидности формы
+            // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
             if (isValid)
             {
-                // Форма валидна
+                // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             }
             else
             {
-                // Форма невалидна
+                // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             }
         }
 
@@ -292,38 +292,38 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Обработчик для проверки email при потере фокуса
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ email пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         private async void OnEmailUnfocused(object sender, FocusEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(EmailEntry.Text) && !IsValidEmail(EmailEntry.Text))
             {
-                await DisplayAlert("Ошибка", "Введите корректный email адрес", "OK");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ email пїЅпїЅпїЅпїЅпїЅ", "OK");
                 EmailEntry.Focus();
             }
         }
 
-        // Обработчик для проверки username при потере фокуса
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ username пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         private async void OnUsernameUnfocused(object sender, FocusEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(UsernameEntry.Text))
             {
-                // Проверяем минимальную длину username
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ username
                 if (UsernameEntry.Text.Length < 3)
                 {
-                    await DisplayAlert("Ошибка", "Логин должен содержать минимум 3 символа", "OK");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 3 пїЅпїЅпїЅпїЅпїЅпїЅпїЅ", "OK");
                     UsernameEntry.Focus();
                     return;
                 }
 
-                // Проверяем уникальность username (кроме текущего пользователя)
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ username (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
                 bool userExists = await _dbService.CheckUserExistsAsync(
                     UsernameEntry.Text,
-                    "", // Пустой email для проверки только username
+                    "", // пїЅпїЅпїЅпїЅпїЅпїЅ email пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ username
                     _currentUser.UserId);
 
                 if (userExists)
                 {
-                    await DisplayAlert("Ошибка", "Пользователь с таким логином уже существует", "OK");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ", "OK");
                     UsernameEntry.Focus();
                 }
             }

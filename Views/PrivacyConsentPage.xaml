@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.PrivacyConsentPage"
+             Title="Согласие на обработку данных">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <Label Text="📋 Согласие на обработку персональных данных"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Border BackgroundColor="#F8F9FA"
+                    Stroke="#2E86AB"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="15">
+
+                <ScrollView HeightRequest="300">
+                    <Label x:Name="ConsentLabel"
+                           FontSize="12"
+                           TextColor="#333" />
+                </ScrollView>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Grid.Column="0"
+                        Text="✅ Принимаю"
+                        BackgroundColor="#4CAF50"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        Clicked="OnAcceptClicked" />
+
+                <Button Grid.Column="1"
+                        Text="❌ Не принимаю"
+                        BackgroundColor="#F44336"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        Clicked="OnDeclineClicked" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

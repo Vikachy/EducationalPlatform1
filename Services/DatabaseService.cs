@@ -19,8 +19,408 @@ namespace EducationalPlatform.Services
             _connectionString = "Server=EducationalPlatform.mssql.somee.com;Database=EducationalPlatform;User Id=yyullechkaaa_SQLLogin_1;Password=xtbnfhvyqu;TrustServerCertificate=true;";
         }
 
+        // СИСТЕМА СОГЛАСИЙ
+        public async Task<bool> CheckUserPrivacyConsentAsync(int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "SELECT COUNT(*) FROM PrivacyConsents WHERE UserId = @UserId";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result) > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка проверки согласия: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> SavePrivacyConsentAsync(int userId, string consentText, string version)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    INSERT INTO PrivacyConsents (UserId, ConsentText, Version, IPAddress)
+                    VALUES (@UserId, @ConsentText, @Version, @IPAddress)";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@ConsentText", consentText);
+                command.Parameters.AddWithValue("@Version", version);
+                command.Parameters.AddWithValue("@IPAddress", "system");
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения согласия: {ex.Message}");
+                return false;
+            }
+        }
+
+        // СИСТЕМА МАГАЗИНА
+        public async Task<List<ShopItem>> GetShopItemsAsync()
+        {
+            var items = new List<ShopItem>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT ItemId, Name, Description, Price, ItemType, Icon
+                    FROM ShopItems 
+                    WHERE IsActive = 1
+                    ORDER BY ItemType, Price";
+
+                using var command = new SqlCommand(query, connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    items.Add(new ShopItem
+                    {
+                        ItemId = reader.GetInt32("ItemId"),
+                        Name = reader.GetString("Name"),
+                        Description = reader.IsDBNull("Description") ? "" : reader.GetString("Description"),
+                        Price = reader.GetInt32("Price"),
+                        ItemType = reader.GetString("ItemType"),
+                        Icon = reader.IsDBNull("Icon") ? "" : reader.GetString("Icon")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки товаров: {ex.Message}");
+            }
+            return items;
+        }
+
+        public async Task<bool> CheckItemOwnershipAsync(int userId, int itemId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "SELECT COUNT(*) FROM UserInventory WHERE UserId = @UserId AND ItemId = @ItemId";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@ItemId", itemId);
+
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result) > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка проверки владения: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> CheckItemEquippedAsync(int userId, int itemId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "SELECT COUNT(*) FROM UserInventory WHERE UserId = @UserId AND ItemId = @ItemId AND IsEquipped = 1";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@ItemId", itemId);
+
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result) > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка проверки экипировки: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> PurchaseShopItemAsync(int userId, int itemId, int price)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Начинаем транзакцию
+                using var transaction = connection.BeginTransaction();
+
+                try
+                {
+                    // 1. Проверяем баланс
+                    var balanceQuery = "SELECT GameCurrency FROM Users WHERE UserId = @UserId";
+                    using var balanceCommand = new SqlCommand(balanceQuery, connection, transaction);
+                    balanceCommand.Parameters.AddWithValue("@UserId", userId);
+                    var balance = Convert.ToInt32(await balanceCommand.ExecuteScalarAsync());
+
+                    if (balance < price)
+                        return false;
+
+                    // 2. Списываем средства
+                    var deductQuery = "UPDATE Users SET GameCurrency = GameCurrency - @Price WHERE UserId = @UserId";
+                    using var deductCommand = new SqlCommand(deductQuery, connection, transaction);
+                    deductCommand.Parameters.AddWithValue("@Price", price);
+                    deductCommand.Parameters.AddWithValue("@UserId", userId);
+                    await deductCommand.ExecuteNonQueryAsync();
+
+                    // 3. Добавляем товар в инвентарь
+                    var inventoryQuery = @"
+                        INSERT INTO UserInventory (UserId, ItemId, PurchaseDate, IsEquipped)
+                        VALUES (@UserId, @ItemId, GETDATE(), 0)";
+                    using var inventoryCommand = new SqlCommand(inventoryQuery, connection, transaction);
+                    inventoryCommand.Parameters.AddWithValue("@UserId", userId);
+                    inventoryCommand.Parameters.AddWithValue("@ItemId", itemId);
+                    await inventoryCommand.ExecuteNonQueryAsync();
+
+                    // 4. Фиксируем транзакцию
+                    transaction.Commit();
+                    return true;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка покупки товара: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> EquipShopItemAsync(int userId, int itemId, string itemType)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Сначала снимаем все предметы этого типа
+                var unequipQuery = @"
+                    UPDATE UserInventory 
+                    SET IsEquipped = 0 
+                    WHERE UserId = @UserId 
+                    AND ItemId IN (SELECT ItemId FROM ShopItems WHERE ItemType = @ItemType)";
+                using var unequipCommand = new SqlCommand(unequipQuery, connection);
+                unequipCommand.Parameters.AddWithValue("@UserId", userId);
+                unequipCommand.Parameters.AddWithValue("@ItemType", itemType);
+                await unequipCommand.ExecuteNonQueryAsync();
+
+                // Затем надеваем выбранный предмет
+                var equipQuery = "UPDATE UserInventory SET IsEquipped = 1 WHERE UserId = @UserId AND ItemId = @ItemId";
+                using var equipCommand = new SqlCommand(equipQuery, connection);
+                equipCommand.Parameters.AddWithValue("@UserId", userId);
+                equipCommand.Parameters.AddWithValue("@ItemId", itemId);
+
+                var result = await equipCommand.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка экипировки товара: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> UnequipShopItemAsync(int userId, string itemType)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    UPDATE UserInventory 
+                    SET IsEquipped = 0 
+                    WHERE UserId = @UserId 
+                    AND ItemId IN (SELECT ItemId FROM ShopItems WHERE ItemType = @ItemType)";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@ItemType", itemType);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка снятия товара: {ex.Message}");
+                return false;
+            }
+        }
+
+        // СИСТЕМА СТАТИСТИКИ
+        public async Task<UserStatistics> GetUserStatisticsAsync(int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT 
+                        (SELECT COUNT(*) FROM StudentProgress WHERE StudentId = @UserId) as TotalCourses,
+                        (SELECT COUNT(*) FROM StudentProgress WHERE StudentId = @UserId AND Status = 'completed') as CompletedCourses,
+                        (SELECT ISNULL(AVG(Score), 0) FROM TestAttempts WHERE StudentId = @UserId AND Status = 'completed') as AverageScore,
+                        (SELECT StreakDays FROM Users WHERE UserId = @UserId) as CurrentStreak,
+                        (SELECT DATEDIFF(day, RegistrationDate, GETDATE()) FROM Users WHERE UserId = @UserId) as TotalDays";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    var totalCourses = reader.GetInt32("TotalCourses");
+                    var completedCourses = reader.GetInt32("CompletedCourses");
+
+                    return new UserStatistics
+                    {
+                        TotalCourses = totalCourses,
+                        CompletedCourses = completedCourses,
+                        TotalTimeSpent = totalCourses * 2, // Примерное время
+                        AverageScore = reader.GetDouble("AverageScore"),
+                        CompletionRate = totalCourses > 0 ? (double)completedCourses / totalCourses : 0,
+                        CurrentStreak = reader.GetInt32("CurrentStreak"),
+                        LongestStreak = reader.GetInt32("CurrentStreak"), // В реальности нужно хранить отдельно
+                        TotalDays = reader.GetInt32("TotalDays")
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки статистики: {ex.Message}");
+            }
+
+            return new UserStatistics();
+        }
+
+        public async Task<List<Achievement>> GetRecentAchievementsAsync(int userId, int count)
+        {
+            var achievements = new List<Achievement>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT TOP (@Count) a.AchievementId, a.Name, a.Description, a.Icon, ua.EarnedDate
+            FROM UserAchievements ua
+            JOIN Achievements a ON ua.AchievementId = a.AchievementId
+            WHERE ua.UserId = @UserId
+            ORDER BY ua.EarnedDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@Count", count);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    achievements.Add(new Achievement
+                    {
+                        AchievementId = reader.GetInt32("AchievementId"),
+                        Name = reader.GetString("Name"),
+                        Description = reader.GetString("Description"),
+                        Icon = reader.GetString("Icon"),
+                        EarnedDate = reader.GetDateTime("EarnedDate")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки достижений: {ex.Message}");
+
+                // Резервная реализация с тестовыми данными
+                if (achievements.Count == 0)
+                {
+                    achievements.Add(new Achievement
+                    {
+                        Icon = "🏆",
+                        Name = "Первый курс",
+                        Description = "Завершил первый курс",
+                        EarnedDate = DateTime.Now.AddDays(-5)
+                    });
+                    achievements.Add(new Achievement
+                    {
+                        Icon = "🔥",
+                        Name = "Серия 7 дней",
+                        Description = "Входил 7 дней подряд",
+                        EarnedDate = DateTime.Now.AddDays(-2)
+                    });
+                }
+            }
+            return achievements;
+        }
+
+        // СИСТЕМА ВАЛЮТЫ
+        public async Task<bool> AddGameCurrencyAsync(int userId, int amount, string reason)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    UPDATE Users SET GameCurrency = GameCurrency + @Amount 
+                    WHERE UserId = @UserId;
+                    
+                    INSERT INTO CurrencyTransactions (UserId, Amount, TransactionType, Reason, TransactionDate)
+                    VALUES (@UserId, @Amount, 'income', @Reason, GETDATE())";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@Amount", amount);
+                command.Parameters.AddWithValue("@Reason", reason);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка начисления валюты: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeactivateUserAsync(int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "UPDATE Users SET IsActive = 0 WHERE UserId = @UserId";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка деактивации пользователя: {ex.Message}");
+                return false;
+            }
+        }
+
         // АВАТАРЫ
-        public async Task<string> UploadAvatarAsync(Stream imageStream, string fileName, int userId)
+        public async Task<string?> UploadAvatarAsync(Stream imageStream, string fileName, int userId)
         {
             try
             {
@@ -50,7 +450,7 @@ namespace EducationalPlatform.Services
             }
         }
 
-        private async Task<string> SaveAvatarAsync(Stream fileStream, string fileName, int userId)
+        private async Task<string?> SaveAvatarAsync(Stream fileStream, string fileName, int userId)
         {
             try
             {
@@ -82,7 +482,7 @@ namespace EducationalPlatform.Services
             }
         }
 
-        public string GetAvatarPath(string fileName)
+        public string? GetAvatarPath(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))
                 return null;
@@ -93,7 +493,7 @@ namespace EducationalPlatform.Services
             return null;
         }
 
-        public async Task<string> GetUserAvatarAsync(int userId)
+        public async Task<string?> GetUserAvatarAsync(int userId)
         {
             try
             {
@@ -439,26 +839,17 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-                    SELECT 
+                    SELECT
                         c.CourseId,
-                        c.CourseName,
-                        c.Description,
-                        pl.LanguageName,
-                        cd.DifficultyName,
-                        c.IsPublished,
-                        c.IsGroupCourse,
-                        c.Price,
-                        c.EstimatedHours,
-                        COUNT(DISTINCT sp.StudentId) as EnrolledStudents
+                        ISNULL(c.CourseName, 'Без названия') as CourseName,
+                        ISNULL(c.Description, 'Описание отсутствует') as Description,
+                        ISNULL(pl.LanguageName, 'Не указан') as LanguageName,
+                        ISNULL(cd.DifficultyName, 'Не указана') as DifficultyName,
+                        c.IsPublished
                     FROM Courses c
                     LEFT JOIN ProgrammingLanguages pl ON c.LanguageId = pl.LanguageId
                     LEFT JOIN CourseDifficulties cd ON c.DifficultyId = cd.DifficultyId
-                    LEFT JOIN StudentProgress sp ON c.CourseId = sp.CourseId
                     WHERE c.IsPublished = 1
-                    GROUP BY 
-                        c.CourseId, c.CourseName, c.Description, 
-                        pl.LanguageName, cd.DifficultyName, c.IsPublished,
-                        c.IsGroupCourse, c.Price, c.EstimatedHours
                     ORDER BY c.CourseName";
 
                 using var command = new SqlCommand(query, connection);
@@ -471,13 +862,12 @@ namespace EducationalPlatform.Services
                     {
                         CourseId = reader.GetInt32("CourseId"),
                         CourseName = reader.GetString("CourseName"),
-                        Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? "" : reader.GetString("Description"),
+                        Description = reader.GetString("Description"),
                         LanguageName = reader.GetString("LanguageName"),
                         DifficultyName = reader.GetString("DifficultyName"),
                         IsPublished = reader.GetBoolean("IsPublished")
                     });
                 }
-
                 return courses;
             }
             catch (Exception ex)

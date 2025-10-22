@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- СВЕТЛАЯ ТЕМА -->
+    <ResourceDictionary x:Key="LightTheme">
+        <!-- Основные цвета -->
+        <Color x:Key="PrimaryColor">#457b9d</Color>
+        <Color x:Key="SecondaryColor">#a8dadc</Color>
+        <Color x:Key="AccentColor">#e63946</Color>
+        <Color x:Key="BackgroundColor">#f1faee</Color>
+        <Color x:Key="TextColor">#1d3557</Color>
+        <Color x:Key="CardColor">#ffffff</Color>
+        <Color x:Key="BorderColor">#a8dadc</Color>
+        
+        <!-- Дополнительные цвета -->
+        <Color x:Key="SuccessColor">#4caf50</Color>
+        <Color x:Key="WarningColor">#ff9800</Color>
+        <Color x:Key="ErrorColor">#f44336</Color>
+        <Color x:Key="InfoColor">#2196f3</Color>
+        
+        <!-- Цвета для прогресса -->
+        <Color x:Key="ProgressColor">#457b9d</Color>
+        <Color x:Key="ProgressBackgroundColor">#e0e0e0</Color>
+        
+        <!-- Цвета для кнопок -->
+        <Color x:Key="ButtonColor">#457b9d</Color>
+        <Color x:Key="ButtonTextColor">#ffffff</Color>
+        <Color x:Key="ButtonHoverColor">#3a6b8a</Color>
+        
+        <!-- Цвета для валюты -->
+        <Color x:Key="CurrencyColor">#ff9800</Color>
+        <Color x:Key="StreakColor">#e63946</Color>
+    </ResourceDictionary>
+
+    <!-- ТЕМНАЯ ТЕМА -->
+    <ResourceDictionary x:Key="DarkTheme">
+        <!-- Основные цвета -->
+        <Color x:Key="PrimaryColor">#669bbc</Color>
+        <Color x:Key="SecondaryColor">#003049</Color>
+        <Color x:Key="AccentColor">#c1121f</Color>
+        <Color x:Key="BackgroundColor">#003049</Color>
+        <Color x:Key="TextColor">#fdf0d5</Color>
+        <Color x:Key="CardColor">#780000</Color>
+        <Color x:Key="BorderColor">#669bbc</Color>
+        
+        <!-- Дополнительные цвета -->
+        <Color x:Key="SuccessColor">#4caf50</Color>
+        <Color x:Key="WarningColor">#ff9800</Color>
+        <Color x:Key="ErrorColor">#f44336</Color>
+        <Color x:Key="InfoColor">#2196f3</Color>
+        
+        <!-- Цвета для прогресса -->
+        <Color x:Key="ProgressColor">#669bbc</Color>
+        <Color x:Key="ProgressBackgroundColor">#4a4a4a</Color>
+        
+        <!-- Цвета для кнопок -->
+        <Color x:Key="ButtonColor">#669bbc</Color>
+        <Color x:Key="ButtonTextColor">#fdf0d5</Color>
+        <Color x:Key="ButtonHoverColor">#5a8baa</Color>
+        
+        <!-- Цвета для валюты -->
+        <Color x:Key="CurrencyColor">#ff9800</Color>
+        <Color x:Key="StreakColor">#c1121f</Color>
+    </ResourceDictionary>
+
+    <!-- СТИЛИ КОМПОНЕНТОВ -->
+    <Style x:Key="StandardButtonStyle" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource ButtonColor}" />
+        <Setter Property="TextColor" Value="{DynamicResource ButtonTextColor}" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="15,10" />
+    </Style>
+
+    <Style x:Key="StandardFrameStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{DynamicResource CardColor}" />
+        <Setter Property="Stroke" Value="{DynamicResource BorderColor}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 10" />
+        <Setter Property="Padding" Value="15" />
+    </Style>
+
+    <Style x:Key="ProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="ProgressColor" Value="{DynamicResource ProgressColor}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource ProgressBackgroundColor}" />
+        <Setter Property="HeightRequest" Value="8" />
+    </Style>
+
+    <Style x:Key="CurrencyLabelStyle" TargetType="Label">
+        <Setter Property="TextColor" Value="{DynamicResource CurrencyColor}" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+
+    <Style x:Key="StreakLabelStyle" TargetType="Label">
+        <Setter Property="TextColor" Value="{DynamicResource StreakColor}" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+
+</ResourceDictionary>

@@ -194,27 +194,21 @@ namespace EducationalPlatform.Views
             {
                 var courses = await _dbService.GetAvailableCoursesAsync();
                 Courses.Clear();
-
                 foreach (var course in courses)
                 {
-                    Courses.Add(course);
+                    // Добавляем проверку на null
+                    if (course != null && !string.IsNullOrEmpty(course.CourseName))
+                    {
+                        Courses.Add(course);
+                    }
                 }
-
                 CoursesCollectionView.ItemsSource = Courses;
             }
             catch (Exception ex)
             {
-                await DisplayAlert(
-                    _settingsService?.GetLocalizedString("Error") ?? "Ошибка",
-                    _settingsService?.CurrentLanguage == "ru"
-                        ? $"Не удалось загрузить курсы: {ex.Message}"
-                        : $"Failed to load courses: {ex.Message}",
-                    "OK");
+                await DisplayAlert("Ошибка", $"Не удалось загрузить курсы: {ex.Message}", "OK");
             }
-        }
-
-
-        
+        } 
 
         private void OnLanguageChanged(object? sender, EventArgs e)
         {

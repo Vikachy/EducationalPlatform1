@@ -2,32 +2,285 @@
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:converters="clr-namespace:EducationalPlatform.Converters"
     x:Class="EducationalPlatform.Views.ProgressPage"
     Title="Прогресс">
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:PercentConverter x:Key="PercentConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
     <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="20" VerticalOptions="Center">
-
-            <Label Text="📊 Прогресс обучения"
-                   FontSize="28"
-                   TextColor="{DynamicResource TextColor}"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center" />
-
-            <Label Text="Страница в разработке..."
-                   FontSize="16"
-                   TextColor="#666"
-                   HorizontalOptions="Center" />
-
-            <Button Text="Вернуться на главную"
-                    Clicked="OnBackClicked"
-                    BackgroundColor="{DynamicResource PrimaryColor}"
-                    TextColor="White"
+        <Grid>
+            <!-- Индикатор загрузки -->
+            <VerticalStackLayout 
+                x:Name="LoadingIndicator"
+                IsVisible="False"
+                VerticalOptions="Center"
+                HorizontalOptions="Center"
+                Spacing="20">
+                <ActivityIndicator
+                    IsRunning="True"
+                    Color="{DynamicResource PrimaryColor}"
                     HeightRequest="50"
-                    CornerRadius="25"
-                    HorizontalOptions="Center" />
+                    WidthRequest="50"/>
+                <Label 
+                    Text="Загрузка данных..."
+                    TextColor="{DynamicResource TextColor}"
+                    HorizontalOptions="Center"/>
+            </VerticalStackLayout>
 
-        </VerticalStackLayout>
+            <!-- Основной контент -->
+            <VerticalStackLayout 
+                x:Name="MainContent"
+                Spacing="20" 
+                Padding="20">
+
+                <!-- Заголовок -->
+                <Label x:Name="TitleLabel" 
+                       Text="📊 Прогресс обучения"
+                       FontSize="28"
+                       TextColor="{DynamicResource TextColor}"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+
+                <!-- Общая статистика -->
+                <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
+                    <VerticalStackLayout Spacing="15">
+                        <Label x:Name="OverallProgressLabel"
+                               Text="Общий прогресс"
+                               FontSize="18"
+                               TextColor="{DynamicResource TextColor}"
+                               FontAttributes="Bold" />
+
+                        <Grid ColumnDefinitions="*, *" RowDefinitions="*, *" ColumnSpacing="15" RowSpacing="15">
+
+                            <!-- Завершенные курсы -->
+                            <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="8">
+                                <Label x:Name="CompletedCoursesText"
+                                       Text="Завершенные курсы"
+                                       TextColor="{DynamicResource TextColor}"
+                                       FontSize="14"/>
+                                <ProgressBar 
+                                    Progress="{Binding UserStatistics.CompletedCourses, Converter={StaticResource PercentConverter}}"
+                                    ProgressColor="{DynamicResource PrimaryColor}"
+                                    BackgroundColor="#E0E0E0"
+                                    HeightRequest="8"/>
+                                <Label 
+                                    Text="{Binding UserStatistics.CompletedCourses, StringFormat='{0} завершено'}"
+                                    TextColor="{DynamicResource TextColor}"
+                                    FontSize="12"
+                                    HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                            <!-- Средний балл -->
+                            <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
+                                <Label x:Name="AverageScoreText"
+                                       Text="Средний балл"
+                                       TextColor="{DynamicResource TextColor}"
+                                       FontSize="14"/>
+                                <ProgressBar 
+                                    Progress="{Binding UserStatistics.AverageScore, Converter={StaticResource PercentConverter}}"
+                                    ProgressColor="{DynamicResource AccentColor}"
+                                    BackgroundColor="#E0E0E0"
+                                    HeightRequest="8"/>
+                                <Label 
+                                    Text="{Binding UserStatistics.AverageScore, StringFormat='{0:F1}%'}"
+                                    TextColor="{DynamicResource TextColor}"
+                                    FontSize="12"
+                                    HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                            <!-- Процент завершения -->
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="8">
+                                <Label x:Name="CompletionRateText"
+                                       Text="Процент завершения"
+                                       TextColor="{DynamicResource TextColor}"
+                                       FontSize="14"/>
+                                <ProgressBar 
+                                    Progress="{Binding UserStatistics.CompletionRate}"
+                                    ProgressColor="{DynamicResource SecondaryColor}"
+                                    BackgroundColor="#E0E0E0"
+                                    HeightRequest="8"/>
+                                <Label 
+                                    Text="{Binding UserStatistics.CompletionRate, StringFormat='{0:P1}'}"
+                                    TextColor="{DynamicResource TextColor}"
+                                    FontSize="12"
+                                    HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                            <!-- Дополнительная статистика -->
+                            <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="10">
+                                <Grid ColumnDefinitions="*, *" ColumnSpacing="10" RowSpacing="10">
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label x:Name="CurrentStreakText"
+                                               Text="Текущая серия"
+                                               TextColor="{DynamicResource TextColor}"
+                                               FontSize="11"
+                                               HorizontalOptions="Center"/>
+                                        <Label 
+                                            Text="{Binding UserStatistics.CurrentStreak, StringFormat='{0} дн.'}"
+                                            TextColor="{DynamicResource PrimaryColor}"
+                                            FontSize="16"
+                                            FontAttributes="Bold"
+                                            HorizontalOptions="Center"/>
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                        <Label x:Name="TotalLearningText"
+                                               Text="Всего дней"
+                                               TextColor="{DynamicResource TextColor}"
+                                               FontSize="11"
+                                               HorizontalOptions="Center"/>
+                                        <Label 
+                                            Text="{Binding UserStatistics.TotalDays, StringFormat='{0} дн.'}"
+                                            TextColor="{DynamicResource SecondaryColor}"
+                                            FontSize="16"
+                                            FontAttributes="Bold"
+                                            HorizontalOptions="Center"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </VerticalStackLayout>
+
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Последние достижения -->
+                <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
+                    <VerticalStackLayout Spacing="15">
+                        <Label x:Name="RecentAchievementsLabel"
+                               Text="Последние достижения"
+                               FontSize="18"
+                               TextColor="{DynamicResource TextColor}"
+                               FontAttributes="Bold" />
+
+                        <CollectionView x:Name="AchievementsCollectionView"
+                                      ItemsSource="{Binding RecentAchievements}"
+                                      SelectionMode="Single"
+                                      SelectionChanged="OnAchievementSelected"
+                                      ItemsLayout="VerticalList"
+                                      HeightRequest="200">
+                            <CollectionView.EmptyView>
+                                <Label x:Name="NoAchievementsLabel"
+                                       Text="Достижений пока нет"
+                                       TextColor="#666"
+                                       FontSize="14"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="10" ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto">
+                                        <Label Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
+                                               Text="{Binding Icon}"
+                                               FontSize="24"
+                                               VerticalOptions="Center"
+                                               Margin="0,0,10,0"/>
+                                        <Label Grid.Row="0" Grid.Column="1"
+                                               Text="{Binding Name}"
+                                               TextColor="{DynamicResource TextColor}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"/>
+                                        <Label Grid.Row="1" Grid.Column="1"
+                                               Text="{Binding Description}"
+                                               TextColor="{DynamicResource TextColor}"
+                                               FontSize="12"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Прогресс по курсам -->
+                <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
+                    <VerticalStackLayout Spacing="15">
+                        <Label x:Name="CourseProgressLabel"
+                               Text="Прогресс по курсам"
+                               FontSize="18"
+                               TextColor="{DynamicResource TextColor}"
+                               FontAttributes="Bold" />
+
+                        <CollectionView x:Name="CourseProgressCollectionView"
+                                      ItemsSource="{Binding ProgressItems}"
+                                      SelectionMode="Single"
+                                      SelectionChanged="OnCourseSelected"
+                                      ItemsLayout="VerticalList">
+                            <CollectionView.EmptyView>
+                                <Label x:Name="NoCoursesLabel"
+                                       Text="Курсы не найдены"
+                                       TextColor="#666"
+                                       FontSize="14"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="15" 
+                                          Stroke="{Binding StatusColor}"
+                                          StrokeThickness="2"
+                                          StrokeShape="RoundRectangle 10"
+                                          Margin="0,5">
+                                        <VerticalStackLayout Spacing="8">
+                                            <!-- Заголовок и статус -->
+                                            <Grid>
+                                                <Label Text="{Binding CourseName}"
+                                                       TextColor="{DynamicResource TextColor}"
+                                                       FontSize="16"
+                                                       FontAttributes="Bold"
+                                                       LineBreakMode="TailTruncation"/>
+                                                <Label Text="{Binding StatusText}"
+                                                       TextColor="{Binding StatusColor}"
+                                                       FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       HorizontalOptions="End"/>
+                                            </Grid>
+
+                                            <!-- Прогресс-бар -->
+                                            <Grid ColumnDefinitions="*, Auto">
+                                                <ProgressBar 
+                                                    Progress="{Binding Score, Converter={StaticResource PercentConverter}}"
+                                                    ProgressColor="{Binding StatusColor}"
+                                                    BackgroundColor="#E0E0E0"
+                                                    HeightRequest="8"
+                                                    VerticalOptions="Center"/>
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding Score, StringFormat='{0}%'}"
+                                                       TextColor="{DynamicResource TextColor}"
+                                                       FontSize="12"
+                                                       Margin="10,0,0,0"/>
+                                            </Grid>
+
+                                            <!-- Дополнительная информация -->
+                                            <Grid ColumnDefinitions="*, *">
+                                                <Label Text="{Binding Attempts, StringFormat='Попытки: {0}'}"
+                                                       TextColor="#666"
+                                                       FontSize="11"/>
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding FormattedCompletionDate}"
+                                                       TextColor="#666"
+                                                       FontSize="11"
+                                                       HorizontalOptions="End"/>
+                                            </Grid>
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Кнопка возврата -->
+                <Button Text="Вернуться на главную"
+                        Clicked="OnBackClicked"
+                        Style="{DynamicResource StandardButtonStyle}"
+                        HorizontalOptions="Center" />
+
+            </VerticalStackLayout>
+        </Grid>
     </ScrollView>
 
 </ContentPage>
