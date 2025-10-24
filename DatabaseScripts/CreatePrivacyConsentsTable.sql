@@ -26,3 +26,4 @@ BEGIN
     CREATE INDEX IX_PrivacyConsents_UserId ON PrivacyConsents(UserId);
     PRINT 'Индекс IX_PrivacyConsents_UserId создан';
 END
+
