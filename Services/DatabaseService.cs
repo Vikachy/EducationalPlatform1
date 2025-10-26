@@ -24,10 +24,22 @@ namespace EducationalPlatform.Services
         {
             try
             {
+                // Сначала проверяем локальные настройки
+                bool hasLocalConsent = Preferences.Get($"PrivacyConsent_{userId}", false);
+                if (hasLocalConsent)
+                {
+                    return true;
+                }
+
+                // Затем проверяем базу данных
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                var query = "SELECT COUNT(*) FROM PrivacyConsents WHERE UserId = @UserId";
+                var query = @"
+            SELECT COUNT(*) 
+            FROM PrivacyConsent 
+            WHERE UserId = @UserId AND IsActive = 1";
+
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@UserId", userId);
 
@@ -36,11 +48,28 @@ namespace EducationalPlatform.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка проверки согласия: {ex.Message}");
-                return false;
+                Console.WriteLine($"Error checking privacy consent: {ex.Message}");
+
+                // Если ошибка БД, проверяем только настройки
+                return Preferences.Get($"PrivacyConsent_{userId}", false);
             }
         }
 
+        private string? GetUserIPAddress()
+        {
+            try
+            {
+
+                var ipAddress = DeviceInfo.Platform == DevicePlatform.Android ? 
+                    "mobile_device" : "desktop_device";
+                return ipAddress;
+
+            }
+            catch
+            {
+                return null;
+            }
+        }
         public async Task<bool> SavePrivacyConsentAsync(int userId, string consentText, string version)
         {
             try
@@ -48,23 +77,122 @@ namespace EducationalPlatform.Services
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
+                // Деактивируем предыдущие согласия пользователя
+                var deactivateQuery = @"
+            UPDATE PrivacyConsent 
+            SET IsActive = 0 
+            WHERE UserId = @UserId";
+
+                using var deactivateCommand = new SqlCommand(deactivateQuery, connection);
+                deactivateCommand.Parameters.AddWithValue("@UserId", userId);
+                await deactivateCommand.ExecuteNonQueryAsync();
+
+                // Создаем новое согласие с IPAddress
+                var insertQuery = @"
+            INSERT INTO PrivacyConsent (UserId, ConsentText, Version, ConsentDate, IPAddress, IsActive)
+            VALUES (@UserId, @ConsentText, @Version, GETDATE(), @IPAddress, 1)";
+
+                using var insertCommand = new SqlCommand(insertQuery, connection);
+                insertCommand.Parameters.AddWithValue("@UserId", userId);
+                insertCommand.Parameters.AddWithValue("@ConsentText", consentText ?? string.Empty);
+                insertCommand.Parameters.AddWithValue("@Version", version ?? "1.0");
+                insertCommand.Parameters.AddWithValue("@IPAddress", GetUserIPAddress() ?? (object)DBNull.Value);
+
+                var result = await insertCommand.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving privacy consent: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> AddGameCurrencyAsync(int userId, int amount, string reason)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
                 var query = @"
-                    INSERT INTO PrivacyConsents (UserId, ConsentText, Version, IPAddress)
-                    VALUES (@UserId, @ConsentText, @Version, @IPAddress)";
+            UPDATE Users SET GameCurrency = ISNULL(GameCurrency, 0) + @Amount 
+            WHERE UserId = @UserId;
+            
+            INSERT INTO CurrencyTransactions (UserId, Amount, TransactionType, Reason, TransactionDate)
+            VALUES (@UserId, @Amount, 'income', @Reason, GETDATE())";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@UserId", userId);
-                command.Parameters.AddWithValue("@ConsentText", consentText);
-                command.Parameters.AddWithValue("@Version", version);
-                command.Parameters.AddWithValue("@IPAddress", "system");
+                command.Parameters.AddWithValue("@Amount", amount);
+                command.Parameters.AddWithValue("@Reason", reason ?? "bonus");
+
+                var result = await command.ExecuteNonQueryAsync();
+
+                if (result > 0)
+                {
+                    Console.WriteLine($"✅ Начислено {amount} монет пользователю {userId} по причине: {reason}");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Не удалось начислить монеты пользователю {userId}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка начисления валюты: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeactivateUserAsync(int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "UPDATE Users SET IsActive = 0 WHERE UserId = @UserId";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
 
                 var result = await command.ExecuteNonQueryAsync();
                 return result > 0;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка сохранения согласия: {ex.Message}");
+                Console.WriteLine($"Ошибка деактивации пользователя: {ex.Message}");
                 return false;
+            }
+        }
+
+        // ОСТАЛЬНЫЕ МЕТОДЫ (без изменений)
+        public async Task<string> GetRandomLoginGreetingAsync(string languageCode = "ru", bool forTeens = false)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT TOP 1 MessageText 
+                    FROM LoginGreetings 
+                    WHERE LanguageCode = @LanguageCode AND ForTeens = @ForTeens AND IsActive = 1
+                    ORDER BY NEWID()";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LanguageCode", languageCode);
+                command.Parameters.AddWithValue("@ForTeens", forTeens);
+
+                var result = await command.ExecuteScalarAsync();
+                return result?.ToString() ?? "Добро пожаловать!";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка получения приветствия: {ex.Message}");
+                return "Добро пожаловать!";
             }
         }
 
@@ -319,11 +447,11 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-            SELECT TOP (@Count) a.AchievementId, a.Name, a.Description, a.Icon, ua.EarnedDate
-            FROM UserAchievements ua
-            JOIN Achievements a ON ua.AchievementId = a.AchievementId
-            WHERE ua.UserId = @UserId
-            ORDER BY ua.EarnedDate DESC";
+                    SELECT TOP (@Count) a.AchievementId, a.Name, a.Description, a.IconUrl, ua.EarnedDate
+                    FROM UserAchievements ua
+                    JOIN Achievements a ON ua.AchievementId = a.AchievementId
+                    WHERE ua.UserId = @UserId
+                    ORDER BY ua.EarnedDate DESC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@UserId", userId);
@@ -337,7 +465,7 @@ namespace EducationalPlatform.Services
                         AchievementId = reader.GetInt32("AchievementId"),
                         Name = reader.GetString("Name"),
                         Description = reader.GetString("Description"),
-                        Icon = reader.GetString("Icon"),
+                        Icon = reader.IsDBNull("IconUrl") ? "🏆" : reader.GetString("IconUrl"),
                         EarnedDate = reader.GetDateTime("EarnedDate")
                     });
                 }
@@ -366,57 +494,6 @@ namespace EducationalPlatform.Services
                 }
             }
             return achievements;
-        }
-
-        // СИСТЕМА ВАЛЮТЫ
-        public async Task<bool> AddGameCurrencyAsync(int userId, int amount, string reason)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-                    UPDATE Users SET GameCurrency = GameCurrency + @Amount 
-                    WHERE UserId = @UserId;
-                    
-                    INSERT INTO CurrencyTransactions (UserId, Amount, TransactionType, Reason, TransactionDate)
-                    VALUES (@UserId, @Amount, 'income', @Reason, GETDATE())";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@UserId", userId);
-                command.Parameters.AddWithValue("@Amount", amount);
-                command.Parameters.AddWithValue("@Reason", reason);
-
-                var result = await command.ExecuteNonQueryAsync();
-                return result > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка начисления валюты: {ex.Message}");
-                return false;
-            }
-        }
-
-        public async Task<bool> DeactivateUserAsync(int userId)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = "UPDATE Users SET IsActive = 0 WHERE UserId = @UserId";
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@UserId", userId);
-
-                var result = await command.ExecuteNonQueryAsync();
-                return result > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка деактивации пользователя: {ex.Message}");
-                return false;
-            }
         }
 
         // АВАТАРЫ
@@ -573,7 +650,10 @@ namespace EducationalPlatform.Services
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                var query = "SELECT RoleId, RoleName FROM Roles WHERE RoleName != 'Admin' ORDER BY RoleId";
+                var query = @"SELECT RoleId, RoleName, Description, CanCreateCourses, CanManageUsers, 
+                            CanManageSystem, CanViewAllData, CanTakeCourses, CanJoinGroups, 
+                            CanPurchaseItems, CanManageGroups, CanGradeTests, CanGenerateReports, 
+                            CanManageContent, CanPublishNews, CanModerateReviews FROM Roles WHERE RoleName != 'Admin' ORDER BY RoleId";
                 using var command = new SqlCommand(query, connection);
                 using var reader = await command.ExecuteReaderAsync();
 
@@ -582,7 +662,21 @@ namespace EducationalPlatform.Services
                     roles.Add(new Role
                     {
                         RoleId = reader.GetInt32("RoleId"),
-                        RoleName = reader.GetString("RoleName")
+                        RoleName = reader.GetString("RoleName"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        CanCreateCourses = reader.GetBoolean("CanCreateCourses"),
+                        CanManageUsers = reader.GetBoolean("CanManageUsers"),
+                        CanManageSystem = reader.GetBoolean("CanManageSystem"),
+                        CanViewAllData = reader.GetBoolean("CanViewAllData"),
+                        CanTakeCourses = reader.GetBoolean("CanTakeCourses"),
+                        CanJoinGroups = reader.GetBoolean("CanJoinGroups"),
+                        CanPurchaseItems = reader.GetBoolean("CanPurchaseItems"),
+                        CanManageGroups = reader.GetBoolean("CanManageGroups"),
+                        CanGradeTests = reader.GetBoolean("CanGradeTests"),
+                        CanGenerateReports = reader.GetBoolean("CanGenerateReports"),
+                        CanManageContent = reader.GetBoolean("CanManageContent"),
+                        CanPublishNews = reader.GetBoolean("CanPublishNews"),
+                        CanModerateReviews = reader.GetBoolean("CanModerateReviews")
                     });
                 }
             }
@@ -633,11 +727,13 @@ namespace EducationalPlatform.Services
                 await connection.OpenAsync();
 
                 var query = @"
-                    SELECT UserId, Username, Email, FirstName, LastName, RoleId,
-                           LanguagePref, GameCurrency, StreakDays, RegistrationDate, 
-                           IsActive, AvatarUrl
-                    FROM Users
-                    WHERE Username = @Username AND PasswordHash = @PasswordHash AND IsActive = 1";
+                    SELECT u.UserId, u.Username, u.Email, u.FirstName, u.LastName, u.RoleId,
+                           u.LanguagePref, u.InterfaceStyle, u.GameCurrency, u.StreakDays, 
+                           u.RegistrationDate, u.IsActive, u.AvatarUrl, u.LastLoginDate,
+                           r.RoleName
+                    FROM Users u
+                    LEFT JOIN Roles r ON u.RoleId = r.RoleId
+                    WHERE u.Username = @Username AND u.PasswordHash = @PasswordHash AND u.IsActive = 1";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Username", username ?? "");
@@ -647,20 +743,27 @@ namespace EducationalPlatform.Services
 
                 if (await reader.ReadAsync())
                 {
+                    var userId = reader.GetInt32("UserId");
+                    var hasConsent = await CheckUserPrivacyConsentAsync(userId);
+
                     return new User
                     {
-                        UserId = reader.GetInt32("UserId"),
+                        UserId = userId,
                         Username = reader.IsDBNull(reader.GetOrdinal("Username")) ? null : reader.GetString("Username"),
                         Email = reader.IsDBNull(reader.GetOrdinal("Email")) ? null : reader.GetString("Email"),
                         FirstName = reader.IsDBNull(reader.GetOrdinal("FirstName")) ? null : reader.GetString("FirstName"),
                         LastName = reader.IsDBNull(reader.GetOrdinal("LastName")) ? null : reader.GetString("LastName"),
                         AvatarUrl = reader.IsDBNull(reader.GetOrdinal("AvatarUrl")) ? null : reader.GetString("AvatarUrl"),
                         RoleId = reader.GetInt32("RoleId"),
+                        RoleName = reader.IsDBNull(reader.GetOrdinal("RoleName")) ? null : reader.GetString("RoleName"),
                         LanguagePref = reader.IsDBNull(reader.GetOrdinal("LanguagePref")) ? "ru" : reader.GetString("LanguagePref"),
+                        InterfaceStyle = reader.IsDBNull(reader.GetOrdinal("InterfaceStyle")) ? "standard" : reader.GetString("InterfaceStyle"),
                         GameCurrency = reader.GetInt32("GameCurrency"),
                         StreakDays = reader.GetInt32("StreakDays"),
                         RegistrationDate = reader.GetDateTime("RegistrationDate"),
-                        IsActive = reader.GetBoolean("IsActive")
+                        LastLoginDate = reader.IsDBNull(reader.GetOrdinal("LastLoginDate")) ? null : reader.GetDateTime("LastLoginDate"),
+                        IsActive = reader.GetBoolean("IsActive"),
+                        HasPrivacyConsent = hasConsent
                     };
                 }
                 return null;
@@ -698,7 +801,7 @@ namespace EducationalPlatform.Services
             }
         }
 
-        public async Task<bool> UpdateUserAsync(int userId, string firstName, string lastName, string username, string email, string avatarUrl = null)
+        public async Task<bool> UpdateUserAsync(int userId, string firstName, string lastName, string username, string email, string? avatarUrl = null)
         {
             try
             {
@@ -1308,6 +1411,428 @@ namespace EducationalPlatform.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка сохранения настроек: {ex.Message}");
+                return false;
+            }
+        }
+
+        // СИСТЕМА ПОДДЕРЖКИ
+        public async Task<bool> CreateSupportTicketAsync(int userId, string subject, string description, string ticketType = "question")
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    INSERT INTO SupportTickets (UserId, Subject, Description, TicketType, Status, Priority, CreatedDate)
+                    VALUES (@UserId, @Subject, @Description, @TicketType, 'open', 3, GETDATE())";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@Subject", subject);
+                command.Parameters.AddWithValue("@Description", description);
+                command.Parameters.AddWithValue("@TicketType", ticketType);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка создания обращения: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<List<SupportTicket>> GetUserSupportTicketsAsync(int userId)
+        {
+            var tickets = new List<SupportTicket>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT TicketId, Subject, Description, TicketType, Status, Priority, 
+                           CreatedDate, ResolvedDate, AdminComment
+                    FROM SupportTickets 
+                    WHERE UserId = @UserId 
+                    ORDER BY CreatedDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    tickets.Add(new SupportTicket
+                    {
+                        TicketId = reader.GetInt32("TicketId"),
+                        UserId = userId,
+                        Subject = reader.GetString("Subject"),
+                        Description = reader.GetString("Description"),
+                        TicketType = reader.GetString("TicketType"),
+                        Status = reader.GetString("Status"),
+                        Priority = reader.GetInt32("Priority"),
+                        CreatedDate = reader.GetDateTime("CreatedDate"),
+                        ResolvedDate = reader.IsDBNull("ResolvedDate") ? null : reader.GetDateTime("ResolvedDate"),
+                        AdminComment = reader.IsDBNull("AdminComment") ? null : reader.GetString("AdminComment")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки обращений: {ex.Message}");
+            }
+            return tickets;
+        }
+
+        // СИСТЕМА НОВОСТЕЙ
+        public async Task<List<News>> GetNewsAsync(string languageCode = "ru", bool forTeens = false)
+        {
+            var news = new List<News>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT n.NewsId, n.Title, n.Content, n.AuthorId, n.PublishedDate, n.IsActive,
+                           u.FirstName + ' ' + u.LastName as AuthorName
+                    FROM News n
+                    LEFT JOIN Users u ON n.AuthorId = u.UserId
+                    WHERE n.IsActive = 1 AND n.LanguageCode = @LanguageCode AND n.ForTeens = @ForTeens
+                    ORDER BY n.PublishedDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LanguageCode", languageCode);
+                command.Parameters.AddWithValue("@ForTeens", forTeens);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    news.Add(new News
+                    {
+                        NewsId = reader.GetInt32("NewsId"),
+                        Title = reader.GetString("Title"),
+                        Content = reader.GetString("Content"),
+                        AuthorId = reader.GetInt32("AuthorId"),
+                        PublishedDate = reader.GetDateTime("PublishedDate"),
+                        IsActive = reader.GetBoolean("IsActive"),
+                        LanguageCode = languageCode,
+                        ForTeens = forTeens
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки новостей: {ex.Message}");
+            }
+            return news;
+        }
+
+        // СИСТЕМА ОТЗЫВОВ
+        public async Task<bool> CreateCourseReviewAsync(int courseId, int studentId, int rating, string comment)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    INSERT INTO CourseReviews (CourseId, StudentId, Rating, Comment, ReviewDate, IsApproved)
+                    VALUES (@CourseId, @StudentId, @Rating, @Comment, GETDATE(), 1)";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@CourseId", courseId);
+                command.Parameters.AddWithValue("@StudentId", studentId);
+                command.Parameters.AddWithValue("@Rating", rating);
+                command.Parameters.AddWithValue("@Comment", comment ?? "");
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка создания отзыва: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<List<CourseReview>> GetCourseReviewsAsync(int courseId)
+        {
+            var reviews = new List<CourseReview>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT cr.ReviewId, cr.CourseId, cr.StudentId, cr.Rating, cr.Comment, cr.ReviewDate,
+                           u.FirstName + ' ' + u.LastName as StudentName
+                    FROM CourseReviews cr
+                    LEFT JOIN Users u ON cr.StudentId = u.UserId
+                    WHERE cr.CourseId = @CourseId AND cr.IsApproved = 1
+                    ORDER BY cr.ReviewDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@CourseId", courseId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    reviews.Add(new CourseReview
+                    {
+                        ReviewId = reader.GetInt32("ReviewId"),
+                        CourseId = courseId,
+                        StudentId = reader.GetInt32("StudentId"),
+                        Rating = reader.GetInt32("Rating"),
+                        Comment = reader.IsDBNull("Comment") ? null : reader.GetString("Comment"),
+                        ReviewDate = reader.GetDateTime("ReviewDate"),
+                        IsApproved = true
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки отзывов: {ex.Message}");
+            }
+            return reviews;
+        }
+
+        // Добавить в класс DatabaseService
+        public async Task<List<Contest>> GetActiveContestsAsync()
+        {
+            var contests = new List<Contest>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT c.ContestId, c.ContestName, c.Description, c.StartDate, c.EndDate, 
+                           c.PrizeCurrency, pl.LanguageName
+                    FROM Contests c
+                    LEFT JOIN ProgrammingLanguages pl ON c.LanguageId = pl.LanguageId
+                    WHERE c.IsActive = 1 AND c.EndDate >= GETDATE()
+                    ORDER BY c.StartDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    contests.Add(new Contest
+                    {
+                        ContestId = reader.GetInt32("ContestId"),
+                        ContestName = reader.GetString("ContestName"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        StartDate = reader.GetDateTime("StartDate"),
+                        EndDate = reader.GetDateTime("EndDate"),
+                        PrizeCurrency = reader.GetInt32("PrizeCurrency"),
+                        Language = new ProgrammingLanguage
+                        {
+                            LanguageName = reader.IsDBNull("LanguageName") ? "Не указан" : reader.GetString("LanguageName")
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки активных конкурсов: {ex.Message}");
+            }
+            return contests;
+        }
+
+        public async Task<List<Contest>> GetCompletedContestsAsync()
+        {
+            var contests = new List<Contest>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT c.ContestId, c.ContestName, c.Description, c.StartDate, c.EndDate, 
+                           c.PrizeCurrency, pl.LanguageName
+                    FROM Contests c
+                    LEFT JOIN ProgrammingLanguages pl ON c.LanguageId = pl.LanguageId
+                    WHERE c.IsActive = 1 AND c.EndDate < GETDATE()
+                    ORDER BY c.EndDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    contests.Add(new Contest
+                    {
+                        ContestId = reader.GetInt32("ContestId"),
+                        ContestName = reader.GetString("ContestName"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        StartDate = reader.GetDateTime("StartDate"),
+                        EndDate = reader.GetDateTime("EndDate"),
+                        PrizeCurrency = reader.GetInt32("PrizeCurrency"),
+                        Language = new ProgrammingLanguage
+                        {
+                            LanguageName = reader.IsDBNull("LanguageName") ? "Не указан" : reader.GetString("LanguageName")
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки завершенных конкурсов: {ex.Message}");
+            }
+            return contests;
+        }
+
+        public async Task<List<ContestSubmission>> GetUserContestSubmissionsAsync(int userId)
+        {
+            var submissions = new List<ContestSubmission>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT cs.SubmissionId, cs.ContestId, cs.ProjectName, cs.Description, 
+                           cs.SubmissionDate, cs.TeacherScore, cs.TeacherComment,
+                           c.ContestName
+                    FROM ContestSubmissions cs
+                    JOIN Contests c ON cs.ContestId = c.ContestId
+                    WHERE cs.StudentId = @UserId
+                    ORDER BY cs.SubmissionDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    submissions.Add(new ContestSubmission
+                    {
+                        SubmissionId = reader.GetInt32("SubmissionId"),
+                        ContestId = reader.GetInt32("ContestId"),
+                        ProjectName = reader.GetString("ProjectName"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        SubmissionDate = reader.GetDateTime("SubmissionDate"),
+                        TeacherScore = reader.IsDBNull("TeacherScore") ? null : reader.GetInt32("TeacherScore"),
+                        TeacherComment = reader.IsDBNull("TeacherComment") ? null : reader.GetString("TeacherComment"),
+                        Contest = new Contest { ContestName = reader.GetString("ContestName") }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки заявок: {ex.Message}");
+            }
+            return submissions;
+        }
+
+        public async Task<List<StudyGroup>> GetUserStudyGroupsAsync(int userId)
+        {
+            var groups = new List<StudyGroup>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT sg.GroupId, sg.GroupName, sg.StartDate, sg.EndDate, sg.IsActive,
+                           c.CourseName, u.FirstName + ' ' + u.LastName as TeacherName
+                    FROM StudyGroups sg
+                    JOIN Courses c ON sg.CourseId = c.CourseId
+                    JOIN Users u ON sg.TeacherId = u.UserId
+                    JOIN GroupEnrollments ge ON sg.GroupId = ge.GroupId
+                    WHERE ge.StudentId = @UserId AND ge.Status = 'active'
+                    ORDER BY sg.StartDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    groups.Add(new StudyGroup
+                    {
+                        GroupId = reader.GetInt32("GroupId"),
+                        GroupName = reader.GetString("GroupName"),
+                        StartDate = reader.GetDateTime("StartDate"),
+                        EndDate = reader.GetDateTime("EndDate"),
+                        IsActive = reader.GetBoolean("IsActive")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки групп пользователя: {ex.Message}");
+            }
+            return groups;
+        }
+
+        public async Task<List<GroupChatMessage>> GetGroupChatMessagesAsync(int groupId, int count = 50)
+        {
+            var messages = new List<GroupChatMessage>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT TOP (@Count) m.MessageId, m.GroupId, m.SenderId, m.MessageText, m.SentDate,
+                           u.FirstName + ' ' + u.LastName as SenderName
+                    FROM GroupChats m
+                    JOIN Users u ON m.SenderId = u.UserId
+                    WHERE m.GroupId = @GroupId
+                    ORDER BY m.SentDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@GroupId", groupId);
+                command.Parameters.AddWithValue("@Count", count);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    messages.Add(new GroupChatMessage
+                    {
+                        MessageId = reader.GetInt32("MessageId"),
+                        GroupId = reader.GetInt32("GroupId"),
+                        SenderId = reader.GetInt32("SenderId"),
+                        MessageText = reader.GetString("MessageText"),
+                        SentDate = reader.GetDateTime("SentDate"),
+                        SenderName = reader.GetString("SenderName")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки сообщений чата: {ex.Message}");
+            }
+            return messages;
+        }
+
+        public async Task<bool> SendGroupChatMessageAsync(int groupId, int senderId, string messageText)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    INSERT INTO GroupChats (GroupId, SenderId, MessageText, SentDate)
+                    VALUES (@GroupId, @SenderId, @MessageText, GETDATE())";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@GroupId", groupId);
+                command.Parameters.AddWithValue("@SenderId", senderId);
+                command.Parameters.AddWithValue("@MessageText", messageText);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка отправки сообщения: {ex.Message}");
                 return false;
             }
         }

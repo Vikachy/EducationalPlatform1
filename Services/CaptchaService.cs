@@ -9,9 +9,29 @@ namespace EducationalPlatform.Services
     public class CaptchaService
     {
         private int _failedAttempts = 0;
-        private const int MAX_ATTEMPTS = 3;
+        private const int MAX_ATTEMPTS_BEFORE_CAPTCHA = 3;
+        private readonly Random _random = new Random();
+        private readonly string _characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-        public bool IsCaptchaRequired => _failedAttempts >= MAX_ATTEMPTS;
+        public bool IsCaptchaRequired => _failedAttempts >= MAX_ATTEMPTS_BEFORE_CAPTCHA;
+
+        public string GenerateCaptchaText()
+        {
+            var captcha = new StringBuilder();
+            for (int i = 0; i < 6; i++)
+            {
+                captcha.Append(_characters[_random.Next(_characters.Length)]);
+            }
+            return captcha.ToString();
+        }
+
+        public bool ValidateCaptcha(string userInput, string correctCaptcha)
+        {
+            if (string.IsNullOrEmpty(userInput) || string.IsNullOrEmpty(correctCaptcha))
+                return false;
+
+            return string.Equals(userInput.Trim().ToUpper(), correctCaptcha.Trim().ToUpper(), StringComparison.OrdinalIgnoreCase);
+        }
 
         public void RecordFailedAttempt()
         {
@@ -23,23 +43,9 @@ namespace EducationalPlatform.Services
             _failedAttempts = 0;
         }
 
-        public string GenerateCaptchaText()
+        public void ShowCaptcha()
         {
-            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-            var random = new Random();
-            var captcha = new StringBuilder(6);
-
-            for (int i = 0; i < 6; i++)
-            {
-                captcha.Append(chars[random.Next(chars.Length)]);
-            }
-
-            return captcha.ToString();
-        }
-
-        public bool ValidateCaptcha(string userInput, string correctCaptcha)
-        {
-            return string.Equals(userInput, correctCaptcha, StringComparison.OrdinalIgnoreCase);
+            _failedAttempts = MAX_ATTEMPTS_BEFORE_CAPTCHA;
         }
     }
 }

@@ -126,12 +126,12 @@ namespace EducationalPlatform.Views
                 {
                     TotalCourses = stats.TotalCourses;
                     CompletedCourses = stats.CompletedCourses;
-                    TotalTimeSpent = stats.TotalTimeSpent;
-                    AverageScore = stats.AverageScore;
-                    CompletionRate = stats.CompletionRate;
-                    CurrentStreak = stats.CurrentStreak;
-                    LongestStreak = stats.LongestStreak;
-                    TotalDays = stats.TotalDays;
+                    TotalTimeSpent = stats.TotalTimeSpent ?? 0;
+                    AverageScore = stats.AverageScore ?? 0.0;
+                    CompletionRate = stats.CompletionRate ?? 0.0;
+                    CurrentStreak = stats.CurrentStreak ?? 0; // Исправлено
+                    LongestStreak = stats.LongestStreak ?? 0;
+                    TotalDays = stats.TotalDays ?? 0; // Исправлено
                 }
 
                 // Загружаем последние достижения

@@ -26,7 +26,8 @@
             </Border>
 
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                <Button Grid.Column="0"
+                <Button x:Name="AcceptButton"
+                        Grid.Column="0"
                         Text="✅ Принимаю"
                         BackgroundColor="#4CAF50"
                         TextColor="White"
@@ -34,7 +35,8 @@
                         CornerRadius="25"
                         Clicked="OnAcceptClicked" />
 
-                <Button Grid.Column="1"
+                <Button x:Name="DeclineButton"
+                        Grid.Column="1"
                         Text="❌ Не принимаю"
                         BackgroundColor="#F44336"
                         TextColor="White"

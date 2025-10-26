@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.ContestPage"
+    Title="Конкурсы"
+    BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+            <!-- Заголовок -->
+            <Label Text="Конкурсы программирования"
+                   FontSize="28"
+                   HorizontalOptions="Center"
+                   TextColor="#2E86AB"
+                   FontAttributes="Bold" />
+
+            <!-- Активные конкурсы -->
+            <Label Text="Активные конкурсы"
+                   FontSize="20"
+                   TextColor="#333"
+                   FontAttributes="Bold" />
+
+            <CollectionView x:Name="ActiveContestsCollectionView"
+                            ItemsSource="{Binding ActiveContests}"
+                            SelectionMode="Single">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="15"
+                                Stroke="#2E86AB"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Margin="0,5">
+                            <VerticalStackLayout Spacing="10">
+                                <Label Text="{Binding ContestName}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#2E86AB" />
+                                
+                                <Label Text="{Binding Description}"
+                                       FontSize="14"
+                                       TextColor="#666"
+                                       LineBreakMode="WordWrap" />
+                                
+                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                                    <Label Grid.Row="0" Grid.Column="0"
+                                           Text="{Binding LanguageName}"
+                                           FontSize="12"
+                                           TextColor="#888" />
+                                    
+                                    <Label Grid.Row="0" Grid.Column="1"
+                                           Text="{Binding PrizeCurrency, StringFormat='Приз: {0} монет'}"
+                                           FontSize="12"
+                                           TextColor="#888"
+                                           HorizontalOptions="End" />
+                                    
+                                    <Label Grid.Row="1" Grid.Column="0"
+                                           Text="{Binding StartDate, StringFormat='Начало: {0:dd.MM.yyyy}'}"
+                                           FontSize="12"
+                                           TextColor="#888" />
+                                    
+                                    <Label Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding EndDate, StringFormat='Окончание: {0:dd.MM.yyyy}'}"
+                                           FontSize="12"
+                                           TextColor="#888"
+                                           HorizontalOptions="End" />
+                                </Grid>
+                                
+                                <Button Text="Участвовать"
+                                        BackgroundColor="#2E86AB"
+                                        TextColor="White"
+                                        Clicked="OnParticipateClicked"
+                                        CommandParameter="{Binding ContestId}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Завершенные конкурсы -->
+            <Label Text="Завершенные конкурсы"
+                   FontSize="20"
+                   TextColor="#333"
+                   FontAttributes="Bold" />
+
+            <CollectionView x:Name="CompletedContestsCollectionView"
+                            ItemsSource="{Binding CompletedContests}"
+                            SelectionMode="Single">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="15"
+                                Stroke="#888"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Margin="0,5">
+                            <VerticalStackLayout Spacing="10">
+                                <Label Text="{Binding ContestName}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#888" />
+                                
+                                <Label Text="{Binding Description}"
+                                       FontSize="14"
+                                       TextColor="#999"
+                                       LineBreakMode="WordWrap" />
+                                
+                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                                    <Label Grid.Row="0" Grid.Column="0"
+                                           Text="{Binding LanguageName}"
+                                           FontSize="12"
+                                           TextColor="#999" />
+                                    
+                                    <Label Grid.Row="0" Grid.Column="1"
+                                           Text="{Binding PrizeCurrency, StringFormat='Приз: {0} монет'}"
+                                           FontSize="12"
+                                           TextColor="#999"
+                                           HorizontalOptions="End" />
+                                    
+                                    <Label Grid.Row="1" Grid.Column="0"
+                                           Text="{Binding StartDate, StringFormat='Начало: {0:dd.MM.yyyy}'}"
+                                           FontSize="12"
+                                           TextColor="#999" />
+                                    
+                                    <Label Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding EndDate, StringFormat='Окончание: {0:dd.MM.yyyy}'}"
+                                           FontSize="12"
+                                           TextColor="#999"
+                                           HorizontalOptions="End" />
+                                </Grid>
+                                
+                                <Button Text="Результаты"
+                                        BackgroundColor="#888"
+                                        TextColor="White"
+                                        Clicked="OnViewResultsClicked"
+                                        CommandParameter="{Binding ContestId}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Мои заявки -->
+            <Label Text="Мои заявки"
+                   FontSize="20"
+                   TextColor="#333"
+                   FontAttributes="Bold" />
+
+            <CollectionView x:Name="MySubmissionsCollectionView"
+                            ItemsSource="{Binding MySubmissions}"
+                            SelectionMode="Single">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="15"
+                                Stroke="#4CAF50"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Margin="0,5">
+                            <VerticalStackLayout Spacing="10">
+                                <Label Text="{Binding ContestName}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#4CAF50" />
+                                
+                                <Label Text="{Binding ProjectName}"
+                                       FontSize="14"
+                                       TextColor="#666" />
+                                
+                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                                    <Label Grid.Row="0" Grid.Column="0"
+                                           Text="{Binding SubmissionDate, StringFormat='Подано: {0:dd.MM.yyyy HH:mm}'}"
+                                           FontSize="12"
+                                           TextColor="#888" />
+                                    
+                                    <Label Grid.Row="0" Grid.Column="1"
+                                           Text="{Binding Status}"
+                                           FontSize="12"
+                                           TextColor="#888"
+                                           HorizontalOptions="End" />
+                                    
+                                    <Label Grid.Row="1" Grid.Column="0"
+                                           Text="{Binding TeacherScore, StringFormat='Оценка: {0}'}"
+                                           FontSize="12"
+                                           TextColor="#888" />
+                                    
+                                    <Label Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding TeacherComment}"
+                                           FontSize="12"
+                                           TextColor="#888"
+                                           HorizontalOptions="End" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Кнопка создания заявки -->
+            <Button x:Name="CreateSubmissionButton"
+                    Text="Подать заявку"
+                    BackgroundColor="#4CAF50"
+                    TextColor="White"
+                    HeightRequest="50"
+                    Clicked="OnCreateSubmissionClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+

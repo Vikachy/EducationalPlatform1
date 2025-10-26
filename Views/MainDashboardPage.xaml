@@ -479,6 +479,55 @@
                         </CollectionView>
                     </VerticalStackLayout>
                 </Border>
+
+                <!-- ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ -->
+                <Border BackgroundColor="{DynamicResource BackgroundColor}"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="🚀 Дополнительные функции"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}"
+                               HorizontalOptions="Center" />
+
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                            <Button Grid.Row="0" Grid.Column="0"
+                                    Text="🏆 Конкурсы"
+                                    Clicked="OnContestsClicked"
+                                    BackgroundColor="#FF9800"
+                                    TextColor="White"
+                                    HeightRequest="50"
+                                    CornerRadius="25" />
+
+                            <Button Grid.Row="0" Grid.Column="1"
+                                    Text="📰 Новости"
+                                    Clicked="OnNewsClicked"
+                                    BackgroundColor="#4CAF50"
+                                    TextColor="White"
+                                    HeightRequest="50"
+                                    CornerRadius="25" />
+
+                            <Button Grid.Row="1" Grid.Column="0"
+                                    Text="💬 Чат"
+                                    Clicked="OnChatClicked"
+                                    BackgroundColor="#9C27B0"
+                                    TextColor="White"
+                                    HeightRequest="50"
+                                    CornerRadius="25" />
+
+                            <Button Grid.Row="1" Grid.Column="1"
+                                    Text="🛠️ Поддержка"
+                                    Clicked="OnSupportClicked"
+                                    BackgroundColor="#F44336"
+                                    TextColor="White"
+                                    HeightRequest="50"
+                                    CornerRadius="25" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
             </VerticalStackLayout>
         </ScrollView>
     </Grid>

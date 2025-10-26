@@ -84,15 +84,15 @@ namespace EducationalPlatform.Views
             var myCoursesLabel = this.FindByName<Label>("MyCoursesLabel");
             if (myCoursesLabel != null)
                 myCoursesLabel.Text = _settingsService.GetLocalizedString("MyCourses");
-            
+
             var todayTasksLabel = this.FindByName<Label>("TodayTasksLabel");
             if (todayTasksLabel != null)
                 todayTasksLabel.Text = _settingsService.GetLocalizedString("TodayTasks");
-            
+
             var newsLabel = this.FindByName<Label>("NewsLabel");
             if (newsLabel != null)
                 newsLabel.Text = _settingsService.GetLocalizedString("News");
-            
+
             var quickActionsLabel = this.FindByName<Label>("QuickActionsLabel");
             if (quickActionsLabel != null)
                 quickActionsLabel.Text = _settingsService.GetLocalizedString("QuickActions");
@@ -103,9 +103,8 @@ namespace EducationalPlatform.Views
             try
             {
                 var avatarImage = this.FindByName<Image>("AvatarImage");
-                if (avatarImage != null)
+                if (avatarImage != null && _dbService != null && _currentUser != null)
                 {
-                    // Получаем актуальный аватар из базы
                     var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
 
                     if (!string.IsNullOrEmpty(currentAvatar))
@@ -127,7 +126,19 @@ namespace EducationalPlatform.Views
 
         private async void InitializeDashboard()
         {
-            if (_currentUser == null || _settingsService == null) return;
+            if (_currentUser == null || _settingsService == null || _dbService == null) return;
+
+            // Получаем случайное приветствие из базы данных
+            var greeting = await _dbService.GetRandomLoginGreetingAsync(
+                _currentUser.LanguagePref ?? "ru",
+                _currentUser.InterfaceStyle == "teen"
+            );
+
+            // Обновляем приветствие
+            if (WelcomeLabel != null)
+            {
+                WelcomeLabel.Text = greeting;
+            }
 
             UpdatePageTexts();
 
@@ -192,7 +203,7 @@ namespace EducationalPlatform.Views
                         MyCourses.Add(new MyCourse
                         {
                             CourseName = item.CourseName,
-                            Progress = item.Score,
+                            Progress = item.Score ?? 0, // Исправить здесь
                             Language = "C#",
                             Difficulty = item.Status,
                             TimeLeft = "7 дней"
@@ -495,25 +506,42 @@ namespace EducationalPlatform.Views
             await DisplayAlert("Все новости", "📢 Полная лента новостей будет доступна в следующем обновлении", "OK");
         }
 
+        private async void OnSupportClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_currentUser != null && _dbService != null && _settingsService != null)
+                    await Navigation.PushAsync(new SupportPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти в поддержку: {ex.Message}", "OK");
+            }
+        }
+
         // БЫСТРЫЕ ДЕЙСТВИЯ
         private async void OnQuickAction1Clicked(object sender, EventArgs e)
         {
-            await Navigation.PushAsync(new CoursesPage(_currentUser, _dbService, _settingsService));
+            if (_currentUser != null && _dbService != null && _settingsService != null)
+                await Navigation.PushAsync(new CoursesPage(_currentUser, _dbService, _settingsService));
         }
 
         private async void OnQuickAction2Clicked(object sender, EventArgs e)
         {
-            await Navigation.PushAsync(new StatisticsPage(_currentUser, _dbService, _settingsService));
+            if (_currentUser != null && _dbService != null && _settingsService != null)
+                await Navigation.PushAsync(new StatisticsPage(_currentUser, _dbService, _settingsService));
         }
 
         private async void OnQuickAction3Clicked(object sender, EventArgs e)
         {
-            await Navigation.PushAsync(new ShopPage(_currentUser, _dbService, _settingsService));
+            if (_currentUser != null && _dbService != null && _settingsService != null)
+                await Navigation.PushAsync(new ShopPage(_currentUser, _dbService, _settingsService));
         }
 
         private async void OnQuickAction4Clicked(object sender, EventArgs e)
         {
-            await Navigation.PushAsync(new ProfilePage(_currentUser, _dbService, _settingsService));
+            if (_currentUser != null && _dbService != null && _settingsService != null)
+                await Navigation.PushAsync(new ProfilePage(_currentUser, _dbService, _settingsService));
         }
 
         protected override bool OnBackButtonPressed()
@@ -531,6 +559,49 @@ namespace EducationalPlatform.Views
                 if (result) Application.Current?.Quit();
             });
             return true;
+        }
+
+        // Методы навигации к новым страницам
+        private async void OnContestsClicked(object sender, EventArgs e)
+        {
+            if (_currentUser != null && _dbService != null && _settingsService != null)
+                await Navigation.PushAsync(new ContestPage(_currentUser, _dbService, _settingsService));
+        }
+
+        private async void OnNewsClicked(object sender, EventArgs e)
+        {
+            if (_currentUser != null && _dbService != null && _settingsService != null)
+                await Navigation.PushAsync(new NewsPage(_currentUser, _dbService, _settingsService));
+        }
+
+        private async void OnChatClicked(object sender, EventArgs e)
+        {
+            // Показываем список групп для выбора чата
+            try
+            {
+                var groups = await _dbService.GetUserStudyGroupsAsync(_currentUser.UserId);
+                if (groups.Count == 0)
+                {
+                    await DisplayAlert("Информация", "Вы не состоите ни в одной группе", "OK");
+                    return;
+                }
+
+                var groupNames = groups.Select(g => g.GroupName).ToArray();
+                var selectedGroup = await DisplayActionSheet("Выберите группу для чата", "Отмена", null, groupNames);
+
+                if (selectedGroup != null && selectedGroup != "Отмена")
+                {
+                    var group = groups.FirstOrDefault(g => g.GroupName == selectedGroup);
+                    if (group != null)
+                    {
+                        await Navigation.PushAsync(new ChatPage(group, _currentUser, _dbService, _settingsService));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Ошибка загрузки групп: {ex.Message}", "OK");
+            }
         }
     }
 

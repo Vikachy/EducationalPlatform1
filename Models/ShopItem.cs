@@ -8,8 +8,10 @@ namespace EducationalPlatform.Models
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public int Price { get; set; }
-        public string ItemType { get; set; } = string.Empty;
-        public string Icon { get; set; } = string.Empty;
+        public string ItemType { get; set; } = string.Empty; // avatar_frame, emoji, theme, badge
+        public string? Icon { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedDate { get; set; }
 
         private bool _isPurchased;
         public bool IsPurchased
@@ -49,5 +51,25 @@ namespace EducationalPlatform.Models
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+    }
+
+    public class UserInventory
+    {
+        public int InventoryId { get; set; }
+        public int UserId { get; set; }
+        public int ItemId { get; set; }
+        public DateTime PurchaseDate { get; set; }
+        public bool IsEquipped { get; set; } = false;
+        public ShopItem? Item { get; set; }
+    }
+
+    public class CurrencyTransaction
+    {
+        public int TransactionId { get; set; }
+        public int UserId { get; set; }
+        public int Amount { get; set; }
+        public string TransactionType { get; set; } = string.Empty; // income, expense
+        public string? Reason { get; set; }
+        public DateTime TransactionDate { get; set; }
     }
 }

@@ -13,6 +13,6 @@ namespace EducationalPlatform.Models
         public string CourseName { get; set; } = string.Empty;
         public string TestTitle { get; set; } = string.Empty;
         public int Score { get; set; }
+        public DateTime DisputeDate { get; set; }
     }
-
 }

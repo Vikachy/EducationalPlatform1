@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.NewsPage"
+    Title="Новости"
+    BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+            <!-- Заголовок -->
+            <Label Text="Новости платформы"
+                   FontSize="28"
+                   HorizontalOptions="Center"
+                   TextColor="#2E86AB"
+                   FontAttributes="Bold" />
+
+            <!-- Поиск -->
+            <SearchBar x:Name="SearchBar"
+                       Placeholder="Поиск новостей..."
+                       SearchCommand="{Binding SearchCommand}"
+                       SearchCommandParameter="{Binding Source={x:Reference SearchBar}, Path=Text}" />
+
+            <!-- Фильтры -->
+            <HorizontalStackLayout Spacing="10">
+                <Button Text="Все"
+                        x:Name="AllButton"
+                        BackgroundColor="#2E86AB"
+                        TextColor="White"
+                        Clicked="OnFilterClicked" />
+                
+                <Button Text="Курсы"
+                        x:Name="CoursesButton"
+                        BackgroundColor="Transparent"
+                        TextColor="#2E86AB"
+                        BorderColor="#2E86AB"
+                        BorderWidth="1"
+                        Clicked="OnFilterClicked" />
+                
+                <Button Text="Конкурсы"
+                        x:Name="ContestsButton"
+                        BackgroundColor="Transparent"
+                        TextColor="#2E86AB"
+                        BorderColor="#2E86AB"
+                        BorderWidth="1"
+                        Clicked="OnFilterClicked" />
+                
+                <Button Text="Система"
+                        x:Name="SystemButton"
+                        BackgroundColor="Transparent"
+                        TextColor="#2E86AB"
+                        BorderColor="#2E86AB"
+                        BorderWidth="1"
+                        Clicked="OnFilterClicked" />
+            </HorizontalStackLayout>
+
+            <!-- Список новостей -->
+            <CollectionView x:Name="NewsCollectionView"
+                            ItemsSource="{Binding NewsItems}"
+                            SelectionMode="Single">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="15"
+                                Stroke="#E0E0E0"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                Margin="0,5">
+                            <VerticalStackLayout Spacing="10">
+                                <!-- Заголовок новости -->
+                                <Label Text="{Binding Title}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#333"
+                                       LineBreakMode="WordWrap" />
+                                
+                                <!-- Краткое описание -->
+                                <Label Text="{Binding Content}"
+                                       FontSize="14"
+                                       TextColor="#666"
+                                       LineBreakMode="WordWrap"
+                                       MaxLines="3" />
+                                
+                                <!-- Метаданные -->
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                    <Label Grid.Row="0" Grid.Column="0"
+                                           Text="{Binding AuthorName}"
+                                           FontSize="12"
+                                           TextColor="#888" />
+                                    
+                                    <Label Grid.Row="0" Grid.Column="1"
+                                           Text="{Binding PublishedDate, StringFormat='{0:dd.MM.yyyy HH:mm}'}"
+                                           FontSize="12"
+                                           TextColor="#888" />
+                                    
+                                    <Label Grid.Row="1" Grid.Column="0"
+                                           Text="{Binding Category}"
+                                           FontSize="12"
+                                           TextColor="#2E86AB" />
+                                    
+                                    <Label Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding ReadTime, StringFormat='{0} мин чтения'}"
+                                           FontSize="12"
+                                           TextColor="#888" />
+                                </Grid>
+                                
+                                <!-- Кнопка "Читать далее" -->
+                                <Button Text="Читать далее"
+                                        BackgroundColor="Transparent"
+                                        TextColor="#2E86AB"
+                                        BorderColor="#2E86AB"
+                                        BorderWidth="1"
+                                        Clicked="OnReadMoreClicked"
+                                        CommandParameter="{Binding NewsId}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Кнопка обновления -->
+            <Button Text="Обновить"
+                    BackgroundColor="#4CAF50"
+                    TextColor="White"
+                    HeightRequest="50"
+                    Clicked="OnRefreshClicked" />
+
+            <!-- Кнопка создания новости (только для контент-менеджеров) -->
+            <Button x:Name="CreateNewsButton"
+                    Text="Создать новость"
+                    BackgroundColor="#FF9800"
+                    TextColor="White"
+                    HeightRequest="50"
+                    Clicked="OnCreateNewsClicked"
+                    IsVisible="False" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+

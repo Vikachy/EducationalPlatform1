@@ -26,14 +26,25 @@
                            FontAttributes="Bold" />
 
                     <Entry x:Name="UsernameEntry"
-                           Placeholder="Логин"
-                           Completed="OnEntryCompleted" />
+                           Placeholder="Логин" />
 
-
-                    <Entry x:Name="PasswordEntry"
-                           Placeholder="Пароль"
-                           IsPassword="True"
-                           Completed="OnEntryCompleted" />
+                    <!-- Кастомное поле пароля -->
+                    <Grid x:Name="PasswordContainer"
+                          ColumnDefinitions="*, Auto"
+                          HeightRequest="50">
+                        <Entry x:Name="PasswordEntry"
+                               Grid.Column="0"
+                               Placeholder="Пароль"
+                               IsPassword="True" />
+                        <Button x:Name="ShowPasswordBtn"
+                                Grid.Column="1"
+                                Text="👁"
+                                BackgroundColor="Transparent"
+                                TextColor="#2E86AB"
+                                FontSize="20"
+                                WidthRequest="50"
+                                HeightRequest="50" />
+                    </Grid>
 
                     <Border x:Name="CaptchaContainer"
                             IsVisible="False"
@@ -74,8 +85,7 @@
                                         HeightRequest="40" />
                             </Grid>
                             <Entry x:Name="CaptchaEntry"
-                                   Placeholder="Введите код с картинки"
-                                   Completed="OnEntryCompleted" />
+                                   Placeholder="Введите код с картинки" />
                         </VerticalStackLayout>
                     </Border>
 

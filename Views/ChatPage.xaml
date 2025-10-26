@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.ChatPage"
+    Title="Групповой чат"
+    BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Заголовок чата -->
+        <Border Grid.Row="0" 
+                BackgroundColor="#2E86AB" 
+                Padding="15">
+            <VerticalStackLayout>
+                <Label Text="{Binding GroupName}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                
+                <Label Text="{Binding OnlineCount, StringFormat='Онлайн: {0}'}"
+                       FontSize="12"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Список сообщений -->
+        <CollectionView Grid.Row="1"
+                        x:Name="MessagesCollectionView"
+                        ItemsSource="{Binding Messages}"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Padding="10"
+                            Margin="5"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 15">
+                        <Border.Stroke>
+                            <SolidColorBrush Color="{Binding IsMyMessage, Converter={StaticResource BoolToColorConverter}}" />
+                        </Border.Stroke>
+                        <Border.Background>
+                            <SolidColorBrush Color="{Binding IsMyMessage, Converter={StaticResource BoolToBackgroundColorConverter}}" />
+                        </Border.Background>
+                        
+                        <VerticalStackLayout Spacing="5">
+                            <!-- Имя отправителя и время -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Grid.Column="0"
+                                       Text="{Binding SenderName}"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToTextColorConverter}}" />
+                                
+                                <Label Grid.Column="1"
+                                       Text="{Binding SentDate, StringFormat='{0:HH:mm}'}"
+                                       FontSize="10"
+                                       TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToTimeColorConverter}}" />
+                            </Grid>
+                            
+                            <!-- Текст сообщения -->
+                            <Label Text="{Binding MessageText}"
+                                   FontSize="14"
+                                   TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToTextColorConverter}}"
+                                   LineBreakMode="WordWrap" />
+                            
+                            <!-- Статус прочтения -->
+                            <Label Text="{Binding ReadStatus}"
+                                   FontSize="10"
+                                   TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToTimeColorConverter}}"
+                                   HorizontalOptions="End"
+                                   IsVisible="{Binding IsMyMessage}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Поле ввода сообщения -->
+        <Border Grid.Row="2"
+                BackgroundColor="White"
+                Stroke="#E0E0E0"
+                StrokeThickness="1"
+                Padding="10">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                <!-- Поле ввода -->
+                <Entry Grid.Column="0"
+                       x:Name="MessageEntry"
+                       Placeholder="Введите сообщение..."
+                       Completed="OnMessageSent"
+                       ReturnType="Send" />
+                
+                <!-- Кнопка прикрепления файла -->
+                <Button Grid.Column="1"
+                        Text="📎"
+                        BackgroundColor="Transparent"
+                        TextColor="#2E86AB"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        Clicked="OnAttachFileClicked" />
+                
+                <!-- Кнопка отправки -->
+                <Button Grid.Column="2"
+                        Text="➤"
+                        BackgroundColor="#2E86AB"
+                        TextColor="White"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        Clicked="OnSendMessageClicked" />
+            </Grid>
+        </Border>
+    </Grid>
+</ContentPage>
+

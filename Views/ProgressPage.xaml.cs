@@ -70,15 +70,15 @@ namespace EducationalPlatform.Views
             var overallProgressLabel = this.FindByName<Label>("OverallProgressLabel");
             if (overallProgressLabel != null)
                 overallProgressLabel.Text = _settingsService.GetLocalizedString("OverallProgress");
-            
+
             var recentAchievementsLabel = this.FindByName<Label>("RecentAchievementsLabel");
             if (recentAchievementsLabel != null)
                 recentAchievementsLabel.Text = _settingsService.GetLocalizedString("RecentAchievements");
-            
+
             var courseProgressLabel = this.FindByName<Label>("CourseProgressLabel");
             if (courseProgressLabel != null)
                 courseProgressLabel.Text = _settingsService.GetLocalizedString("CourseProgress");
-            
+
             var statisticsLabel = this.FindByName<Label>("StatisticsLabel");
             if (statisticsLabel != null)
                 statisticsLabel.Text = _settingsService.GetLocalizedString("Statistics");
@@ -108,7 +108,7 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private void UpdateStatistics(UserStatistics statistics)
+        private void UpdateStatistics(UserStatistics? statistics)
         {
             if (statistics == null) return;
 
@@ -127,37 +127,39 @@ namespace EducationalPlatform.Views
                     (double)statistics.CompletedCourses / statistics.TotalCourses : 0;
 
             if (averageScoreProgress != null)
-                averageScoreProgress.Progress = statistics.AverageScore / 100.0;
+                averageScoreProgress.Progress = (statistics.AverageScore ?? 0.0) / 100.0;
 
             if (completionRateProgress != null)
-                completionRateProgress.Progress = statistics.CompletionRate;
+                completionRateProgress.Progress = statistics.CompletionRate ?? 0.0;
 
             if (totalCoursesLabel != null)
                 totalCoursesLabel.Text = $"{statistics.CompletedCourses}/{statistics.TotalCourses}";
             if (averageScoreLabel != null)
-                averageScoreLabel.Text = $"{statistics.AverageScore:F1}%";
+                averageScoreLabel.Text = $"{(statistics.AverageScore ?? 0.0):F1}%"; // Исправлено: 0.0 вместо 0
             if (completionRateLabel != null)
-                completionRateLabel.Text = $"{statistics.CompletionRate * 100:F1}%";
+                completionRateLabel.Text = $"{(statistics.CompletionRate ?? 0.0) * 100:F1}%"; // Исправлено: 0.0 вместо 0
             if (currentStreakLabel != null)
-                currentStreakLabel.Text = $"{statistics.CurrentStreak} {_settingsService?.GetLocalizedString("Days")}";
+                currentStreakLabel.Text = $"{(statistics.CurrentStreak ?? 0)} {_settingsService?.GetLocalizedString("Days")}"; // Исправлено
             if (totalDaysLabel != null)
-                totalDaysLabel.Text = $"{statistics.TotalDays} {_settingsService?.GetLocalizedString("Days")}";
+                totalDaysLabel.Text = $"{(statistics.TotalDays ?? 0)} {_settingsService?.GetLocalizedString("Days")}"; // Исправлено
         }
 
         private async Task LoadCourseProgress()
         {
             try
             {
+                if (_dbService == null || _currentUser == null) return;
+
                 ProgressItems.Clear();
 
-                var progress = await _dbService!.GetStudentProgressAsync(_currentUser!.UserId);
+                var progress = await _dbService.GetStudentProgressAsync(_currentUser.UserId);
                 foreach (var item in progress)
                 {
                     ProgressItems.Add(new ProgressItem
                     {
                         CourseName = item.CourseName,
                         Status = item.Status,
-                        Score = item.Score,
+                        Score = item.Score ?? 0,
                         CompletionDate = item.CompletionDate,
                         Attempts = item.Attempts
                     });
@@ -177,9 +179,11 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                if (_dbService == null || _currentUser == null) return;
+
                 RecentAchievements.Clear();
 
-                var achievements = await _dbService!.GetRecentAchievementsAsync(_currentUser!.UserId, 5);
+                var achievements = await _dbService.GetRecentAchievementsAsync(_currentUser.UserId, 5);
                 foreach (var achievement in achievements)
                 {
                     RecentAchievements.Add(achievement);
@@ -205,7 +209,7 @@ namespace EducationalPlatform.Views
             if (e.CurrentSelection.FirstOrDefault() is Achievement selectedAchievement)
             {
                 await DisplayAlert(
-                    selectedAchievement.Name,
+                    selectedAchievement.Name ?? "Достижение",
                     $"{selectedAchievement.Description}\n\nДата получения: {selectedAchievement.EarnedDate:dd.MM.yyyy}",
                     "OK");
             }
