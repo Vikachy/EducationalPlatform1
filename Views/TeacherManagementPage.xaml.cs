@@ -1,6 +1,5 @@
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
-using EducationalPlatform.Converters;
 using System.Collections.ObjectModel;
 using System.Globalization;
 
@@ -18,6 +17,7 @@ namespace EducationalPlatform.Views
         public TeacherManagementPage(User user, DatabaseService dbService, SettingsService settingsService)
         {
             InitializeComponent();
+
             _currentUser = user;
             _dbService = dbService;
             _settingsService = settingsService;
@@ -25,7 +25,7 @@ namespace EducationalPlatform.Views
             MyCourses = new ObservableCollection<TeacherCourse>();
             PendingReviews = new ObservableCollection<PendingReview>();
 
-            // Регистрируем конвертеры
+            // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РєРѕРЅРІРµСЂС‚РµСЂРѕРІ
             Resources.Add("PublishedConverter", new PublishedToTextConverter());
             Resources.Add("StatusColorConverter", new StatusColorConverter());
             Resources.Add("PublishButtonConverter", new PublishButtonTextConverter());
@@ -33,10 +33,11 @@ namespace EducationalPlatform.Views
 
             BindingContext = this;
 
-            LoadTeacherData();
+            // Р—Р°РіСЂСѓР¶Р°РµРј РґР°РЅРЅС‹Рµ Р±РµР· await, С‚Р°Рє РєР°Рє СЌС‚Рѕ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
+            _ = LoadTeacherDataAsync();
         }
 
-        private async void LoadTeacherData()
+        private async Task LoadTeacherDataAsync()
         {
             try
             {
@@ -49,15 +50,15 @@ namespace EducationalPlatform.Views
 
                 MyCoursesCollectionView.ItemsSource = MyCourses;
 
-                // Загружаем работы на проверку
+                // Р—Р°РіСЂСѓР·РєР° СЂР°Р±РѕС‚ РЅР° РїСЂРѕРІРµСЂРєСѓ
                 LoadPendingReviews();
 
-                // Заполняем пикеры
-                LoadPickersData();
+                // Р—Р°РіСЂСѓР·РєР° СЃРїРёСЃРєРѕРІ
+                await LoadPickersDataAsync();
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить данные: {ex.Message}", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РґР°РЅРЅС‹Рµ: {ex.Message}", "OK");
             }
         }
 
@@ -67,13 +68,13 @@ namespace EducationalPlatform.Views
             {
                 PendingReviews.Clear();
 
-                // Временно добавляем тестовые данные
+                // Р—Р°РіР»СѓС€РєР° РґР»СЏ РґРµРјРѕРЅСЃС‚СЂР°С†РёРё СЂР°Р±РѕС‚ РЅР° РїСЂРѕРІРµСЂРєСѓ
                 PendingReviews.Add(new PendingReview
                 {
                     AttemptId = 1,
-                    StudentName = "Иван Петров",
-                    CourseName = "C# для начинающих",
-                    TestTitle = "Основы ООП",
+                    StudentName = "РРІР°РЅ РРІР°РЅРѕРІ",
+                    CourseName = "C# РґР»СЏ РЅР°С‡РёРЅР°СЋС‰РёС…",
+                    TestTitle = "РўРµСЃС‚ РїРѕ РћРћРџ",
                     Score = 75
                 });
 
@@ -81,44 +82,37 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки работ на проверку: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё СЂР°Р±РѕС‚ РЅР° РїСЂРѕРІРµСЂРєСѓ: {ex.Message}");
             }
         }
 
-        private async void LoadPickersData()
+        private async Task LoadPickersDataAsync()
         {
             try
             {
-                // Загружаем языки программирования
                 var languages = await _dbService.GetProgrammingLanguagesAsync();
                 LanguagePicker.ItemsSource = languages;
 
-                // Загружаем сложности
                 var difficulties = await _dbService.GetCourseDifficultiesAsync();
                 DifficultyPicker.ItemsSource = difficulties;
-
-                // Загружаем курсы для тестов
-                CourseForTestPicker.ItemsSource = MyCourses;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки данных для пикеров: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё СЃРїРёСЃРєРѕРІ РґР»СЏ РІС‹Р±РѕСЂР°: {ex.Message}");
             }
         }
 
-        // СОЗДАНИЕ КУРСА
-        // Исправленный метод создания курса
         private async void OnCreateCourseClicked(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(NewCourseNameEntry.Text))
             {
-                await DisplayAlert("Ошибка", "Введите название курса", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", "Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ РєСѓСЂСЃР°", "OK");
                 return;
             }
 
             if (LanguagePicker.SelectedItem == null || DifficultyPicker.SelectedItem == null)
             {
-                await DisplayAlert("Ошибка", "Выберите язык программирования и сложность", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", "Р’С‹Р±РµСЂРёС‚Рµ СЏР·С‹Рє РїСЂРѕРіСЂР°РјРјРёСЂРѕРІР°РЅРёСЏ Рё СЃР»РѕР¶РЅРѕСЃС‚СЊ", "OK");
                 return;
             }
 
@@ -129,7 +123,7 @@ namespace EducationalPlatform.Views
 
                 bool success = await _dbService.CreateCourseAsync(
                     NewCourseNameEntry.Text,
-                    NewCourseDescriptionEditor.Text,
+                    NewCourseDescriptionEditor.Text ?? string.Empty,
                     selectedLanguage.LanguageId,
                     selectedDifficulty.DifficultyId,
                     _currentUser.UserId,
@@ -137,77 +131,30 @@ namespace EducationalPlatform.Views
 
                 if (success)
                 {
-                    await DisplayAlert("Успех", "Курс успешно создан!", "OK");
+                    await DisplayAlert("РЈСЃРїРµС…", "РљСѓСЂСЃ СЃРѕР·РґР°РЅ СѓСЃРїРµС€РЅРѕ!", "OK");
 
-                    // Очищаем поля
+                    // РћС‡РёСЃС‚РєР° РїРѕР»РµР№
                     NewCourseNameEntry.Text = "";
                     NewCourseDescriptionEditor.Text = "";
                     LanguagePicker.SelectedItem = null;
                     DifficultyPicker.SelectedItem = null;
                     IsGroupCourseCheckBox.IsChecked = false;
 
-                    // Обновляем список курсов
-                    LoadTeacherData();
+                    // РћР±РЅРѕРІР»РµРЅРёРµ СЃРїРёСЃРєР° РєСѓСЂСЃРѕРІ
+                    await LoadTeacherDataAsync();
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось создать курс", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ РєСѓСЂСЃ", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка создания курса: {ex.Message}", "OK");
-            }
-        }  
-
-        // СОЗДАНИЕ ТЕСТА
-        private async void OnCreateTestClicked(object sender, EventArgs e)
-        {
-            if (CourseForTestPicker.SelectedItem == null)
-            {
-                await DisplayAlert("Ошибка", "Выберите курс для теста", "OK");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(NewTestTitleEntry.Text))
-            {
-                await DisplayAlert("Ошибка", "Введите название теста", "OK");
-                return;
-            }
-
-            try
-            {
-                var selectedCourse = (TeacherCourse)CourseForTestPicker.SelectedItem;
-
-                bool success = await _dbService.CreateTestAsync(
-                    selectedCourse.CourseId,
-                    NewTestTitleEntry.Text,
-                    NewTestDescriptionEditor.Text,
-                    int.TryParse(TimeLimitEntry.Text, out int timeLimit) ? timeLimit : 30,
-                    int.TryParse(PassingScoreEntry.Text, out int passingScore) ? passingScore : 60);
-
-                if (success)
-                {
-                    await DisplayAlert("Успех", "Тест успешно создан!", "OK");
-                    // Очищаем поля
-                    NewTestTitleEntry.Text = "";
-                    NewTestDescriptionEditor.Text = "";
-                    TimeLimitEntry.Text = "";
-                    PassingScoreEntry.Text = "";
-                    CourseForTestPicker.SelectedItem = null;
-                }
-                else
-                {
-                    await DisplayAlert("Ошибка", "Не удалось создать тест", "OK");
-                }
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", $"Ошибка создания теста: {ex.Message}", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", $"РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ РєСѓСЂСЃР°: {ex.Message}", "OK");
             }
         }
 
-        // УПРАВЛЕНИЕ КУРСАМИ
+        // РџСѓР±Р»РёРєР°С†РёСЏ РєСѓСЂСЃР°
         private async void OnPublishCourseClicked(object sender, EventArgs e)
         {
             if (sender is Button button && button.BindingContext is TeacherCourse course)
@@ -217,19 +164,19 @@ namespace EducationalPlatform.Views
                     bool success = await _dbService.PublishCourseAsync(course.CourseId, _currentUser.UserId);
                     if (success)
                     {
-                        await DisplayAlert("Успех",
-                            course.IsPublished ? "Курс снят с публикации!" : "Курс опубликован!",
+                        await DisplayAlert("РЈСЃРїРµС…",
+                            course.IsPublished ? "РљСѓСЂСЃ СЃРЅСЏС‚ СЃ РїСѓР±Р»РёРєР°С†РёРё!" : "РљСѓСЂСЃ РѕРїСѓР±Р»РёРєРѕРІР°РЅ!",
                             "OK");
-                        LoadTeacherData();
+                        await LoadTeacherDataAsync();
                     }
                     else
                     {
-                        await DisplayAlert("Ошибка", "Не удалось изменить статус курса", "OK");
+                        await DisplayAlert("РћС€РёР±РєР°", "РќРµ СѓРґР°Р»РѕСЃСЊ РёР·РјРµРЅРёС‚СЊ СЃС‚Р°С‚СѓСЃ РєСѓСЂСЃР°", "OK");
                     }
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Ошибка", $"Ошибка: {ex.Message}", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", $"РћС€РёР±РєР°: {ex.Message}", "OK");
                 }
             }
         }
@@ -238,7 +185,14 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button button && button.BindingContext is TeacherCourse course)
             {
-                await DisplayAlert("Группы", $"Управление группами курса: {course.CourseName}", "OK");
+                try
+                {
+                    await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService, course));
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ РіСЂСѓРїРїС‹: {ex.Message}", "OK");
+                }
             }
         }
 
@@ -246,47 +200,96 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button button && button.BindingContext is TeacherCourse course)
             {
-                await DisplayAlert("Статистика", $"Статистика по курсу: {course.CourseName}", "OK");
+                try
+                {
+                    await Navigation.PushAsync(new CourseStudentsPage(_currentUser, _dbService, _settingsService, course.CourseId, course.CourseName));
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ СЃС‚Р°С‚РёСЃС‚РёРєСѓ: {ex.Message}", "OK");
+                }
             }
         }
 
-        // ПРОВЕРКА РАБОТ
+        private async void OnManageContentClicked(object sender, EventArgs e)
+        {
+            if (sender is Button button && button.BindingContext is TeacherCourse course)
+            {
+                try
+                {
+                    await Navigation.PushAsync(new TeacherContentManagementPage(_currentUser, _dbService, _settingsService, course.CourseId, course.CourseName));
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ СѓРїСЂР°РІР»РµРЅРёРµ РєРѕРЅС‚РµРЅС‚РѕРј: {ex.Message}", "OK");
+                }
+            }
+        }
+
+        // РџСЂРѕСЃРјРѕС‚СЂ СЂР°Р±РѕС‚С‹
         private async void OnReviewWorkClicked(object sender, EventArgs e)
         {
             if (sender is Button button && button.BindingContext is PendingReview review)
             {
-                await DisplayAlert("Проверка", $"Проверка работы: {review.StudentName}", "OK");
+                await DisplayAlert("РџСЂРѕРІРµСЂРєР°", $"РџСЂРѕРІРµСЂРєР° СЂР°Р±РѕС‚С‹: {review.StudentName}", "OK");
             }
         }
 
-        // БЫСТРЫЙ ДОСТУП
+        // РћС‚С‡РµС‚С‹
         private async void OnReportsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Отчеты", "Генерация отчетов в Word/Excel", "OK");
+            await DisplayAlert("РћС‚С‡РµС‚С‹", "Р­РєСЃРїРѕСЂС‚ РѕС‚С‡РµС‚РѕРІ РІ Word/Excel", "OK");
         }
 
         private async void OnGroupsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Группы", "Управление учебными группами", "OK");
+            try
+            {
+                await Navigation.PushAsync(new TeacherGroupsManagementPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ РіСЂСѓРїРїС‹: {ex.Message}", "OK");
+            }
         }
 
         private async void OnTestsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Тесты", "Управление тестами и заданиями", "OK");
+            try
+            {
+                await Navigation.PushAsync(new TeacherTestsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С‚РµСЃС‚С‹: {ex.Message}", "OK");
+            }
         }
 
         private async void OnChatsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Чаты", "Общение с учениками", "OK");
+            try
+            {
+                await Navigation.PushAsync(new TeacherChatsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С‡Р°С‚С‹: {ex.Message}", "OK");
+            }
         }
 
         private async void OnBackClicked(object sender, EventArgs e)
         {
             await Navigation.PopAsync();
         }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            _ = LoadTeacherDataAsync();
+        }
     }
 
-    // ДОПОЛНИТЕЛЬНЫЕ МОДЕЛИ
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РєР»Р°СЃСЃС‹
     public class PendingReview
     {
         public int AttemptId { get; set; }
@@ -296,15 +299,41 @@ namespace EducationalPlatform.Views
         public int Score { get; set; }
     }
 
-    // КОНВЕРТЕРЫ ДЛЯ КНОПОК
-    public class PublishButtonTextConverter : IValueConverter
+    // РљРѕРЅРІРµСЂС‚РµСЂС‹
+    public class PublishedToTextConverter : IValueConverter
     {
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value is bool published && published ? "Снять" : "Опубликовать";
+            return (bool)value ? "РћРїСѓР±Р»РёРєРѕРІР°РЅ" : "Р§РµСЂРЅРѕРІРёРє";
         }
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class StatusColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return (bool)value ? Color.FromArgb("#4CAF50") : Color.FromArgb("#FF9800");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PublishButtonTextConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return (bool)value ? "РЎРЅСЏС‚СЊ" : "РћРїСѓР±Р»РёРєРѕРІР°С‚СЊ";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }
@@ -312,12 +341,12 @@ namespace EducationalPlatform.Views
 
     public class PublishButtonColorConverter : IValueConverter
     {
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value is bool published && published ? Color.FromArgb("#FF9800") : Color.FromArgb("#4CAF50");
+            return (bool)value ? Color.FromArgb("#FF9800") : Color.FromArgb("#4CAF50");
         }
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

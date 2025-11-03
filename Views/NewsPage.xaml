@@ -17,9 +17,7 @@
 
             <!-- Поиск -->
             <SearchBar x:Name="SearchBar"
-                       Placeholder="Поиск новостей..."
-                       SearchCommand="{Binding SearchCommand}"
-                       SearchCommandParameter="{Binding Source={x:Reference SearchBar}, Path=Text}" />
+                       Placeholder="Поиск новостей..." />
 
             <!-- Фильтры -->
             <HorizontalStackLayout Spacing="10">
@@ -83,7 +81,7 @@
                                 <!-- Метаданные -->
                                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
                                     <Label Grid.Row="0" Grid.Column="0"
-                                           Text="{Binding AuthorName}"
+                                           Text="{Binding Author.FirstName}"
                                            FontSize="12"
                                            TextColor="#888" />
                                     
@@ -98,7 +96,7 @@
                                            TextColor="#2E86AB" />
                                     
                                     <Label Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding ReadTime, StringFormat='{0} мин чтения'}"
+                                           Text=""
                                            FontSize="12"
                                            TextColor="#888" />
                                 </Grid>

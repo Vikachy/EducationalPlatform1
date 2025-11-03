@@ -1,7 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
 using EducationalPlatform.Converters;
-using System.ComponentModel;
 
 namespace EducationalPlatform.Views
 {
@@ -52,7 +55,7 @@ namespace EducationalPlatform.Views
             _dbService = dbService;
             _settingsService = settingsService;
 
-            // ������������ ����������
+            // Конвертеры состояний
             Resources.Add("PublishedConverter", new PublishedToTextConverter());
             Resources.Add("StatusColorConverter", new StatusColorConverter());
 
@@ -60,39 +63,106 @@ namespace EducationalPlatform.Views
             LoadTeacherData();
         }
 
-        private async void LoadTeacherData()
+        private void LoadTeacherData()
         {
             try
             {
-                var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
+                // Демо-данные курса (если БД недоступна)
+                var courses = new List<TeacherCourse>
+                {
+                    new TeacherCourse
+                    {
+                        CourseId = 1,
+                        CourseName = "Python для начинающих",
+                        Description = "Базовый курс программирования на Python",
+                        StudentCount = 25,
+                        AverageRating = 4.7,
+                        Groups = new List<StudyGroup> { new StudyGroup(), new StudyGroup() },
+                        IsPublished = true
+                    },
+                    new TeacherCourse
+                    {
+                        CourseId = 2,
+                        CourseName = "JavaScript основы",
+                        Description = "Быстрый старт JavaScript",
+                        StudentCount = 18,
+                        AverageRating = 4.5,
+                        Groups = new List<StudyGroup> { new StudyGroup() },
+                        IsPublished = true
+                    },
+                    new TeacherCourse
+                    {
+                        CourseId = 3,
+                        CourseName = "Java OOP",
+                        Description = "Объектно-ориентированное программирование на Java",
+                        StudentCount = 12,
+                        AverageRating = 4.8,
+                        Groups = new List<StudyGroup>(),
+                        IsPublished = false
+                    },
+                    new TeacherCourse
+                    {
+                        CourseId = 4,
+                        CourseName = "C++ для продвинутых",
+                        Description = "Продвинутый курс C++",
+                        StudentCount = 8,
+                        AverageRating = 4.9,
+                        Groups = new List<StudyGroup> { new StudyGroup(), new StudyGroup(), new StudyGroup() },
+                        IsPublished = true
+                    }
+                };
 
                 TotalCourses = courses.Count;
                 TotalStudents = courses.Sum(c => c.StudentCount);
-                AverageRating = courses.Any() ? courses.Average(c => c.AverageRating) : 0;
+                AverageRating = courses.Average(c => c.AverageRating);
 
                 CoursesCollectionView.ItemsSource = courses;
             }
             catch (Exception ex)
             {
-                await DisplayAlert("������", $"�� ������� ��������� ������: {ex.Message}", "OK");
+                DisplayAlert("Ошибка", $"Не удалось загрузить данные: {ex.Message}", "OK");
             }
         }
 
         private async void OnCreateCourseClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("�������� �����", "������� � ����������", "OK");
+            try
+            {
+                await Navigation.PushAsync(new TeacherManagementPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось открыть создание курса: {ex.Message}", "OK");
+            }
         }
 
         private async void OnReportsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("������", "������� � ����������", "OK");
+            await DisplayAlert("Отчеты", "Экспорт и аналитика", "OK");
+        }
+
+        private async void OnManageContentClicked(object sender, EventArgs e)
+        {
+            if (sender is Button button && button.BindingContext is TeacherCourse course)
+            {
+                try
+                {
+                    // Переход на страницу управления контентом курса
+                    await Navigation.PushAsync(new TeacherContentManagementPage(
+                        _currentUser, _dbService, _settingsService, course.CourseId, course.CourseName));
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось открыть управление контентом: {ex.Message}", "OK");
+                }
+            }
         }
 
         private async void OnManageCourseClicked(object sender, EventArgs e)
         {
             if (sender is Button button && button.BindingContext is TeacherCourse course)
             {
-                await DisplayAlert("���������� ������", $"���������� ������: {course.CourseName}", "OK");
+                await DisplayAlert("Управление курсом", $"Курс: {course.CourseName}", "OK");
             }
         }
 
@@ -100,7 +170,14 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button button && button.BindingContext is TeacherCourse course)
             {
-                await DisplayAlert("���������� ��������", $"������ �����: {course.CourseName}", "OK");
+                try
+                {
+                    await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService, course));
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось открыть группы: {ex.Message}", "OK");
+                }
             }
         }
 

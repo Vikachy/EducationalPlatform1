@@ -63,16 +63,25 @@
                         CornerRadius="22"
                         Margin="0,0,10,0" />
 
-                <!-- КНОПКА ПРОФИЛЯ -->
-                <Button Grid.Column="3"
-                        Text="👤"
-                        Clicked="OnProfileClicked"
-                        BackgroundColor="Transparent"
-                        TextColor="White"
-                        FontSize="20"
-                        WidthRequest="45"
-                        HeightRequest="45"
-                        CornerRadius="22" />
+                <!-- КНОПКИ ПРОФИЛЬ/ВЫЙТИ -->
+                <HorizontalStackLayout Grid.Column="3" Spacing="8">
+                    <Button Text="👤"
+                            Clicked="OnProfileClicked"
+                            BackgroundColor="Transparent"
+                            TextColor="White"
+                            FontSize="20"
+                            WidthRequest="45"
+                            HeightRequest="45"
+                            CornerRadius="22" />
+                    <Button Text="⎋"
+                            Clicked="OnLogoutClicked"
+                            BackgroundColor="Transparent"
+                            TextColor="White"
+                            FontSize="18"
+                            WidthRequest="45"
+                            HeightRequest="45"
+                            CornerRadius="22" />
+                </HorizontalStackLayout>
             </Grid>
         </Border>
 
@@ -146,6 +155,15 @@
                                        TextColor="White"
                                        FontAttributes="Bold"
                                        VerticalOptions="Center" />
+                                <Button Text="Мои курсы →"
+                                        Clicked="OnMyCoursesClicked"
+                                        BackgroundColor="Transparent"
+                                        TextColor="White"
+                                        BorderColor="White"
+                                        BorderWidth="1"
+                                        HeightRequest="35"
+                                        CornerRadius="15"
+                                        Margin="10,0,0,0" />
                                 <Button Text="Все курсы →"
                                         Clicked="OnAllCoursesClicked"
                                         BackgroundColor="Transparent"
@@ -394,32 +412,56 @@
                 </Border>
                 <!-- ПАНЕЛЬ УЧИТЕЛЯ (ТОЛЬКО ДЛЯ УЧИТЕЛЕЙ) -->
                 <Border x:Name="TeacherPanel"
-                    BackgroundColor="{DynamicResource BackgroundColor}"
-                    Stroke="{DynamicResource AccentColor}"
-                    StrokeThickness="2"
-                    StrokeShape="RoundRectangle 15"
-                    IsVisible="False"
-                    Padding="20">   
+    BackgroundColor="{DynamicResource BackgroundColor}"
+    Stroke="{DynamicResource AccentColor}"
+    StrokeThickness="2"
+    StrokeShape="RoundRectangle 15"
+    IsVisible="False"
+    Padding="20">
                     <VerticalStackLayout Spacing="15">
                         <Label Text="👨‍🏫 Панель преподавателя"
-                           FontSize="18"
-                           FontAttributes="Bold"
-                           TextColor="{DynamicResource AccentColor}"
-                           HorizontalOptions="Center" />
+           FontSize="18"
+           FontAttributes="Bold"
+           TextColor="{DynamicResource AccentColor}"
+           HorizontalOptions="Center" />
 
                         <Button Text="📚 Управление курсами"
-                        Clicked="OnTeacherManagementClicked"
-                        BackgroundColor="{DynamicResource AccentColor}"
-                        TextColor="White"
-                        HeightRequest="40"
-                        CornerRadius="20" />
+        Clicked="OnTeacherManagementClicked"
+        BackgroundColor="{DynamicResource AccentColor}"
+        TextColor="White"
+        HeightRequest="40"
+        CornerRadius="20" />
 
                         <Button Text="👥 Учебные группы"
-                        Clicked="OnTeacherGroupsClicked"
-                        BackgroundColor="{DynamicResource PrimaryColor}"
-                        TextColor="White"
-                        HeightRequest="40"
-                        CornerRadius="20" />
+        Clicked="OnTeacherGroupsClicked"
+        BackgroundColor="{DynamicResource PrimaryColor}"
+        TextColor="White"
+        HeightRequest="40"
+        CornerRadius="20" />
+
+                        <!-- ДОБАВЛЕННЫЕ КНОПКИ -->
+                        <VerticalStackLayout Spacing="10" IsVisible="{Binding IsTeacher}">
+                            <Button Text="➕ Создать тест" 
+                    Clicked="OnCreateTestClicked"
+                    BackgroundColor="{DynamicResource SecondaryColor}"
+                    TextColor="White"
+                    HeightRequest="35"
+                    CornerRadius="15"/>
+
+                            <Button Text="📝 Создать практику" 
+                    Clicked="OnCreatePracticeClicked"
+                    BackgroundColor="{DynamicResource SecondaryColor}"
+                    TextColor="White"
+                    HeightRequest="35"
+                    CornerRadius="15"/>
+
+                            <Button Text="📖 Создать теорию" 
+                    Clicked="OnCreateTheoryClicked"
+                    BackgroundColor="{DynamicResource SecondaryColor}"
+                    TextColor="White"
+                    HeightRequest="35"
+                    CornerRadius="15"/>
+                        </VerticalStackLayout>
                     </VerticalStackLayout>
                 </Border>
                 <!-- ЛЕНТА НОВОСТЕЙ -->

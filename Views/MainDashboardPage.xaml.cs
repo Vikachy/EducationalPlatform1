@@ -203,7 +203,7 @@ namespace EducationalPlatform.Views
                         MyCourses.Add(new MyCourse
                         {
                             CourseName = item.CourseName,
-                            Progress = item.Score ?? 0, // Исправить здесь
+                            Progress = item.Score ?? 0,
                             Language = "C#",
                             Difficulty = item.Status,
                             TimeLeft = "7 дней"
@@ -434,6 +434,19 @@ namespace EducationalPlatform.Views
             }
         }
 
+        private async void OnMyCoursesClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_currentUser != null && _dbService != null && _settingsService != null)
+                    await Navigation.PushAsync(new MyCoursesPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти к моим курсам: {ex.Message}", "OK");
+            }
+        }
+
         private async void OnTeacherPanelClicked(object sender, EventArgs e)
         {
             if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
@@ -503,7 +516,8 @@ namespace EducationalPlatform.Views
 
         private async void OnAllNewsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Все новости", "📢 Полная лента новостей будет доступна в следующем обновлении", "OK");
+            if (_currentUser != null && _dbService != null && _settingsService != null)
+                await Navigation.PushAsync(new NewsPage(_currentUser, _dbService, _settingsService));
         }
 
         private async void OnSupportClicked(object sender, EventArgs e)
@@ -544,6 +558,18 @@ namespace EducationalPlatform.Views
                 await Navigation.PushAsync(new ProfilePage(_currentUser, _dbService, _settingsService));
         }
 
+        private async void OnLogoutClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                Application.Current!.MainPage = new NavigationPage(new MainPage());
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось выйти: {ex.Message}", "OK");
+            }
+        }
+
         protected override bool OnBackButtonPressed()
         {
             MainThread.BeginInvokeOnMainThread(async () =>
@@ -576,31 +602,84 @@ namespace EducationalPlatform.Views
 
         private async void OnChatClicked(object sender, EventArgs e)
         {
-            // Показываем список групп для выбора чата
             try
             {
-                var groups = await _dbService.GetUserStudyGroupsAsync(_currentUser.UserId);
-                if (groups.Count == 0)
+                if (_currentUser.RoleId == 1) // Студент
                 {
-                    await DisplayAlert("Информация", "Вы не состоите ни в одной группе", "OK");
-                    return;
+                    await Navigation.PushAsync(new StudentChatsPage(_currentUser, _dbService, _settingsService));
                 }
-
-                var groupNames = groups.Select(g => g.GroupName).ToArray();
-                var selectedGroup = await DisplayActionSheet("Выберите группу для чата", "Отмена", null, groupNames);
-
-                if (selectedGroup != null && selectedGroup != "Отмена")
+                else if (_currentUser.RoleId == 2) // Учитель
                 {
-                    var group = groups.FirstOrDefault(g => g.GroupName == selectedGroup);
-                    if (group != null)
-                    {
-                        await Navigation.PushAsync(new ChatPage(group, _currentUser, _dbService, _settingsService));
-                    }
+                    await Navigation.PushAsync(new TeacherChatsPage(_currentUser, _dbService, _settingsService));
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка загрузки групп: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка", $"Не удалось открыть чаты: {ex.Message}", "OK");
+            }
+        }
+
+        // ДОБАВЬТЕ ЭТИ МЕТОДЫ В КЛАСС MainDashboardPage
+        private async void OnCreateTestClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    // Переход на страницу создания теста
+                    if (_dbService != null && _settingsService != null)
+                        await Navigation.PushAsync(new CreateTestPage(_currentUser, _dbService, _settingsService));
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось создать тест: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
+            }
+        }
+
+        private async void OnCreatePracticeClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    // Переход на страницу создания практики
+                    if (_dbService != null && _settingsService != null)
+                        await Navigation.PushAsync(new CreatePracticePage(_currentUser, _dbService, _settingsService));
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось создать практику: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
+            }
+        }
+
+        private async void OnCreateTheoryClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    // Переход на страницу создания теории
+                    if (_dbService != null && _settingsService != null)
+                        await Navigation.PushAsync(new CreateTheoryPage(_currentUser, _dbService, _settingsService));
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось создать теорию: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
             }
         }
     }

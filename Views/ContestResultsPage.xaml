@@ -2,12 +2,34 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.ContestResultsPage"
-             Title="Результаты конкурса">
-    <ContentPage.Content>
-        <VerticalStackLayout>
-            <Label Text="Страница результатов конкурса" 
-                   VerticalOptions="Center" 
-                   HorizontalOptions="Center" />
-        </VerticalStackLayout>
-    </ContentPage.Content>
+             x:Name="Page"
+             Title="Работы конкурса">
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
+            <HorizontalStackLayout>
+                <Button Text="←" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="White" />
+                <Label Text="Оценивание работ" FontSize="20" TextColor="White" FontAttributes="Bold" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <CollectionView Grid.Row="1" x:Name="SubmissionsCollection" SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="10" Padding="12" BackgroundColor="#F8F9FA" Stroke="#DDD" StrokeThickness="1" StrokeShape="RoundRectangle 10">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="{Binding ProjectName}" FontAttributes="Bold" />
+                            <Label Text="{Binding Student.FirstName}" FontSize="12" TextColor="#666" />
+                            <Label Text="{Binding SubmissionDate, StringFormat='📅 {0:dd.MM.yyyy HH:mm}'}" FontSize="11" TextColor="#666" />
+                            <HorizontalStackLayout Spacing="8">
+                                <Button Text="Скачать" Clicked="OnDownloadClicked" CommandParameter="{Binding ProjectFileUrl}" />
+                                <Button Text="Оценить" Clicked="OnGradeClicked" CommandParameter="{Binding .}" BackgroundColor="{DynamicResource PrimaryColor}" TextColor="White" IsVisible="{Binding Source={x:Reference Page}, Path=CanGrade}" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+
 </ContentPage>

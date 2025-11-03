@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.TeacherContentPage"
+             Title="Контент курса">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="15" Spacing="14">
+            <Picker x:Name="CoursePicker" Title="Выберите курс" />
+
+            <Label Text="Добавить теорию" FontAttributes="Bold" />
+            <Entry x:Name="TheoryTitleEntry" Placeholder="Заголовок" />
+            <Editor x:Name="TheoryContentEditor" Placeholder="HTML/Markdown контент" AutoSize="TextChanges" />
+            <Button Text="Добавить теорию" Clicked="OnAddTheoryClicked" />
+
+            <BoxView HeightRequest="1" Color="#DDD" />
+
+            <Label Text="Добавить практику" FontAttributes="Bold" />
+            <Entry x:Name="PracticeTitleEntry" Placeholder="Заголовок" />
+            <Editor x:Name="StarterCodeEditor" Placeholder="Стартовый код" AutoSize="TextChanges" />
+            <Editor x:Name="ExpectedOutputEditor" Placeholder="Ожидаемый вывод" AutoSize="TextChanges" />
+            <Editor x:Name="TestCasesEditor" Placeholder="Тест-кейсы (JSON)" AutoSize="TextChanges" />
+            <Entry x:Name="HintEntry" Placeholder="Подсказка" />
+            <Button Text="Добавить практику" Clicked="OnAddPracticeClicked" />
+
+            <BoxView HeightRequest="1" Color="#DDD" />
+
+            <Label Text="Добавить тест" FontAttributes="Bold" />
+            <Entry x:Name="TestTitleEntry" Placeholder="Название теста" />
+            <Editor x:Name="TestDescriptionEditor" Placeholder="Описание" AutoSize="TextChanges" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Entry Grid.Column="0" x:Name="TestTimeLimitEntry" Placeholder="Лимит (мин)" Keyboard="Numeric" />
+                <Entry Grid.Column="1" x:Name="TestPassingScoreEntry" Placeholder="Проходной балл" Keyboard="Numeric" />
+            </Grid>
+            <Button Text="Добавить тест" Clicked="OnAddTestClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+
+
+
+
+
+
+
+
+
+

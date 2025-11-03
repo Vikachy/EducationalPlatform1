@@ -19,7 +19,7 @@ namespace EducationalPlatform.Views
 
         public ContestPage(User currentUser, DatabaseService dbService, SettingsService settingsService)
         {
-            // Убрать вызов InitializeComponent() если он не генерируется
+            InitializeComponent();
             _currentUser = currentUser;
             _dbService = dbService;
             _settingsService = settingsService;
@@ -27,6 +27,13 @@ namespace EducationalPlatform.Views
 
             BindingContext = this;
             LoadContests();
+
+            // Разрешаем участие только студентам
+            var submitBtn = this.FindByName<Button>("CreateSubmissionButton");
+            if (submitBtn != null)
+            {
+                submitBtn.IsVisible = _currentUser.RoleId == 1; // 1 = Student
+            }
         }
 
         private async void LoadContests()
@@ -67,6 +74,22 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button button && button.CommandParameter is int contestId)
             {
+                if (_currentUser.RoleId != 1)
+                {
+                    await DisplayAlert("Доступ запрещен", "Участвовать могут только студенты", "OK");
+                    return;
+                }
+                // Проверяем, что участие разрешено правилами конкурса и студент состоит в группе, если требуется
+                var contest = ActiveContests.FirstOrDefault(c => c.ContestId == contestId);
+                if (contest != null && contest.OnlyForGroups)
+                {
+                    bool inGroup = await _dbService.IsUserInAnyActiveGroupAsync(_currentUser.UserId);
+                    if (!inGroup)
+                    {
+                        await DisplayAlert("Доступ ограничен", "Этот конкурс доступен только участникам учебных групп. Обратитесь к преподавателю, чтобы присоединиться к группе.", "OK");
+                        return;
+                    }
+                }
                 await Navigation.PushAsync(new ContestSubmissionPage(contestId, _currentUser, _dbService, _settingsService));
             }
         }
@@ -97,6 +120,20 @@ namespace EducationalPlatform.Views
                 var contest = activeContests.FirstOrDefault(c => c.ContestName == selectedContest);
                 if (contest != null)
                 {
+                    if (_currentUser.RoleId != 1)
+                    {
+                        await DisplayAlert("Доступ запрещен", "Участвовать могут только студенты", "OK");
+                        return;
+                    }
+                    if (contest.OnlyForGroups)
+                    {
+                        bool inGroup = await _dbService.IsUserInAnyActiveGroupAsync(_currentUser.UserId);
+                        if (!inGroup)
+                        {
+                            await DisplayAlert("Доступ ограничен", "Этот конкурс доступен только участникам учебных групп. Обратитесь к преподавателю, чтобы присоединиться к группе.", "OK");
+                            return;
+                        }
+                    }
                     await Navigation.PushAsync(new ContestSubmissionPage(contest.ContestId, _currentUser, _dbService, _settingsService));
                 }
             }

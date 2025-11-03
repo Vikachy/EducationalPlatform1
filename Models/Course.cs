@@ -67,4 +67,5 @@ namespace EducationalPlatform.Models
         public int ActiveStudents { get; set; }
         public DateTime LastActivity { get; set; }
     }
+
 }

@@ -39,7 +39,6 @@ namespace EducationalPlatform.Views
 
             BindingContext = this;
             LoadUserData();
-            LoadShopItems();
         }
 
         private void LoadUserData()
@@ -47,7 +46,7 @@ namespace EducationalPlatform.Views
             UserGameCurrency = _currentUser.GameCurrency;
         }
 
-        private async void LoadShopItems()
+        private async Task LoadShopItems()
         {
             try
             {
@@ -193,6 +192,7 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                ShopLoadingOverlay.IsVisible = true;
                 if (!item.IsPurchased)
                 {
                     // ПОКУПКА товара
@@ -205,8 +205,8 @@ namespace EducationalPlatform.Views
                             _currentUser.GameCurrency = UserGameCurrency;
                             item.IsPurchased = true;
 
-                            await DisplayAlert("Успех", $"Товар \"{item.Name}\" приобретен! 🎉", "OK");
-                            LoadShopItems(); // Обновляем список
+                            await DisplayAlert("Успех", $"Товар \"{item.Name}\" приобретен!", "OK");
+                            LoadShopItems();
                         }
                         else
                         {
@@ -228,7 +228,7 @@ namespace EducationalPlatform.Views
                         if (success)
                         {
                             item.IsEquipped = true;
-                            await DisplayAlert("Успех", $"\"{item.Name}\" теперь активно! ✨", "OK");
+                            await DisplayAlert("Успех", $"\"{item.Name}\" теперь активно!", "OK");
 
                             // Если это тема, применяем её
                             if (item.ItemType == "theme")
@@ -236,7 +236,7 @@ namespace EducationalPlatform.Views
                                 ApplyPurchasedTheme(item);
                             }
 
-                            LoadShopItems(); // Обновляем список
+                            LoadShopItems();
                         }
                     }
                     else
@@ -255,6 +255,10 @@ namespace EducationalPlatform.Views
             catch (Exception ex)
             {
                 await DisplayAlert("Ошибка", $"Ошибка операции: {ex.Message}", "OK");
+            }
+            finally
+            {
+                ShopLoadingOverlay.IsVisible = false;
             }
         }
 
@@ -275,14 +279,36 @@ namespace EducationalPlatform.Views
 
         private async void OnInventoryClicked(object sender, EventArgs e)
         {
-            // Временная заглушка
-            await DisplayAlert("Инвентарь", "Функция инвентаря в разработке", "OK");
+            try
+            {
+                await Navigation.PushAsync(new InventoryPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось открыть инвентарь: {ex.Message}", "OK");
+            }
         }
 
         private async void OnEarnCoinsClicked(object sender, EventArgs e)
         {
-            // Временная заглушка
-            await DisplayAlert("Получение монет", "Функция получения монет в разработке", "OK");
+            try
+            {
+                bool ok = await _dbService.AddGameCurrencyAsync(_currentUser.UserId, 50, _settingsService?.CurrentLanguage == "ru" ? "Ежедневный бонус" : "Daily bonus");
+                if (ok)
+                {
+                    UserGameCurrency = await _dbService.GetUserGameCurrencyAsync(_currentUser.UserId);
+                    _currentUser.GameCurrency = UserGameCurrency;
+                    await DisplayAlert("Успех", "+50 монет начислено!", "OK");
+                }
+                else
+                {
+                    await DisplayAlert("Ошибка", "Не удалось начислить монеты", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Ошибка начисления: {ex.Message}", "OK");
+            }
         }
 
         private async void OnBackClicked(object sender, EventArgs e)
@@ -290,11 +316,15 @@ namespace EducationalPlatform.Views
             await Navigation.PopAsync();
         }
 
-        protected override void OnAppearing()
+        protected override async void OnAppearing()
         {
             base.OnAppearing();
             LoadUserData();
-            LoadShopItems();
+            InitialLoadingOverlay.IsVisible = true;
+            ShopContent.IsVisible = false;
+            await LoadShopItems();
+            InitialLoadingOverlay.IsVisible = false;
+            ShopContent.IsVisible = true;
         }
 
         public new event PropertyChangedEventHandler? PropertyChanged;

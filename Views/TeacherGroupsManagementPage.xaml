@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.TeacherGroupsManagementPage"
+             Title="Управление группами">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Заголовок -->
+        <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
+            <Label Text="Управление учебными группами" 
+                   FontSize="18" 
+                   FontAttributes="Bold" 
+                   TextColor="White" 
+                   HorizontalOptions="Center" />
+        </Border>
+
+        <!-- Контент -->
+        <ScrollView Grid.Row="1" Padding="15">
+            <VerticalStackLayout Spacing="20">
+                
+                <!-- Создание новой группы -->
+                <Border BackgroundColor="#E3F2FD" 
+                        Stroke="#2196F3" 
+                        StrokeThickness="1" 
+                        StrokeShape="RoundRectangle 10" 
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Создать новую группу" 
+                               FontSize="16" 
+                               FontAttributes="Bold" />
+                        
+                        <Entry x:Name="NewGroupNameEntry" 
+                               Placeholder="Название группы" />
+                        
+                        <Picker x:Name="CoursePicker"
+                                Title="Выберите курс"
+                                ItemDisplayBinding="{Binding CourseName}" />
+                        
+                        <Button Text="Создать группу" 
+                                Clicked="OnCreateGroupClicked" 
+                                BackgroundColor="#2196F3" 
+                                TextColor="White" />
+
+                        <Button Text="Создать группу из списка логинов"
+                                Clicked="OnCreateGroupWithUsersClicked"
+                                BackgroundColor="#2E86AB"
+                                TextColor="White" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Список групп -->
+                <Label Text="Мои группы" 
+                       FontSize="16" 
+                       FontAttributes="Bold" />
+                
+                <CollectionView x:Name="GroupsCollectionView" 
+                                ItemsSource="{Binding Groups}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,5" 
+                                    BackgroundColor="White" 
+                                    Stroke="#E0E0E0" 
+                                    StrokeThickness="1" 
+                                    StrokeShape="RoundRectangle 5" 
+                                    Padding="15">
+                                <Grid ColumnDefinitions="Auto,*,Auto" VerticalOptions="Center">
+                                    <Label Grid.Column="0" 
+                                           Text="👥" 
+                                           FontSize="20" 
+                                           VerticalOptions="Center" 
+                                           Margin="0,0,10,0" />
+                                    
+                                    <VerticalStackLayout Grid.Column="1">
+                                        <Label Text="{Binding GroupName}" 
+                                               FontSize="14" 
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding CourseName}" 
+                                               FontSize="12" 
+                                               TextColor="#666" />
+                                        <Label Text="{Binding StudentCount, StringFormat='Студентов: {0}'}" 
+                                               FontSize="10" 
+                                               TextColor="#999" />
+                                    </VerticalStackLayout>
+                                    
+                                    <VerticalStackLayout Grid.Column="2" Spacing="5">
+                                        <Button Text="Студенты" 
+                                                BackgroundColor="#4CAF50" 
+                                                TextColor="White" 
+                                                FontSize="10"
+                                                HeightRequest="25"
+                                                Clicked="OnViewStudentsClicked" />
+                                        <Button Text="Чат" 
+                                                BackgroundColor="#2196F3" 
+                                                TextColor="White" 
+                                                FontSize="10"
+                                                HeightRequest="25"
+                                                Clicked="OnChatClicked" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Кнопка назад -->
+        <Button Grid.Row="2" 
+                Text="Назад" 
+                Clicked="OnBackClicked" 
+                BackgroundColor="Transparent" 
+                TextColor="#2E86AB" 
+                BorderColor="#2E86AB" 
+                BorderWidth="1" 
+                Margin="20" />
+    </Grid>
+
+</ContentPage>
+
+
+

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.StudentChatsPage"
+             Title="Мои чаты">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
+            <Label Text="💬 Мои групповые чаты" 
+                   FontSize="18" 
+                   FontAttributes="Bold" 
+                   TextColor="White" 
+                   HorizontalOptions="Center" />
+        </Border>
+
+        <!-- Список групп -->
+        <CollectionView Grid.Row="1" 
+                        x:Name="GroupsCollectionView"
+                        ItemsSource="{Binding Groups}"
+                        SelectionMode="Single"
+                        SelectionChanged="OnGroupSelected">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="10,5" 
+                            BackgroundColor="White" 
+                            Stroke="#E0E0E0" 
+                            StrokeThickness="1" 
+                            StrokeShape="RoundRectangle 10" 
+                            Padding="15">
+                        <Grid ColumnDefinitions="Auto,*,Auto" VerticalOptions="Center">
+                            <!-- Иконка группы -->
+                            <Label Grid.Column="0" 
+                                   Text="👥" 
+                                   FontSize="24" 
+                                   VerticalOptions="Center" 
+                                   Margin="0,0,10,0" />
+                            
+                            <!-- Информация о группе -->
+                            <VerticalStackLayout Grid.Column="1" Spacing="5">
+                                <Label Text="{Binding GroupName}" 
+                                       FontSize="16" 
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding CourseName}" 
+                                       FontSize="12" 
+                                       TextColor="#666" />
+                                <Label Text="{Binding StudentCount, StringFormat='Участников: {0}'}" 
+                                       FontSize="10" 
+                                       TextColor="#999" />
+                            </VerticalStackLayout>
+                            
+                            <!-- Кнопка входа в чат -->
+                            <Button Grid.Column="2" 
+                                    Text="💬" 
+                                    BackgroundColor="#2E86AB" 
+                                    TextColor="White" 
+                                    WidthRequest="40" 
+                                    HeightRequest="40" 
+                                    CornerRadius="20" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+
+</ContentPage>
+
+
+
+
+

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.CourseStudentsPage"
+             Title="Студенты курса">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Заголовок -->
+        <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
+            <VerticalStackLayout>
+                <Label Text="{Binding CourseName}" 
+                       FontSize="18" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center" />
+                <Label Text="{Binding StudentCount, StringFormat='Студентов: {0}'}" 
+                       FontSize="12" 
+                       TextColor="White" 
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Список студентов -->
+        <CollectionView Grid.Row="1" 
+                        x:Name="StudentsCollectionView"
+                        ItemsSource="{Binding Students}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="10,5" 
+                            BackgroundColor="White" 
+                            Stroke="#E0E0E0" 
+                            StrokeThickness="1" 
+                            StrokeShape="RoundRectangle 10" 
+                            Padding="15">
+                        <Grid ColumnDefinitions="Auto,*,Auto" VerticalOptions="Center">
+                            <!-- Аватар -->
+                            <Frame Grid.Column="0" 
+                                   WidthRequest="50" 
+                                   HeightRequest="50" 
+                                   CornerRadius="25" 
+                                   BackgroundColor="#2E86AB" 
+                                   Margin="0,0,10,0">
+                                <Label Text="👤" 
+                                       FontSize="20" 
+                                       HorizontalOptions="Center" 
+                                       VerticalOptions="Center" 
+                                       TextColor="White" />
+                            </Frame>
+                            
+                            <!-- Информация о студенте -->
+                            <VerticalStackLayout Grid.Column="1" Spacing="5">
+                                <Label Text="{Binding StudentName}" 
+                                       FontSize="16" 
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding Username}" 
+                                       FontSize="12" 
+                                       TextColor="#666" />
+                                <Label Text="{Binding Progress, StringFormat='Прогресс: {0}%'}" 
+                                       FontSize="10" 
+                                       TextColor="#999" />
+                                <Label Text="{Binding LastActivity, StringFormat='Последняя активность: {0:dd.MM.yyyy}'}" 
+                                       FontSize="10" 
+                                       TextColor="#999" />
+                            </VerticalStackLayout>
+                            
+                            <!-- Кнопки действий -->
+                            <VerticalStackLayout Grid.Column="2" Spacing="5">
+                                <Button Text="📊" 
+                                        BackgroundColor="#2196F3" 
+                                        TextColor="White" 
+                                        WidthRequest="35" 
+                                        HeightRequest="35" 
+                                        CornerRadius="17" 
+                                        Clicked="OnViewStatsClicked" />
+                                <Button Text="💬" 
+                                        BackgroundColor="#4CAF50" 
+                                        TextColor="White" 
+                                        WidthRequest="35" 
+                                        HeightRequest="35" 
+                                        CornerRadius="17" 
+                                        Clicked="OnChatClicked" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Кнопка назад -->
+        <Button Grid.Row="2" 
+                Text="Назад" 
+                Clicked="OnBackClicked" 
+                BackgroundColor="Transparent" 
+                TextColor="#2E86AB" 
+                BorderColor="#2E86AB" 
+                BorderWidth="1" 
+                Margin="20" />
+    </Grid>
+
+</ContentPage>
+
+
+
+
+

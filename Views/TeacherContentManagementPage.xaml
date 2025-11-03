@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.TeacherContentManagementPage"
+             Title="Управление контентом">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Заголовок -->
+        <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
+            <VerticalStackLayout>
+                <Label Text="{Binding CourseName}" 
+                       FontSize="18" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center" />
+                <Label Text="Управление контентом курса" 
+                       FontSize="12" 
+                       TextColor="White" 
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Контент -->
+        <ScrollView Grid.Row="1" Padding="15">
+            <VerticalStackLayout Spacing="20">
+                
+                <!-- Добавление теории -->
+                <Border BackgroundColor="#E3F2FD" 
+                        Stroke="#2196F3" 
+                        StrokeThickness="1" 
+                        StrokeShape="RoundRectangle 10" 
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="📚 Добавить теорию" 
+                               FontSize="16" 
+                               FontAttributes="Bold" />
+                        
+                        <Entry x:Name="TheoryTitleEntry" 
+                               Placeholder="Название урока" />
+                        
+                        <Editor x:Name="TheoryContentEditor" 
+                                Placeholder="Содержание урока" 
+                                HeightRequest="100" />
+                        
+                        <Button Text="Добавить теорию" 
+                                Clicked="OnAddTheoryClicked" 
+                                BackgroundColor="#2196F3" 
+                                TextColor="White" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Добавление практики -->
+                <Border BackgroundColor="#E8F5E8" 
+                        Stroke="#4CAF50" 
+                        StrokeThickness="1" 
+                        StrokeShape="RoundRectangle 10" 
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="💻 Добавить практику" 
+                               FontSize="16" 
+                               FontAttributes="Bold" />
+                        
+                        <Entry x:Name="PracticeTitleEntry" 
+                               Placeholder="Название задания" />
+                        
+                        <Editor x:Name="PracticeDescriptionEditor" 
+                                Placeholder="Описание задания" 
+                                HeightRequest="80" />
+                        
+                        <Editor x:Name="StarterCodeEditor" 
+                                Placeholder="Начальный код" 
+                                HeightRequest="100" />
+                        
+                        <Entry x:Name="ExpectedOutputEntry" 
+                               Placeholder="Ожидаемый результат" />
+                        
+                        <Button Text="Добавить практику" 
+                                Clicked="OnAddPracticeClicked" 
+                                BackgroundColor="#4CAF50" 
+                                TextColor="White" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Добавление теста -->
+                <Border BackgroundColor="#FFF3E0" 
+                        Stroke="#FF9800" 
+                        StrokeThickness="1" 
+                        StrokeShape="RoundRectangle 10" 
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="📝 Добавить тест" 
+                               FontSize="16" 
+                               FontAttributes="Bold" />
+                        
+                        <Entry x:Name="TestTitleEntry" 
+                               Placeholder="Название теста" />
+                        
+                        <Editor x:Name="TestDescriptionEditor" 
+                                Placeholder="Описание теста" 
+                                HeightRequest="80" />
+                        
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Entry Grid.Column="0" 
+                                   x:Name="TimeLimitEntry" 
+                                   Placeholder="Время (мин)" 
+                                   Keyboard="Numeric" />
+                            <Entry Grid.Column="1" 
+                                   x:Name="PassingScoreEntry" 
+                                   Placeholder="Проходной балл" 
+                                   Keyboard="Numeric" />
+                        </Grid>
+                        
+                        <Button Text="Добавить тест" 
+                                Clicked="OnAddTestClicked" 
+                                BackgroundColor="#FF9800" 
+                                TextColor="White" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Существующий контент -->
+                <Label Text="📋 Существующий контент" 
+                       FontSize="16" 
+                       FontAttributes="Bold" />
+                
+                <CollectionView x:Name="ContentCollectionView" 
+                                ItemsSource="{Binding ContentItems}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,5" 
+                                    BackgroundColor="White" 
+                                    Stroke="#E0E0E0" 
+                                    StrokeThickness="1" 
+                                    StrokeShape="RoundRectangle 5" 
+                                    Padding="10">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Label Grid.Column="0" 
+                                           Text="{Binding TypeIcon}" 
+                                           FontSize="20" 
+                                           VerticalOptions="Center" 
+                                           Margin="0,0,10,0" />
+                                    
+                                    <VerticalStackLayout Grid.Column="1">
+                                        <Label Text="{Binding Title}" 
+                                               FontSize="14" 
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding Type}" 
+                                               FontSize="12" 
+                                               TextColor="#666" />
+                                    </VerticalStackLayout>
+                                    
+                                    <Button Grid.Column="2" 
+                                            Text="✏️" 
+                                            BackgroundColor="Transparent" 
+                                            Clicked="OnEditContentClicked" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Кнопка назад -->
+        <Button Grid.Row="2" 
+                Text="Назад" 
+                Clicked="OnBackClicked" 
+                BackgroundColor="Transparent" 
+                TextColor="#2E86AB" 
+                BorderColor="#2E86AB" 
+                BorderWidth="1" 
+                Margin="20" />
+    </Grid>
+
+</ContentPage>
+
+
+
+
+

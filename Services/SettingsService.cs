@@ -77,13 +77,17 @@ namespace EducationalPlatform.Services
                     }
                     else
                     {
-                        // Стандартная тема
+                        // Подростковая тема
+                        Application.Current.Resources["PrimaryColor"] = Color.FromArgb("#669bbc");
                         Application.Current.Resources["PrimaryColor"] = Color.FromArgb("#457b9d");
                         Application.Current.Resources["SecondaryColor"] = Color.FromArgb("#1d3557");
                         Application.Current.Resources["BackgroundColor"] = Color.FromArgb("#f1faee");
                         Application.Current.Resources["AccentColor"] = Color.FromArgb("#e63946");
                         Application.Current.Resources["TextColor"] = Color.FromArgb("#1d3557");
                         Application.Current.Resources["LightTextColor"] = Color.FromArgb("#f1faee");
+
+
+
                     }
 
                     // Обновляем NavigationBar и StatusBar

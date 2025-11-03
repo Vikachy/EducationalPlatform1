@@ -49,6 +49,25 @@ namespace EducationalPlatform.Views
                 {
                     AvatarImage.Source = "default_avatar.png";
                 }
+
+                // применяем экипировку (рамка/эмодзи/тема)
+                var equipped = await _dbService.GetEquippedItemsAsync(_currentUser.UserId);
+                // рамка: меняем цвет рамки как пример визуализации
+                var frameBorder = this.FindByName<Border>("AvatarFrameBorder");
+                if (frameBorder != null)
+                {
+                    frameBorder.Stroke = equipped.FrameItemId.HasValue ? Color.FromArgb("#FFD700") : frameBorder.Stroke;
+                }
+                // эмодзи рядом с именем
+                if (!string.IsNullOrEmpty(equipped.EmojiIcon))
+                {
+                    UserNameLabel.Text = $"{UserNameLabel.Text} {equipped.EmojiIcon}";
+                }
+                // тема
+                if (!string.IsNullOrEmpty(equipped.ThemeName))
+                {
+                    _settingsService.ApplyTheme(equipped.ThemeName.ToLower().Contains("океан") ? "ocean" : "standard");
+                }
             }
             catch (Exception ex)
             {
@@ -127,47 +146,65 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private void LoadUserData()
+        private async void LoadUserData()
         {
-            UserNameLabel.Text = $"{_currentUser.FirstName} {_currentUser.LastName}";
-            UpdatePageTexts();
-            CompletedCoursesLabel.Text = "3";
-            StreakDaysLabel.Text = _currentUser.StreakDays.ToString();
-            GameCurrencyLabel.Text = _currentUser.GameCurrency.ToString();
-            OverallProgressBar.Progress = 0.65;
-            ProgressPercentLabel.Text = "65%";
+            try
+            {
+                UserNameLabel.Text = $"{_currentUser.FirstName} {_currentUser.LastName}";
+                UpdatePageTexts();
+
+                var stats = await _dbService.GetUserStatisticsAsync(_currentUser.UserId);
+                CompletedCoursesLabel.Text = stats.CompletedCourses.ToString();
+                StreakDaysLabel.Text = stats.CurrentStreak?.ToString() ?? _currentUser.StreakDays.ToString();
+                var balance = await _dbService.GetUserGameCurrencyAsync(_currentUser.UserId);
+                _currentUser.GameCurrency = balance;
+                GameCurrencyLabel.Text = balance.ToString();
+
+                var overall = await _dbService.GetOverallLearningProgressAsync(_currentUser.UserId);
+                OverallProgressBar.Progress = overall;
+                ProgressPercentLabel.Text = $"{Math.Round(overall * 100)}%";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки профиля: {ex.Message}");
+            }
         }
 
-        private void LoadAchievements()
+        private async void LoadAchievements()
         {
-            Achievements.Clear();
-            if (_settingsService?.CurrentLanguage == "ru")
+            try
             {
-                Achievements.Add(new Achievement { Icon = "🏆", Name = "Первый курс", Description = "Завершил первый курс" });
-                Achievements.Add(new Achievement { Icon = "🔥", Name = "Серия 7 дней", Description = "Входил 7 дней подряд" });
+                Achievements.Clear();
+                var recent = await _dbService.GetRecentAchievementsAsync(_currentUser.UserId, 10);
+                foreach (var a in recent) Achievements.Add(a);
+                AchievementsCollectionView.ItemsSource = Achievements;
             }
-            else
+            catch (Exception ex)
             {
-                Achievements.Add(new Achievement { Icon = "🏆", Name = "First Course", Description = "Completed first course" });
-                Achievements.Add(new Achievement { Icon = "🔥", Name = "7 Day Streak", Description = "Logged in 7 days in a row" });
+                Console.WriteLine($"Ошибка загрузки достижений: {ex.Message}");
             }
-            AchievementsCollectionView.ItemsSource = Achievements;
         }
 
-        private void LoadActiveCourses()
+        private async void LoadActiveCourses()
         {
-            ActiveCourses.Clear();
-            if (_settingsService?.CurrentLanguage == "ru")
+            try
             {
-                ActiveCourses.Add(new ActiveCourse { CourseName = "C# для начинающих", Progress = 75 });
-                ActiveCourses.Add(new ActiveCourse { CourseName = "Python основы", Progress = 40 });
+                ActiveCourses.Clear();
+                var progress = await _dbService.GetStudentProgressAsync(_currentUser.UserId);
+                foreach (var p in progress)
+                {
+                    ActiveCourses.Add(new ActiveCourse
+                    {
+                        CourseName = p.CourseName,
+                        Progress = p.Score ?? 0
+                    });
+                }
+                ActiveCoursesCollectionView.ItemsSource = ActiveCourses;
             }
-            else
+            catch (Exception ex)
             {
-                ActiveCourses.Add(new ActiveCourse { CourseName = "C# for Beginners", Progress = 75 });
-                ActiveCourses.Add(new ActiveCourse { CourseName = "Python Basics", Progress = 40 });
+                Console.WriteLine($"Ошибка загрузки активных курсов: {ex.Message}");
             }
-            ActiveCoursesCollectionView.ItemsSource = ActiveCourses;
         }
 
         // ИСПРАВЛЕННАЯ НАВИГАЦИЯ:
@@ -229,17 +266,63 @@ namespace EducationalPlatform.Views
 
         private async void OnShopClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Магазин", "Магазин внутриигровых предметов скоро будет доступен!", "OK");
+            try
+            {
+                await Navigation.PushAsync(new ShopPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось открыть магазин: {ex.Message}", "OK");
+            }
         }
 
         private async void OnStatisticsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Статистика", "Подробная статистика обучения скоро будет доступна!", "OK");
+            try
+            {
+                await Navigation.PushAsync(new StatisticsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось открыть статистику: {ex.Message}", "OK");
+            }
         }
 
         private async void OnAppearanceClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Внешний вид", "Настройки внешнего вида профиля скоро будут доступны!", "OK");
+            try
+            {
+                await Navigation.PushAsync(new SettingsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось открыть внешний вид: {ex.Message}", "OK");
+            }
+        }
+
+        private async void OnChangePasswordClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                // Создаем отдельную страницу для смены пароля
+                await Navigation.PushAsync(new ChangePasswordPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось открыть смену пароля: {ex.Message}", "OK");
+            }
+        }
+
+        private async void OnLogoutClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                Application.Current!.MainPage = new NavigationPage(new MainPage());
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось выйти: {ex.Message}", "OK");
+            }
         }
 
         protected override bool OnBackButtonPressed()

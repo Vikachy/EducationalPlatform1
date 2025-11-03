@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.TestPage"
+             Title="Тест">
+
+    <VerticalStackLayout Padding="15" Spacing="10">
+        <Label x:Name="TitleLabel" FontAttributes="Bold" FontSize="18" />
+        <Label Text="Этот тест без вопросов (демо). Нажмите 'Завершить' для оценки." FontSize="13" TextColor="#666"/>
+        <Button Text="Начать" x:Name="StartButton" Clicked="OnStartClicked" BackgroundColor="{DynamicResource PrimaryColor}" TextColor="White" />
+        <Button Text="Завершить" x:Name="FinishButton" IsEnabled="False" Clicked="OnFinishClicked" BackgroundColor="{DynamicResource AccentColor}" TextColor="White" />
+        <Label x:Name="ResultLabel" />
+    </VerticalStackLayout>
+
+</ContentPage>
+
+
+
+
+
+
+
+

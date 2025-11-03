@@ -6,8 +6,9 @@
     Title="Вход в систему"
     BackgroundColor="{DynamicResource BackgroundColor}">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="25" Padding="30">
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Spacing="25" Padding="30">
             <Label Text="Платформа обучения"
                    FontSize="32"
                    HorizontalOptions="Center"
@@ -89,11 +90,26 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <Button x:Name="LoginBtn"
-                            Text="Войти"
-                            BackgroundColor="#2E86AB"
-                            TextColor="White"
-                            HeightRequest="50" />
+                    <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                        <Button x:Name="LoginBtn"
+                                Grid.Row="0"
+                                Text="Войти"
+                                BackgroundColor="#2E86AB"
+                                TextColor="White"
+                                HeightRequest="50" />
+                        <ActivityIndicator x:Name="LoginActivity"
+                                            Grid.Row="1"
+                                            IsVisible="False"
+                                            IsRunning="False"
+                                            Color="#2E86AB"
+                                            HeightRequest="20" />
+                    </Grid>
+
+                    <Button x:Name="ForgotPasswordBtn"
+                            Text="Забыли пароль?"
+                            BackgroundColor="Transparent"
+                            TextColor="#2E86AB"
+                            HeightRequest="40" />
 
                     <Button x:Name="RegisterBtn"
                             Text="Создать аккаунт"
@@ -104,6 +120,13 @@
                             HeightRequest="50" />
                 </VerticalStackLayout>
             </Border>
-        </VerticalStackLayout>
-    </ScrollView>
+            </VerticalStackLayout>
+        </ScrollView>
+        <Grid x:Name="FullScreenLoading" IsVisible="False" BackgroundColor="#80000000">
+            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="12">
+                <ActivityIndicator IsRunning="True" Color="#FFFFFF" WidthRequest="48" HeightRequest="48" />
+                <Label Text="Загрузка..." TextColor="White" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
 </ContentPage>

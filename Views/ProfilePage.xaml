@@ -40,22 +40,31 @@
                            HorizontalOptions="Center"
                            VerticalOptions="Center" />
 
-                    <!-- КНОПКА РЕДАКТИРОВАНИЯ -->
-                    <Button Grid.Column="2"
-                            Text="✏️"
-                            Clicked="OnEditProfileClicked"
-                            BackgroundColor="Transparent"
-                            TextColor="White"
-                            FontSize="18"
-                            WidthRequest="45"
-                            HeightRequest="45"
-                            CornerRadius="22" />
+                    <!-- КНОПКИ РЕДАКТИРОВАНИЯ И ВЫЙТИ -->
+                    <HorizontalStackLayout Grid.Column="2" Spacing="8">
+                        <Button Text="✏️"
+                                Clicked="OnEditProfileClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="White"
+                                FontSize="18"
+                                WidthRequest="45"
+                                HeightRequest="45"
+                                CornerRadius="22" />
+                        <Button Text="⎋"
+                                Clicked="OnLogoutClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="White"
+                                FontSize="18"
+                                WidthRequest="45"
+                                HeightRequest="45"
+                                CornerRadius="22" />
+                    </HorizontalStackLayout>
                 </Grid>
             </Border>
 
             <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
             <Border Grid.Row="1"
-                    Margin="20,-30,20,0"
+                    Margin="20,10,20,0"
                     BackgroundColor="{DynamicResource BackgroundColor}"
                     Stroke="{DynamicResource PrimaryColor}"
                     StrokeThickness="2"
@@ -66,7 +75,7 @@
                     <!-- АВАТАР И ОСНОВНАЯ ИНФОРМАЦИЯ -->
                     <HorizontalStackLayout Grid.Row="0" Spacing="15" VerticalOptions="Center">
                         <!-- АВАТАР С РАМКОЙ -->
-                        <Border WidthRequest="80"
+                        <Border x:Name="AvatarFrameBorder" WidthRequest="80"
                             HeightRequest="80"
                             BackgroundColor="{DynamicResource PrimaryColor}"
                             Stroke="{DynamicResource AccentColor}"
@@ -377,6 +386,15 @@
                         Text="🎨 Внешний вид"
                         Clicked="OnAppearanceClicked"
                         BackgroundColor="#669BBC"
+                        TextColor="White"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        FontAttributes="Bold" />
+
+                <Button Grid.Row="2" Grid.ColumnSpan="2"
+                        Text="🔐 Сменить пароль"
+                        Clicked="OnChangePasswordClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"
                         HeightRequest="50"
                         CornerRadius="25"

@@ -2,16 +2,16 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.TeacherDashboardPage"
-              Title="Панель учителя">
+             Title="Панель учителя">
 
     <ScrollView>
         <VerticalStackLayout Spacing="15" Padding="20">
 
             <!-- ЗАГОЛОВОК -->
-            <Label Text="Панель управления курсами"
+            <Label Text="Мои курсы"
                    FontSize="24"
-                   TextColor="{DynamicResource TextColor}"
-                   FontAttributes="Bold" />
+                   FontAttributes="Bold"
+                   TextColor="{DynamicResource TextColor}" />
 
             <!-- СТАТИСТИКА -->
             <Border BackgroundColor="{DynamicResource PrimaryColor}"
@@ -73,47 +73,67 @@
             </Grid>
 
             <!-- СПИСОК КУРСОВ -->
-            <Label Text="Мои курсы"
-                   FontSize="18"
-                   TextColor="{DynamicResource TextColor}"
-                   FontAttributes="Bold" />
-
             <CollectionView x:Name="CoursesCollectionView">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <Border Margin="0,5"
-                                BackgroundColor="{DynamicResource BackgroundColor}"
+                                BackgroundColor="{DynamicResource CardBackgroundColor}"
                                 Stroke="{DynamicResource PrimaryColor}"
                                 StrokeThickness="1"
                                 StrokeShape="RoundRectangle 10"
-                                Padding="15">
-                            <VerticalStackLayout Spacing="10">
+                                Padding="15"
+                                HeightRequest="180">
 
-                                <!-- Заголовок курса -->
-                                <HorizontalStackLayout>
-                                    <Label Text="{Binding CourseName}"
-                                           FontSize="16"
+                            <VerticalStackLayout Spacing="8">
+
+                                <!-- Заголовок курса и кнопки -->
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                    <!-- Название курса -->
+                                    <Label Grid.Column="0"
+                                           Text="{Binding CourseName}"
+                                           FontSize="18"
                                            FontAttributes="Bold"
                                            TextColor="{DynamicResource TextColor}"
                                            VerticalOptions="Center" />
 
-                                    <Label Text="{Binding IsPublished, Converter={StaticResource PublishedConverter}}"
+                                    <!-- Кнопка Контент -->
+                                    <Button Grid.Column="1"
+                                            Text="📝 Контент"
+                                            Clicked="OnManageContentClicked"
+                                            BackgroundColor="#2196F3"
+                                            TextColor="White"
+                                            FontSize="10"
+                                            FontAttributes="Bold"
+                                            CornerRadius="5"
+                                            HeightRequest="30"
+                                            WidthRequest="100"
+                                            VerticalOptions="Center" />
+
+                                    <!-- Статус публикации -->
+                                    <Label Grid.Column="2"
+                                           Text="{Binding IsPublished, Converter={StaticResource PublishedConverter}}"
                                            FontSize="10"
                                            BackgroundColor="{Binding IsPublished, Converter={StaticResource StatusColorConverter}}"
                                            TextColor="White"
-                                           Padding="5,2"
-                                           Margin="10,0,0,0" />
-                                </HorizontalStackLayout>
+                                           Padding="8,4"
+                                           VerticalOptions="Center" />
+                                </Grid>
 
                                 <!-- Описание -->
                                 <Label Text="{Binding Description}"
-                                       FontSize="12"
-                                       TextColor="#666"
-                                       MaxLines="2" />
+                                       FontSize="14"
+                                       TextColor="#666666"
+                                       MaxLines="2"
+                                       LineBreakMode="TailTruncation" />
 
                                 <!-- Статистика -->
-                                <Grid ColumnDefinitions="*,*,*">
-                                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Grid ColumnDefinitions="*,*,*" 
+                                      VerticalOptions="Center"
+                                      HeightRequest="40">
+
+                                    <VerticalStackLayout Grid.Column="0" 
+                                                         Spacing="2"
+                                                         HorizontalOptions="Center">
                                         <Label Text="{Binding StudentCount}"
                                                FontSize="14"
                                                FontAttributes="Bold"
@@ -121,11 +141,13 @@
                                                HorizontalOptions="Center" />
                                         <Label Text="студентов"
                                                FontSize="10"
-                                               TextColor="#666"
+                                               TextColor="#666666"
                                                HorizontalOptions="Center" />
                                     </VerticalStackLayout>
 
-                                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                    <VerticalStackLayout Grid.Column="1" 
+                                                         Spacing="2"
+                                                         HorizontalOptions="Center">
                                         <Label Text="{Binding AverageRating, StringFormat='{0:F1}'}"
                                                FontSize="14"
                                                FontAttributes="Bold"
@@ -133,11 +155,13 @@
                                                HorizontalOptions="Center" />
                                         <Label Text="рейтинг"
                                                FontSize="10"
-                                               TextColor="#666"
+                                               TextColor="#666666"
                                                HorizontalOptions="Center" />
                                     </VerticalStackLayout>
 
-                                    <VerticalStackLayout Grid.Column="2" Spacing="2">
+                                    <VerticalStackLayout Grid.Column="2" 
+                                                         Spacing="2"
+                                                         HorizontalOptions="Center">
                                         <Label Text="{Binding Groups.Count}"
                                                FontSize="14"
                                                FontAttributes="Bold"
@@ -145,26 +169,36 @@
                                                HorizontalOptions="Center" />
                                         <Label Text="группы"
                                                FontSize="10"
-                                               TextColor="#666"
+                                               TextColor="#666666"
                                                HorizontalOptions="Center" />
                                     </VerticalStackLayout>
                                 </Grid>
 
                                 <!-- Кнопки управления -->
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                <Grid ColumnDefinitions="*,*" 
+                                      ColumnSpacing="8"
+                                      HeightRequest="40"
+                                      VerticalOptions="End">
+
                                     <Button Grid.Column="0"
-                                            Text="Управление"
+                                            Text="⚙️ Управление"
                                             Clicked="OnManageCourseClicked"
-                                            BackgroundColor="{DynamicResource PrimaryColor}"
+                                            BackgroundColor="#4CAF50"
                                             TextColor="White"
-                                            HeightRequest="35" />
+                                            FontSize="12"
+                                            FontAttributes="Bold"
+                                            CornerRadius="5"
+                                            HeightRequest="36" />
 
                                     <Button Grid.Column="1"
-                                            Text="Группы"
+                                            Text="👥 Группы"
                                             Clicked="OnManageGroupsClicked"
-                                            BackgroundColor="{DynamicResource SecondaryColor}"
+                                            BackgroundColor="#FF9800"
                                             TextColor="White"
-                                            HeightRequest="35" />
+                                            FontSize="12"
+                                            FontAttributes="Bold"
+                                            CornerRadius="5"
+                                            HeightRequest="36" />
                                 </Grid>
 
                             </VerticalStackLayout>

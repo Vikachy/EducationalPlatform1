@@ -2,12 +2,25 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.ContestSubmissionPage"
-             Title="Подача заявки">
-    <ContentPage.Content>
-        <VerticalStackLayout>
-            <Label Text="Страница подачи заявки на конкурс" 
-                   VerticalOptions="Center" 
-                   HorizontalOptions="Center" />
-        </VerticalStackLayout>
-    </ContentPage.Content>
+             Title="Заявка на конкурс">
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
+            <HorizontalStackLayout>
+                <Button Text="←" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="White" />
+                <Label x:Name="HeaderLabel" Text="Отправка проекта" FontSize="20" TextColor="White" FontAttributes="Bold" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="15" Spacing="12">
+                <Entry x:Name="ProjectNameEntry" Placeholder="Название проекта" />
+                <Editor x:Name="DescriptionEditor" Placeholder="Описание проекта" AutoSize="TextChanges" />
+                <Button Text="Выбрать ZIP" Clicked="OnPickZipClicked" />
+                <Label x:Name="PickedFileLabel" Text="Файл не выбран" FontSize="12" TextColor="#666" />
+                <Button Text="Отправить" Clicked="OnSubmitClicked" BackgroundColor="{DynamicResource PrimaryColor}" TextColor="White" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+
 </ContentPage>

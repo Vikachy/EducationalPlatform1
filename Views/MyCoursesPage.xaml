@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.MyCoursesPage"
+    Title="Мои курсы">
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15">
+            <HorizontalStackLayout>
+                <Label Text="🎯 Мои курсы"
+                       FontSize="20"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
+                <Button Text="Назад"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        BorderColor="White"
+                        BorderWidth="1"
+                        HeightRequest="35"
+                        CornerRadius="15"
+                        Margin="20,0,0,0" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="15" Spacing="10">
+                <CollectionView x:Name="EnrolledCoursesCollection"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="{DynamicResource PrimaryColor}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 12"
+                                    Padding="12"
+                                    Margin="0,5">
+                                <VerticalStackLayout Spacing="6">
+                                    <Label Text="{Binding CourseName}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource TextColor}" />
+                                    <Label Text="{Binding Status}"
+                                           FontSize="12"
+                                           TextColor="#666" />
+                                    <ProgressBar Progress="{Binding ProgressDecimal}"
+                                                 HeightRequest="8"
+                                                 ProgressColor="{DynamicResource PrimaryColor}" />
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Button Text="Открыть курс"
+                                                Clicked="OnOpenCourseClicked"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                                TextColor="White"
+                                                HeightRequest="34"
+                                                CornerRadius="17" />
+                                        <Button Text="Продолжить"
+                                                Clicked="OnContinueCourseClicked"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{DynamicResource AccentColor}"
+                                                TextColor="White"
+                                                HeightRequest="34"
+                                                CornerRadius="17" />
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
+
+
+
+
+
+
+
+
+
+
+
+

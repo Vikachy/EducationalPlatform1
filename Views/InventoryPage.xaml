@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="EducationalPlatform.Views.InventoryPage"
+    Title="Инвентарь">
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="20,15">
+            <HorizontalStackLayout>
+                <Label Text="🎒 Мой инвентарь" FontSize="20" TextColor="White" FontAttributes="Bold" />
+                <Button Text="Назад" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="White"
+                        BorderColor="White" BorderWidth="1" HeightRequest="35" CornerRadius="15" Margin="20,0,0,0" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="15" Spacing="12">
+                <CollectionView x:Name="InventoryCollection" SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="#F8F9FA" Stroke="{DynamicResource PrimaryColor}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="12" Margin="0,5">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10">
+                                    <Label Grid.Column="0" Grid.Row="0" Text="{Binding Name}" FontSize="16" FontAttributes="Bold" TextColor="{DynamicResource TextColor}" />
+                                    <Label Grid.Column="0" Grid.Row="1" Text="{Binding Description}" FontSize="12" TextColor="#666" />
+                                    <Button Grid.Column="1" Grid.RowSpan="2" Text="{Binding ActionText}" Clicked="OnToggleEquipClicked" CommandParameter="{Binding .}"
+                                            BackgroundColor="{Binding ButtonColor}" TextColor="White" HeightRequest="36" CornerRadius="18" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="EducationalPlatform.Views.GroupChatPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:EducationalPlatform.Models"
+             xmlns:services="clr-namespace:EducationalPlatform.Services">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Header -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="10">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0" 
+                        Text="←" 
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="16"
+                        WidthRequest="40"/>
+
+                <Label Grid.Column="1" 
+                       Text="{Binding Title}"
+                       TextColor="White"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+
+                <Label Grid.Column="2" 
+                       Text="👥"
+                       FontSize="16"
+                       HorizontalOptions="End"
+                       VerticalOptions="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Messages -->
+        <CollectionView Grid.Row="1"
+                        x:Name="MessagesCollectionView"
+                        ItemsSource="{Binding Messages}"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="10,5"
+                          ColumnDefinitions="*,Auto">
+
+                        <!-- Other user's message -->
+                        <Frame Grid.Column="0"
+                               IsVisible="{Binding IsMyMessage, Converter={StaticResource InverseBoolConverter}}"
+                               BackgroundColor="{DynamicResource SecondaryColor}"
+                               Padding="12"
+                               HorizontalOptions="Start"
+                               MaximumWidthRequest="300">
+                            <VerticalStackLayout>
+                                <Label Text="{Binding MessageText}"
+                                       TextColor="{DynamicResource TextColor}"
+                                       FontSize="14"/>
+                                <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}"
+                                       TextColor="Gray"
+                                       FontSize="10"
+                                       HorizontalOptions="End"/>
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- My message -->
+                        <Frame Grid.Column="1"
+                               IsVisible="{Binding IsMyMessage}"
+                               BackgroundColor="{DynamicResource PrimaryColor}"
+                               Padding="12"
+                               HorizontalOptions="End"
+                               MaximumWidthRequest="300">
+                            <VerticalStackLayout>
+                                <Label Text="{Binding MessageText}"
+                                       TextColor="White"
+                                       FontSize="14"/>
+                                <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}"
+                                       TextColor="LightGray"
+                                       FontSize="10"
+                                       HorizontalOptions="End"/>
+                            </VerticalStackLayout>
+                        </Frame>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Message Input -->
+        <Border Grid.Row="2"
+                BackgroundColor="{DynamicResource CardBackgroundColor}"
+                Padding="10"
+                Stroke="{DynamicResource BorderColor}"
+                StrokeThickness="1">
+            <Grid ColumnDefinitions="*,Auto,Auto" 
+                  ColumnSpacing="10">
+
+                <Entry Grid.Column="0"
+                       x:Name="MessageEntry"
+                       Placeholder="Введите сообщение..."
+                       Completed="OnMessageSent"
+                       BackgroundColor="Transparent"/>
+
+                <Button Grid.Column="1"
+                        Text="📎"
+                        Clicked="OnAttachFileClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        WidthRequest="40"/>
+
+                <Button Grid.Column="2"
+                        Text="➤"
+                        Clicked="OnSendMessageClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        WidthRequest="40"/>
+            </Grid>
+        </Border>
+
+    </Grid>
+</ContentPage>

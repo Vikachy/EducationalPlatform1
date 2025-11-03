@@ -10,6 +10,7 @@ namespace EducationalPlatform
         private DatabaseService _dbService;
         private SettingsService _settingsService;
         private CaptchaService _captchaService;
+        private IEmailService _emailService;
         private string _currentCaptcha = "";
 
         public MainPage()
@@ -19,11 +20,14 @@ namespace EducationalPlatform
             _settingsService = new SettingsService();
             _captchaService = new CaptchaService();
 
+            _emailService = new EmailService();
+
             // Устанавливаем обработчики событий
             RefreshCaptchaButton.Clicked += OnRefreshCaptchaClicked;
             ShowPasswordBtn.Clicked += OnShowPasswordClicked;
             LoginBtn.Clicked += OnLoginClicked;
             RegisterBtn.Clicked += OnRegisterClicked;
+            ForgotPasswordBtn.Clicked += OnForgotPasswordClicked;
 
             // Устанавливаем обработчик завершения ввода для полей
             UsernameEntry.Completed += OnEntryCompleted;
@@ -33,6 +37,115 @@ namespace EducationalPlatform
             RefreshCaptcha();
         }
 
+        private async void OnForgotPasswordClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                var login = await DisplayPromptAsync("Восстановление пароля",
+                    "Введите ваш логин или email:", "Продолжить", "Отмена");
+
+                if (string.IsNullOrWhiteSpace(login)) return;
+
+                // Показываем индикатор загрузки
+                ForgotPasswordBtn.IsEnabled = false;
+                ForgotPasswordBtn.Text = "Отправка запроса...";
+
+                // Ищем пользователя
+                var user = await _dbService.GetUserByUsernameAsync(login) ??
+                           await _dbService.GetUserByEmailAsync(login);
+
+                if (user == null)
+                {
+                    await DisplayAlert("Ошибка", "Пользователь с такими данными не найден.", "OK");
+                    ForgotPasswordBtn.IsEnabled = true;
+                    ForgotPasswordBtn.Text = "Забыли пароль?";
+                    return;
+                }
+
+                // Генерируем код
+                var code = new Random().Next(100000, 999999).ToString();
+                Console.WriteLine($"🔑 Сгенерирован код: {code} для пользователя: {user.UserId}");
+
+                // Пробуем сохранить код (основной метод)
+                bool codeSaved = await _dbService.SavePasswordResetCodeAsync(user.UserId, code);
+
+                if (!codeSaved)
+                {
+                    await DisplayAlert("Ошибка", "Не удалось создать код восстановления.", "OK");
+                    ForgotPasswordBtn.IsEnabled = true;
+                    ForgotPasswordBtn.Text = "Забыли пароль?";
+                    return;
+                }
+
+                // Отправляем email
+                bool emailSent = await _emailService.SendPasswordResetCodeAsync(
+                    user.Email, user.Username, code);
+
+                if (emailSent)
+                {
+                    await DisplayAlert("Успех",
+                        $"Код восстановления отправлен на вашу почту {MaskEmail(user.Email)}", "OK");
+
+                    // Запрашиваем код
+                    var enteredCode = await DisplayPromptAsync("Подтверждение",
+                        "Введите 6-значный код из письма:", "Подтвердить", "Отмена",
+                        maxLength: 6, keyboard: Keyboard.Numeric);
+
+                    if (string.IsNullOrWhiteSpace(enteredCode))
+                    {
+                        ForgotPasswordBtn.IsEnabled = true;
+                        ForgotPasswordBtn.Text = "Забыли пароль?";
+                        return;
+                    }
+
+                    // Проверяем код
+                    var validUser = await _dbService.GetUserByResetCodeAsync(enteredCode);
+
+                    if (validUser?.UserId == user.UserId)
+                    {
+                        await Navigation.PushAsync(new ResetPasswordPage(validUser, _dbService));
+                    }
+                    else
+                    {
+                        await DisplayAlert("Ошибка", "Неверный или устаревший код.", "OK");
+                    }
+                }
+                else
+                {
+                    await DisplayAlert("Ошибка отправки",
+                        "Не удалось отправить код на вашу почту.", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Ошибка: {ex.Message}", "OK");
+                Console.WriteLine($"❌ Ошибка восстановления: {ex}");
+            }
+            finally
+            {
+                ForgotPasswordBtn.IsEnabled = true;
+                ForgotPasswordBtn.Text = "Забыли пароль?";
+            }
+        }
+
+        private string MaskEmail(string email)
+        {
+            if (string.IsNullOrEmpty(email) || !email.Contains("@"))
+                return "***@***";
+
+            var parts = email.Split('@');
+            if (parts.Length != 2) return "***@***";
+
+            var username = parts[0];
+            var domain = parts[1];
+
+            if (username.Length <= 2)
+                return $"***@{domain}";
+
+            return $"{username.Substring(0, 2)}***@{domain}";
+        }
+
+        // Остальные методы остаются без изменений...
         private void OnEntryCompleted(object? sender, EventArgs e)
         {
             OnLoginClicked(sender, e);
@@ -94,6 +207,9 @@ namespace EducationalPlatform
 
             // Показываем индикатор загрузки
             SetControlsEnabled(false);
+            LoginActivity.IsVisible = true;
+            LoginActivity.IsRunning = true;
+            FullScreenLoading.IsVisible = true;
 
             try
             {
@@ -158,6 +274,9 @@ namespace EducationalPlatform
             {
                 // Восстанавливаем кнопки
                 SetControlsEnabled(true);
+                LoginActivity.IsVisible = false;
+                LoginActivity.IsRunning = false;
+                FullScreenLoading.IsVisible = false;
             }
         }
 

@@ -130,7 +130,21 @@ namespace EducationalPlatform.Views
                 var result = await FilePicker.Default.PickAsync();
                 if (result != null)
                 {
-                    await DisplayAlert("Информация", "Функция отправки файлов будет добавлена в следующих версиях", "OK");
+                    using var stream = await result.OpenReadAsync();
+                    var fileService = ServiceHelper.GetService<FileService>();
+                    var uniqueName = fileService.GenerateUniqueFileName(result.FileName);
+                    var savedPath = await fileService.SaveDocumentAsync(stream, uniqueName);
+
+                    var ok = await _dbService.SendGroupChatMessageAsync(_currentGroup.GroupId, _currentUser.UserId, $"[file] {savedPath}");
+                    if (ok)
+                    {
+                        await DisplayAlert("Файл", "Файл отправлен", "OK");
+                        LoadMessages();
+                    }
+                    else
+                    {
+                        await DisplayAlert("Ошибка", "Не удалось отправить файл", "OK");
+                    }
                 }
             }
             catch (Exception ex)

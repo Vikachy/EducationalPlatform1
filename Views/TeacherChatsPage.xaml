@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.TeacherChatsPage"
+             Title="Чаты преподавателя">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
+            <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
+                <Label Grid.Column="0" Text="💬 Управление чатами групп" FontSize="18" FontAttributes="Bold" TextColor="White" />
+                <Button Grid.Column="1" Text="👥 Группы" BackgroundColor="White" TextColor="#2E86AB" CornerRadius="8" Padding="10,6" Clicked="OnManageGroupsClicked" />
+            </Grid>
+        </Border>
+
+        <!-- Две колонки: слева список чатов, справа текущий чат -->
+        <Grid Grid.Row="1" ColumnDefinitions="300,*">
+            <!-- Список групп слева -->
+            <CollectionView Grid.Column="0" 
+                            x:Name="GroupsCollectionView"
+                            ItemsSource="{Binding Groups}"
+                            SelectionMode="Single"
+                            SelectionChanged="OnGroupSelected">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="10,5" 
+                                BackgroundColor="White" 
+                                Stroke="#E0E0E0" 
+                                StrokeThickness="1" 
+                                StrokeShape="RoundRectangle 10" 
+                                Padding="15">
+                            <Grid ColumnDefinitions="Auto,*,Auto" VerticalOptions="Center">
+                                <Label Grid.Column="0" Text="👥" FontSize="24" VerticalOptions="Center" Margin="0,0,10,0" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="5">
+                                    <Label Text="{Binding GroupName}" FontSize="16" FontAttributes="Bold" />
+                                    <Label Text="{Binding CourseName}" FontSize="12" TextColor="#666" />
+                                    <Label Text="{Binding StudentCount, StringFormat='Студентов: {0}'}" FontSize="10" TextColor="#999" />
+                                    <Label Text="{Binding IsActive, Converter={StaticResource StatusConverter}}" FontSize="10" TextColor="{Binding IsActive, Converter={StaticResource StatusColorConverter}}" />
+                                </VerticalStackLayout>
+                                <Button Grid.Column="2" Text="💬" BackgroundColor="#2E86AB" TextColor="White" WidthRequest="40" HeightRequest="40" CornerRadius="20" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Правая панель: текущий чат как в Telegram -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
+                <!-- Заголовок чата -->
+                <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
+                    <VerticalStackLayout>
+                        <Label x:Name="ChatGroupNameLabel" Text="Выберите чат" FontSize="18" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+                        <Label x:Name="ChatOnlineLabel" Text="Онлайн: 0" FontSize="12" TextColor="White" HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Сообщения -->
+                <CollectionView Grid.Row="1"
+                                x:Name="MessagesCollectionView"
+                                ItemsSource="{Binding Messages}"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10" Margin="5" StrokeThickness="0" StrokeShape="RoundRectangle 15">
+                                <VerticalStackLayout Spacing="5">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Grid.Column="0" Text="{Binding SenderName}" FontSize="12" FontAttributes="Bold" />
+                                        <Label Grid.Column="1" Text="{Binding SentDate, StringFormat='{0:HH:mm}'}" FontSize="10" />
+                                    </Grid>
+                                    <Label Text="{Binding MessageText}" FontSize="14" LineBreakMode="WordWrap" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Ввод -->
+                <Border Grid.Row="2" BackgroundColor="White" Stroke="#E0E0E0" StrokeThickness="1" Padding="10">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                        <Entry Grid.Column="0" x:Name="MessageEntry" Placeholder="Введите сообщение..." Completed="OnMessageSent" ReturnType="Send" />
+                        <Button Grid.Column="1" Text="📎" BackgroundColor="Transparent" TextColor="#2E86AB" WidthRequest="40" HeightRequest="40" Clicked="OnAttachFileClicked" />
+                        <Button Grid.Column="2" Text="➤" BackgroundColor="#2E86AB" TextColor="White" WidthRequest="40" HeightRequest="40" Clicked="OnSendMessageClicked" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+
+</ContentPage>
+
+
+

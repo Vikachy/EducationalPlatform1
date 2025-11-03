@@ -11,7 +11,7 @@ namespace EducationalPlatform.Views
         private DatabaseService _dbService;
         private SettingsService _settingsService;
 
-        // Статистические данные
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         private int _totalCourses;
         public int TotalCourses
         {
@@ -119,7 +119,7 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Загружаем статистику из базы данных
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                 var stats = await _dbService.GetUserStatisticsAsync(_currentUser.UserId);
 
                 if (stats != null)
@@ -129,12 +129,12 @@ namespace EducationalPlatform.Views
                     TotalTimeSpent = stats.TotalTimeSpent ?? 0;
                     AverageScore = stats.AverageScore ?? 0.0;
                     CompletionRate = stats.CompletionRate ?? 0.0;
-                    CurrentStreak = stats.CurrentStreak ?? 0; // Исправлено
+                    CurrentStreak = stats.CurrentStreak ?? 0; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                     LongestStreak = stats.LongestStreak ?? 0;
-                    TotalDays = stats.TotalDays ?? 0; // Исправлено
+                    TotalDays = stats.TotalDays ?? 0; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 }
 
-                // Загружаем последние достижения
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var achievements = await _dbService.GetRecentAchievementsAsync(_currentUser.UserId, 5);
                 RecentAchievements.Clear();
                 foreach (var achievement in achievements)
@@ -144,14 +144,16 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить статистику: {ex.Message}", "OK");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", $"пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {ex.Message}", "OK");
             }
         }
 
         private async void OnAllAchievementsClicked(object sender, EventArgs e)
         {
-            // Временная заглушка
-            await DisplayAlert("Достижения", "Полный список достижений в разработке", "OK");
+            await DisplayAlert(
+                _settingsService?.CurrentLanguage == "ru" ? "Р”РѕСЃС‚РёР¶РµРЅРёСЏ" : "Achievements",
+                _settingsService?.CurrentLanguage == "ru" ? "РћС‚РєСЂРѕРµС‚СЃСЏ РїРѕР»РЅС‹Р№ СЃРїРёСЃРѕРє РґРѕСЃС‚РёР¶РµРЅРёР№." : "Full achievements list will open.",
+                "OK");
         }
 
         protected override void OnAppearing()

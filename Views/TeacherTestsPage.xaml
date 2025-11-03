@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.TeacherTestsPage"
+             Title="Тесты">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="15" Spacing="12">
+            <Picker x:Name="CoursePicker" Title="Выберите курс" />
+            <Entry x:Name="TitleEntry" Placeholder="Название теста" />
+            <Editor x:Name="DescriptionEditor" Placeholder="Описание" AutoSize="TextChanges" />
+            <Entry x:Name="TimeLimitEntry" Placeholder="Лимит времени (мин)" Keyboard="Numeric" />
+            <Entry x:Name="PassingScoreEntry" Placeholder="Проходной балл" Keyboard="Numeric" />
+            <Button Text="Создать тест" Clicked="OnCreateClicked" BackgroundColor="{DynamicResource PrimaryColor}" TextColor="White" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+
+
+
+
+
+
+
+
+
+
