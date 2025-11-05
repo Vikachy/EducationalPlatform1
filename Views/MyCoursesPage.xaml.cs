@@ -81,7 +81,3 @@ namespace EducationalPlatform.Views
         public double ProgressDecimal => Progress / 100.0;
     }
 }
-
-
-
-

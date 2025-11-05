@@ -12,7 +12,7 @@ namespace EducationalPlatform.Views
         private readonly int _courseId;
         private readonly int _lessonId;
 
-        private DatabaseService.PracticeDto? _exercise;
+        private PracticeDto? _exercise; // Используем PracticeDto из Models
 
         public PracticePage(User user, DatabaseService dbService, SettingsService settingsService, int courseId, int lessonId, string lessonTitle)
         {
@@ -51,7 +51,7 @@ namespace EducationalPlatform.Views
                         // Базовая проверка тест-кейсов (JSON массив объектов с expected)
                         try
                         {
-                            var testCases = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(_exercise.TestCasesJson!) ?? new();
+                            var testCases = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(_exercise.TestCasesJson) ?? new();
                             int passed = 0;
                             foreach (var tc in testCases)
                             {
@@ -76,11 +76,3 @@ namespace EducationalPlatform.Views
         }
     }
 }
-
-
-
-
-
-
-
-

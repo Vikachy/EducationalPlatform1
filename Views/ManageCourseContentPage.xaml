@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.ManageCourseContentPage"
+             Title="Управление контентом курса">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <Label x:Name="CourseTitleLabel" 
+                   Text="Название курса" 
+                   FontSize="24" 
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <!-- Панель добавления нового контента -->
+            <Frame BackgroundColor="#E8F5E8" Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Добавить новый контент:" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryColor}" />
+
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <Button Text="📖 Теория" 
+                                Clicked="OnAddTheoryClicked"
+                                BackgroundColor="#4CAF50"
+                                TextColor="White" />
+                        <Button Grid.Column="1" 
+                                Text="💻 Практика" 
+                                Clicked="OnAddPracticeClicked"
+                                BackgroundColor="#2196F3"
+                                TextColor="White" />
+                        <Button Grid.Column="2" 
+                                Text="📝 Тест" 
+                                Clicked="OnAddTestClicked"
+                                BackgroundColor="#FF9800"
+                                TextColor="White" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Разделы с уроками -->
+            <VerticalStackLayout Spacing="15">
+
+                <!-- Теория -->
+                <Frame Style="{DynamicResource StandardFrameStyle}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label x:Name="TheoryLabel" 
+                               Text="Теория (0)" 
+                               FontSize="18" 
+                               FontAttributes="Bold" />
+
+                        <CollectionView x:Name="TheoryCollection">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame BackgroundColor="#F8F9FA" Padding="15" Margin="0,5">
+                                        <Grid ColumnDefinitions="*,Auto,Auto">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding Title}" 
+                                                   FontSize="16" 
+                                                   VerticalOptions="Center" />
+                                            <Button Grid.Column="1"
+                                                    Text="✏️" 
+                                                    Clicked="OnEditLessonClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    FontSize="16"
+                                                    Margin="0,0,10,0" />
+                                            <Button Grid.Column="2"
+                                                    Text="🗑️" 
+                                                    Clicked="OnDeleteLessonClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="Red"
+                                                    FontSize="16" />
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <Label x:Name="EmptyTheoryLabel" 
+                               Text="Теоретические уроки отсутствуют" 
+                               FontSize="14"
+                               TextColor="Gray"
+                               HorizontalOptions="Center"
+                               IsVisible="False" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Практика -->
+                <Frame Style="{DynamicResource StandardFrameStyle}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label x:Name="PracticeLabel" 
+                               Text="Практика (0)" 
+                               FontSize="18" 
+                               FontAttributes="Bold" />
+
+                        <CollectionView x:Name="PracticeCollection">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame BackgroundColor="#F8F9FA" Padding="15" Margin="0,5">
+                                        <Grid ColumnDefinitions="*,Auto,Auto">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding Title}" 
+                                                   FontSize="16" 
+                                                   VerticalOptions="Center" />
+                                            <Button Grid.Column="1"
+                                                    Text="✏️" 
+                                                    Clicked="OnEditLessonClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    FontSize="16"
+                                                    Margin="0,0,10,0" />
+                                            <Button Grid.Column="2"
+                                                    Text="🗑️" 
+                                                    Clicked="OnDeleteLessonClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="Red"
+                                                    FontSize="16" />
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <Label x:Name="EmptyPracticeLabel" 
+                               Text="Практические задания отсутствуют" 
+                               FontSize="14"
+                               TextColor="Gray"
+                               HorizontalOptions="Center"
+                               IsVisible="False" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Тесты -->
+                <Frame Style="{DynamicResource StandardFrameStyle}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label x:Name="TestsLabel" 
+                               Text="Тесты (0)" 
+                               FontSize="18" 
+                               FontAttributes="Bold" />
+
+                        <CollectionView x:Name="TestsCollection">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame BackgroundColor="#F8F9FA" Padding="15" Margin="0,5">
+                                        <Grid ColumnDefinitions="*,Auto,Auto">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding Title}" 
+                                                   FontSize="16" 
+                                                   VerticalOptions="Center" />
+                                            <Button Grid.Column="1"
+                                                    Text="✏️" 
+                                                    Clicked="OnEditLessonClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    FontSize="16"
+                                                    Margin="0,0,10,0" />
+                                            <Button Grid.Column="2"
+                                                    Text="🗑️" 
+                                                    Clicked="OnDeleteLessonClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="Red"
+                                                    FontSize="16" />
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <Label x:Name="EmptyTestsLabel" 
+                               Text="Тесты отсутствуют" 
+                               FontSize="14"
+                               TextColor="Gray"
+                               HorizontalOptions="Center"
+                               IsVisible="False" />
+                    </VerticalStackLayout>
+                </Frame>
+
+            </VerticalStackLayout>
+
+            <!-- Статистика -->
+            <Frame BackgroundColor="#F0F8FF" Padding="15">
+                <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                    <Label Grid.Row="0" Grid.Column="0" Text="Статистика курса:" 
+                           FontSize="16" FontAttributes="Bold" Grid.ColumnSpan="3" />
+
+                    <Label Grid.Row="1" Grid.Column="0" 
+                           Text="{Binding TheoryCount, StringFormat='Теория: {0}'}" 
+                           FontSize="14" HorizontalOptions="Center" />
+                    <Label Grid.Row="1" Grid.Column="1" 
+                           Text="{Binding PracticeCount, StringFormat='Практика: {0}'}" 
+                           FontSize="14" HorizontalOptions="Center" />
+                    <Label Grid.Row="1" Grid.Column="2" 
+                           Text="{Binding TestCount, StringFormat='Тесты: {0}'}" 
+                           FontSize="14" HorizontalOptions="Center" />
+                </Grid>
+            </Frame>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Text="Назад" 
+                        Clicked="OnBackClicked" />
+                <Button Text="Обновить" 
+                        Clicked="OnRefreshClicked"
+                        BackgroundColor="{DynamicResource SecondaryColor}" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

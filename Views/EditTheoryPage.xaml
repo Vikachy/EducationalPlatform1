@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.EditTheoryPage"
+             Title="Редактирование теории">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <Label Text="Редактирование теоретического урока" 
+                   FontSize="24" FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
+                <VerticalStackLayout Spacing="15">
+
+                    <Label Text="Название урока:" Style="{DynamicResource StandardLabelStyle}"/>
+                    <Entry x:Name="TitleEntry" Placeholder="Введите название урока" />
+
+                    <Label Text="Порядок урока:" Style="{DynamicResource StandardLabelStyle}"/>
+                    <Entry x:Name="OrderEntry" Placeholder="1" Keyboard="Numeric" />
+
+                    <Label Text="Содержание:" Style="{DynamicResource StandardLabelStyle}"/>
+                    <Editor x:Name="ContentEditor" 
+                            HeightRequest="300"
+                            Placeholder="Введите содержание урока..."
+                            AutoSize="TextChanges" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Text="Назад" Clicked="OnBackClicked" />
+                        <Button Text="Сохранить изменения" Clicked="OnSaveClicked" 
+                                BackgroundColor="{DynamicResource PrimaryColor}" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

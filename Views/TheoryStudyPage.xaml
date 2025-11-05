@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.TheoryStudyPage"
+             Title="Изучение теории">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Заголовок -->
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
+            <HorizontalStackLayout>
+                <Label x:Name="TitleLabel" 
+                       Text="Теория" 
+                       FontSize="20" 
+                       TextColor="White" 
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
+                <Button Text="Назад" 
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        Margin="20,0,0,0" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Содержание теории -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="15">
+                <Label x:Name="ContentLabel" 
+                       FontSize="16"
+                       LineBreakMode="WordWrap" />
+
+                <!-- Прикрепленные файлы -->
+                <StackLayout x:Name="AttachmentsSection" IsVisible="False">
+                    <Label Text="Прикрепленные файлы:" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryColor}" />
+                    <CollectionView x:Name="AttachmentsCollection">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="#F0F8FF" 
+                                        Padding="10" 
+                                        Margin="0,5">
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Label Text="📎" FontSize="16" />
+                                        <Label Text="{Binding .}" 
+                                               FontSize="14"
+                                               LineBreakMode="TailTruncation" />
+                                        <Button Text="Открыть" 
+                                                Clicked="OnOpenAttachmentClicked"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                                TextColor="White"
+                                                Padding="10,5" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Кнопки навигации -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="10" Padding="15">
+            <Button x:Name="PrevButton" 
+                    Text="⬅️ Предыдущий" 
+                    Clicked="OnPrevClicked"
+                    IsVisible="False" />
+            <Button x:Name="NextButton" 
+                    Text="Следующий ➡️" 
+                    Clicked="OnNextClicked"
+                    BackgroundColor="{DynamicResource PrimaryColor}"
+                    TextColor="White" />
+        </Grid>
+
+    </Grid>
+</ContentPage>

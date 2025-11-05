@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="EducationalPlatform.Views.CreatePracticePage"
-             Title="Создание практики">
+             x:Class="EducationalPlatform.Views.EditPracticePage"
+             Title="Редактирование практики">
 
     <ScrollView>
         <VerticalStackLayout Spacing="20" Padding="20">
 
-            <Label Text="Создание практического задания" 
+            <Label Text="Редактирование практического задания" 
                    FontSize="24" FontAttributes="Bold"
                    HorizontalOptions="Center" />
 
@@ -60,7 +60,7 @@
 
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                         <Button Text="Назад" Clicked="OnBackClicked" />
-                        <Button Text="Создать практику" Clicked="OnCreateClicked" 
+                        <Button Text="Сохранить изменения" Clicked="OnSaveClicked" 
                                 BackgroundColor="{DynamicResource PrimaryColor}" />
                     </Grid>
 

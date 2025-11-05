@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="EducationalPlatform.Views.CreateQuestionPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Создание вопроса">
+
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="15">
+
+            <Label Text="Текст вопроса:" FontAttributes="Bold"/>
+            <Editor x:Name="QuestionEditor" 
+                   HeightRequest="100" 
+                   Placeholder="Введите текст вопроса..."
+                   AutoSize="TextChanges"/>
+
+            <Label Text="Тип вопроса:" FontAttributes="Bold"/>
+            <Picker x:Name="QuestionTypePicker">
+                <Picker.Items>
+                    <x:String>single</x:String>
+                    <x:String>multiple</x:String>
+                    <x:String>text</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <Label Text="Баллы:" FontAttributes="Bold"/>
+            <Entry x:Name="ScoreEntry" 
+                  Keyboard="Numeric" 
+                  Text="1"/>
+
+            <StackLayout x:Name="AnswerOptionsSection">
+                <Label Text="Варианты ответов:" FontAttributes="Bold"/>
+                <CollectionView x:Name="AnswersCollection">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="10" ColumnDefinitions="*,Auto,Auto">
+                                <Entry Text="{Binding AnswerText}" 
+                                      Grid.Column="0"
+                                      Placeholder="Текст ответа"/>
+                                <CheckBox IsChecked="{Binding IsCorrect}" 
+                                         Grid.Column="1"
+                                         VerticalOptions="Center"/>
+                                <Button Text="❌" 
+                                       Grid.Column="2"
+                                       Clicked="OnDeleteAnswerClicked"
+                                       CommandParameter="{Binding .}"
+                                       BackgroundColor="Transparent"/>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Button Text="Добавить вариант ответа" 
+                       Clicked="OnAddAnswerClicked"/>
+            </StackLayout>
+
+            <StackLayout Orientation="Horizontal" Spacing="10">
+                <Button Text="Сохранить" 
+                       Clicked="OnSaveClicked"
+                       BackgroundColor="Green"/>
+                <Button Text="Отмена" 
+                       Clicked="OnCancelClicked"
+                       BackgroundColor="Gray"/>
+            </StackLayout>
+
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

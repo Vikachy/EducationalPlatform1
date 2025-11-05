@@ -21,13 +21,13 @@ namespace EducationalPlatform.Views
             CourseTitle.Text = courseName;
         }
 
-        protected override void OnAppearing()
+        protected override async void OnAppearing()
         {
             base.OnAppearing();
-            LoadCourseContent();
+            await LoadCourseContent();
         }
 
-        private async void LoadCourseContent()
+        private async Task LoadCourseContent()
         {
             try
             {
@@ -42,9 +42,13 @@ namespace EducationalPlatform.Views
                 _courseId = course.CourseId;
 
                 var lessons = await _dbService.GetCourseLessonsAsync(_courseId);
+
+                // Обновляем коллекции
                 TheoryCollection.ItemsSource = lessons.Where(l => l.LessonType == "theory").ToList();
                 PracticeCollection.ItemsSource = lessons.Where(l => l.LessonType == "practice").ToList();
                 TestsCollection.ItemsSource = lessons.Where(l => l.LessonType == "test").ToList();
+
+                UpdateSectionTitles(lessons);
             }
             catch (Exception ex)
             {
@@ -52,20 +56,60 @@ namespace EducationalPlatform.Views
             }
         }
 
+        private void UpdateSectionTitles(IEnumerable<CourseLesson> lessons)
+        {
+            var theoryCount = lessons.Count(l => l.LessonType == "theory");
+            var practiceCount = lessons.Count(l => l.LessonType == "practice");
+            var testCount = lessons.Count(l => l.LessonType == "test");
+
+            // Обновляем заголовки секций
+            TheoryLabel.Text = $"Теория ({theoryCount})";
+            PracticeLabel.Text = $"Практика ({practiceCount})";
+            TestsLabel.Text = $"Тесты ({testCount})";
+        }
+
+        // Обработчик для теории
+        private async void OnTheorySelected(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.CurrentSelection.FirstOrDefault() is CourseLesson lesson)
+            {
+                await Navigation.PushAsync(new TheoryStudyPage(
+                    _currentUser,
+                    _dbService,
+                    _settingsService,
+                    lesson.LessonId
+                ));
+            }
+            ((CollectionView)sender).SelectedItem = null;
+        }
+
         private async void OnPracticeSelected(object sender, SelectionChangedEventArgs e)
         {
-            if (e.CurrentSelection.FirstOrDefault() is DatabaseService.LessonDto lesson)
+            if (e.CurrentSelection.FirstOrDefault() is CourseLesson lesson)
             {
-                await Navigation.PushAsync(new PracticePage(_currentUser, _dbService, _settingsService, _courseId, lesson.LessonId, lesson.Title));
+                await Navigation.PushAsync(new PracticePage(
+                    _currentUser,
+                    _dbService,
+                    _settingsService,
+                    _courseId,
+                    lesson.LessonId,
+                    lesson.Title
+                ));
             }
             ((CollectionView)sender).SelectedItem = null;
         }
 
         private async void OnTestSelected(object sender, SelectionChangedEventArgs e)
         {
-            if (e.CurrentSelection.FirstOrDefault() is DatabaseService.LessonDto lesson)
+            if (e.CurrentSelection.FirstOrDefault() is CourseLesson lesson)
             {
-                await Navigation.PushAsync(new TestPage(_currentUser, _dbService, _settingsService, _courseId, lesson.LessonId));
+                await Navigation.PushAsync(new TestPage(
+                    _currentUser,
+                    _dbService,
+                    _settingsService,
+                    _courseId,
+                    lesson.LessonId
+                ));
             }
             ((CollectionView)sender).SelectedItem = null;
         }
@@ -74,7 +118,6 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Поиск группы преподавателя по курсу
                 var groups = await _dbService.GetTeacherStudyGroupsAsync(_currentUser.UserId);
                 var group = groups.FirstOrDefault();
                 if (group != null)
@@ -94,5 +137,3 @@ namespace EducationalPlatform.Views
         }
     }
 }
-
-

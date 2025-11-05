@@ -2,11 +2,73 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.CreateTestPage"
-             Title="CreateTestPage">
-    <VerticalStackLayout>
-        <Label 
-            Text="Welcome to .NET MAUI!"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+             Title="Создание теста">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <Label Text="Создание теста" 
+                   FontSize="24" FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
+                <VerticalStackLayout Spacing="15">
+
+                    <!-- Основные настройки теста -->
+                    <Label Text="Название теста:" Style="{DynamicResource StandardLabelStyle}"/>
+                    <Entry Text="{Binding TestTitle}" Placeholder="Введите название теста" />
+
+                    <Label Text="Описание:" Style="{DynamicResource StandardLabelStyle}"/>
+                    <Editor Text="{Binding TestDescription}" HeightRequest="80" />
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto" ColumnSpacing="20">
+                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                            <Label Text="Лимит времени (мин):" Style="{DynamicResource StandardLabelStyle}"/>
+                            <Entry Text="{Binding TimeLimit}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label Text="Проходной балл:" Style="{DynamicResource StandardLabelStyle}"/>
+                            <Entry Text="{Binding PassingScore}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <!-- Вопросы -->
+                    <Label Text="Вопросы:" FontSize="16" FontAttributes="Bold" />
+                    <Button Text="➕ Добавить вопрос" Clicked="OnAddQuestionClicked" />
+
+                    <CollectionView ItemsSource="{Binding Questions}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="#F0F0F0" Padding="10" Margin="0,5">
+                                    <VerticalStackLayout>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Label Text="{Binding QuestionText}" FontAttributes="Bold" />
+                                            <Button Grid.Column="1" Text="❌" 
+                                                    Clicked="OnRemoveQuestionClicked"
+                                                    CommandParameter="{Binding .}" />
+                                        </Grid>
+                                        <Label Text="{Binding QuestionType, StringFormat='Тип: {0}'}" 
+                                               FontSize="12" />
+                                        <Label Text="{Binding AnswerOptions.Count, StringFormat='Вариантов: {0}'}" 
+                                               FontSize="12" />
+                                        <Button Text="✏️ Редактировать" 
+                                                Clicked="OnEditQuestionClicked"
+                                                CommandParameter="{Binding .}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Text="Назад" Clicked="OnBackClicked" />
+                        <Button Text="Создать тест" Clicked="OnCreateClicked" 
+                                BackgroundColor="{DynamicResource PrimaryColor}" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

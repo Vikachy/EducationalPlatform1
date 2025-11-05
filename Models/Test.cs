@@ -61,4 +61,18 @@ namespace EducationalPlatform.Models
         public string? TeacherComment { get; set; }
     }
 
+    // Дополнительные модели для создания вопросов
+    public class QuestionCreationModel
+    {
+        public string QuestionText { get; set; } = string.Empty;
+        public string QuestionType { get; set; } = "single";
+        public int Score { get; set; } = 1;
+        public List<AnswerOptionCreationModel> AnswerOptions { get; set; } = new();
+    }
+
+    public class AnswerOptionCreationModel
+    {
+        public string AnswerText { get; set; } = string.Empty;
+        public bool IsCorrect { get; set; }
+    }
 }

@@ -42,6 +42,52 @@ namespace EducationalPlatform.Views
             InitializeDashboard();
         }
 
+        private async void OnManageCourseContentClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    // Получаем курсы преподавателя
+                    var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
+                    if (courses.Any())
+                    {
+                        // Показываем диалог выбора курса
+                        string[] courseNames = courses.Select(c => c.CourseName).ToArray();
+                        string selectedCourseName = await DisplayActionSheet(
+                            "Выберите курс для управления контентом",
+                            "Отмена",
+                            null,
+                            courseNames);
+
+                        if (!string.IsNullOrEmpty(selectedCourseName) && selectedCourseName != "Отмена")
+                        {
+                            var selectedCourse = courses.FirstOrDefault(c => c.CourseName == selectedCourseName);
+                            if (selectedCourse != null)
+                            {
+                                // Переходим на страницу управления контентом курса
+                                await Navigation.PushAsync(new ManageCourseContentPage(
+                                    _currentUser, _dbService, _settingsService, selectedCourse));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await DisplayAlert("Информация", "У вас нет курсов для управления", "OK");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось перейти к управлению контентом: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
+            }
+        }
+
+
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
@@ -169,13 +215,24 @@ namespace EducationalPlatform.Views
             }
         }
 
+        // ИСПРАВЛЕННЫЙ МЕТОД - переход на TeacherGroupsPage
         private async void OnTeacherGroupsClicked(object sender, EventArgs e)
         {
             if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
             {
                 try
                 {
-                    await DisplayAlert("Группы", "Управление учебными группами", "OK");
+                    // Получаем курсы преподавателя
+                    var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
+                    if (courses.Any())
+                    {
+                        // Переходим на страницу управления группами
+                        await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService, null));
+                    }
+                    else
+                    {
+                        await DisplayAlert("Информация", "У вас нет курсов для управления группами", "OK");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -197,26 +254,28 @@ namespace EducationalPlatform.Views
                 // Загружаем активные курсы пользователя
                 if (_currentUser?.RoleId == 1) // Студент
                 {
-                    var progress = await _dbService!.GetStudentProgressAsync(_currentUser.UserId);
-                    foreach (var item in progress)
+                    var progressList = await _dbService.GetStudentProgressAsync(_currentUser.UserId);
+                    foreach (var progress in progressList)
                     {
                         MyCourses.Add(new MyCourse
                         {
-                            CourseName = item.CourseName,
-                            Progress = item.Score ?? 0,
+                            CourseId = progress.CourseId,
+                            CourseName = progress.CourseName,
+                            Progress = progress.Score ?? 0,
                             Language = "C#",
-                            Difficulty = item.Status,
+                            Difficulty = progress.Status,
                             TimeLeft = "7 дней"
                         });
                     }
                 }
                 else if (_currentUser?.RoleId == 2) // Учитель
                 {
-                    var teacherCourses = await _dbService!.GetTeacherCoursesAsync(_currentUser.UserId);
+                    var teacherCourses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
                     foreach (var course in teacherCourses)
                     {
                         MyCourses.Add(new MyCourse
                         {
+                            CourseId = course.CourseId,
                             CourseName = course.CourseName,
                             Progress = (int)(course.AverageRating * 20),
                             Language = course.LanguageName,
@@ -477,11 +536,23 @@ namespace EducationalPlatform.Views
                 "OK");
         }
 
+        // ИСПРАВЛЕННЫЙ МЕТОД - переход к изучению курса при клике
         private async void OnMyCourseSelected(object sender, SelectionChangedEventArgs e)
         {
             if (e.CurrentSelection.FirstOrDefault() is MyCourse selectedCourse)
             {
-                await DisplayAlert("Курс", $"Переход к курсу: {selectedCourse.CourseName}", "OK");
+                try
+                {
+                    // Переходим к изучению курса
+                    if (_currentUser != null && _dbService != null && _settingsService != null)
+                    {
+                        await Navigation.PushAsync(new CourseStudyPage(_currentUser, _dbService, _settingsService, selectedCourse.CourseId));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось открыть курс: {ex.Message}", "OK");
+                }
             }
             MyCoursesCollectionView.SelectedItem = null;
         }
@@ -558,6 +629,184 @@ namespace EducationalPlatform.Views
                 await Navigation.PushAsync(new ProfilePage(_currentUser, _dbService, _settingsService));
         }
 
+        // НОВЫЕ МЕТОДЫ ДЛЯ СОЗДАНИЯ КОНТЕНТА
+        private async void OnCreateContentClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    // Получаем курсы преподавателя
+                    var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
+                    if (courses.Any())
+                    {
+                        // Показываем диалог выбора курса
+                        string[] courseNames = courses.Select(c => c.CourseName).ToArray();
+                        string selectedCourseName = await DisplayActionSheet(
+                            "Выберите курс для добавления контента",
+                            "Отмена",
+                            null,
+                            courseNames);
+
+                        if (!string.IsNullOrEmpty(selectedCourseName) && selectedCourseName != "Отмена")
+                        {
+                            var selectedCourse = courses.FirstOrDefault(c => c.CourseName == selectedCourseName);
+                            if (selectedCourse != null)
+                            {
+                                // Переходим на страницу управления контентом курса
+                                await Navigation.PushAsync(new ManageCourseContentPage(
+                                    _currentUser, _dbService, _settingsService, selectedCourse));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await DisplayAlert("Информация", "У вас нет курсов для добавления контента", "OK");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось создать контент: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
+            }
+        }
+
+        private async void OnCreateTestClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    // Получаем курсы преподавателя
+                    var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
+                    if (courses.Any())
+                    {
+                        // Показываем диалог выбора курса
+                        string[] courseNames = courses.Select(c => c.CourseName).ToArray();
+                        string selectedCourseName = await DisplayActionSheet(
+                            "Выберите курс для создания теста",
+                            "Отмена",
+                            null,
+                            courseNames);
+
+                        if (!string.IsNullOrEmpty(selectedCourseName) && selectedCourseName != "Отмена")
+                        {
+                            var selectedCourse = courses.FirstOrDefault(c => c.CourseName == selectedCourseName);
+                            if (selectedCourse != null)
+                            {
+                                // Переходим на страницу создания теста
+                                await Navigation.PushAsync(new CreateTestPage(_currentUser, _dbService, _settingsService, selectedCourse.CourseId));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await DisplayAlert("Информация", "У вас нет курсов для создания теста", "OK");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось создать тест: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
+            }
+        }
+
+        private async void OnCreatePracticeClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    // Получаем курсы преподавателя
+                    var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
+                    if (courses.Any())
+                    {
+                        // Показываем диалог выбора курса
+                        string[] courseNames = courses.Select(c => c.CourseName).ToArray();
+                        string selectedCourseName = await DisplayActionSheet(
+                            "Выберите курс для создания практики",
+                            "Отмена",
+                            null,
+                            courseNames);
+
+                        if (!string.IsNullOrEmpty(selectedCourseName) && selectedCourseName != "Отмена")
+                        {
+                            var selectedCourse = courses.FirstOrDefault(c => c.CourseName == selectedCourseName);
+                            if (selectedCourse != null)
+                            {
+                                // Переходим на страницу создания практики
+                                await Navigation.PushAsync(new CreatePracticePage(_currentUser, _dbService, _settingsService, selectedCourse.CourseId));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await DisplayAlert("Информация", "У вас нет курсов для создания практики", "OK");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось создать практику: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
+            }
+        }
+
+        private async void OnCreateTheoryClicked(object sender, EventArgs e)
+        {
+            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            {
+                try
+                {
+                    // Получаем курсы преподавателя
+                    var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
+                    if (courses.Any())
+                    {
+                        // Показываем диалог выбора курса
+                        string[] courseNames = courses.Select(c => c.CourseName).ToArray();
+                        string selectedCourseName = await DisplayActionSheet(
+                            "Выберите курс для создания теории",
+                            "Отмена",
+                            null,
+                            courseNames);
+
+                        if (!string.IsNullOrEmpty(selectedCourseName) && selectedCourseName != "Отмена")
+                        {
+                            var selectedCourse = courses.FirstOrDefault(c => c.CourseName == selectedCourseName);
+                            if (selectedCourse != null)
+                            {
+                                // Переходим на страницу создания теории
+                                await Navigation.PushAsync(new CreateTheoryPage(_currentUser, _dbService, _settingsService, selectedCourse.CourseId));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await DisplayAlert("Информация", "У вас нет курсов для создания теории", "OK");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось создать теорию: {ex.Message}", "OK");
+                }
+            }
+            else
+            {
+                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
+            }
+        }
+
         private async void OnLogoutClicked(object sender, EventArgs e)
         {
             try
@@ -570,24 +819,7 @@ namespace EducationalPlatform.Views
             }
         }
 
-        protected override bool OnBackButtonPressed()
-        {
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                bool result = await DisplayAlert(
-                    _settingsService?.GetLocalizedString("Confirmation") ?? "Подтверждение",
-                    _settingsService?.CurrentLanguage == "ru"
-                        ? "Вы действительно хотите выйти из приложения?"
-                        : "Do you really want to exit the application?",
-                    _settingsService?.CurrentLanguage == "ru" ? "Да" : "Yes",
-                    _settingsService?.CurrentLanguage == "ru" ? "Нет" : "No");
-
-                if (result) Application.Current?.Quit();
-            });
-            return true;
-        }
-
-        // Методы навигации к новым страницам
+        // ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ НАВИГАЦИИ
         private async void OnContestsClicked(object sender, EventArgs e)
         {
             if (_currentUser != null && _dbService != null && _settingsService != null)
@@ -619,74 +851,28 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // ДОБАВЬТЕ ЭТИ МЕТОДЫ В КЛАСС MainDashboardPage
-        private async void OnCreateTestClicked(object sender, EventArgs e)
+        protected override bool OnBackButtonPressed()
         {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            MainThread.BeginInvokeOnMainThread(async () =>
             {
-                try
-                {
-                    // Переход на страницу создания теста
-                    if (_dbService != null && _settingsService != null)
-                        await Navigation.PushAsync(new CreateTestPage(_currentUser, _dbService, _settingsService));
-                }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Ошибка", $"Не удалось создать тест: {ex.Message}", "OK");
-                }
-            }
-            else
-            {
-                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
-            }
-        }
+                bool result = await DisplayAlert(
+                    _settingsService?.GetLocalizedString("Confirmation") ?? "Подтверждение",
+                    _settingsService?.CurrentLanguage == "ru"
+                        ? "Вы действительно хотите выйти из приложения?"
+                        : "Do you really want to exit the application?",
+                    _settingsService?.CurrentLanguage == "ru" ? "Да" : "Yes",
+                    _settingsService?.CurrentLanguage == "ru" ? "Нет" : "No");
 
-        private async void OnCreatePracticeClicked(object sender, EventArgs e)
-        {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
-            {
-                try
-                {
-                    // Переход на страницу создания практики
-                    if (_dbService != null && _settingsService != null)
-                        await Navigation.PushAsync(new CreatePracticePage(_currentUser, _dbService, _settingsService));
-                }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Ошибка", $"Не удалось создать практику: {ex.Message}", "OK");
-                }
-            }
-            else
-            {
-                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
-            }
-        }
-
-        private async void OnCreateTheoryClicked(object sender, EventArgs e)
-        {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
-            {
-                try
-                {
-                    // Переход на страницу создания теории
-                    if (_dbService != null && _settingsService != null)
-                        await Navigation.PushAsync(new CreateTheoryPage(_currentUser, _dbService, _settingsService));
-                }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Ошибка", $"Не удалось создать теорию: {ex.Message}", "OK");
-                }
-            }
-            else
-            {
-                await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
-            }
+                if (result) Application.Current?.Quit();
+            });
+            return true;
         }
     }
 
     // МОДЕЛИ ДАННЫХ
     public class MyCourse
     {
+        public int CourseId { get; set; }
         public string CourseName { get; set; } = string.Empty;
         public int Progress { get; set; }
         public double ProgressDecimal => Progress / 100.0;

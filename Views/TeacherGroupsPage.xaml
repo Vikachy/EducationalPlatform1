@@ -2,59 +2,140 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.TeacherGroupsPage"
-             Title="Учебные группы">
+             Title="Управление группами">
 
     <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Заголовок -->
         <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
             <HorizontalStackLayout>
-                <Button Text="←" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="White" />
-                <Label Text="Группы" FontSize="20" TextColor="White" FontAttributes="Bold" />
+                <Label Text="👥 Управление учебными группами" 
+                       FontSize="20" 
+                       TextColor="White" 
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
+                <Button Text="Назад" 
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        Margin="20,0,0,0" />
             </HorizontalStackLayout>
         </Border>
 
-        <CollectionView Grid.Row="1" x:Name="GroupsCollection" SelectionMode="Single" SelectionChanged="OnGroupSelected">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Border Margin="10" Padding="12" BackgroundColor="#F8F9FA" Stroke="#DDD" StrokeThickness="1" StrokeShape="RoundRectangle 10">
-                        <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto">
-                            <Label Grid.Column="0" Grid.Row="0" Text="{Binding GroupName}" FontAttributes="Bold" />
-                            <Label Grid.Column="0" Grid.Row="1" Text="{Binding StudentCount, StringFormat='Студентов: {0}'}" FontSize="12" TextColor="#666" />
-                            <Button Grid.Column="1" Grid.RowSpan="2" Text="Чат" Clicked="OnOpenChatClicked" CommandParameter="{Binding .}" />
-                            <Button Grid.Column="2" Grid.RowSpan="2" Text="Деактивировать" Clicked="OnDeactivateGroupClicked" CommandParameter="{Binding .}" />
+        <!-- Основное содержимое -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- Создание новой группы -->
+                <Border BackgroundColor="#F8F9FA" Padding="15" Stroke="#DDD" StrokeThickness="1">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Создать новую группу" FontSize="16" FontAttributes="Bold" />
+
+                        <Label Text="Выберите курс:" />
+                        <Picker x:Name="CoursePicker" 
+                                Title="Выберите курс"
+                                ItemDisplayBinding="{Binding CourseName}" />
+
+                        <Label Text="Название группы:" />
+                        <Entry x:Name="GroupNameEntry" Placeholder="Введите название группы" />
+
+                        <Button Text="Создать группу" 
+                                Clicked="OnCreateGroupClicked"
+                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                TextColor="White" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Список групп -->
+                <Label Text="Мои группы:" FontSize="18" FontAttributes="Bold" />
+                <CollectionView x:Name="GroupsCollection" 
+                              SelectionMode="Single"
+                              SelectionChanged="OnGroupSelected">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="#F8F9FA" 
+                                    Stroke="#DDD" 
+                                    StrokeThickness="1" 
+                                    Padding="15"
+                                    Margin="0,5">
+                                <VerticalStackLayout Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Text="{Binding GroupName}" 
+                                               FontSize="16" 
+                                               FontAttributes="Bold" />
+                                        <Label Grid.Column="1" 
+                                               Text="{Binding StudentCount, StringFormat='{0} студентов'}" 
+                                               FontSize="12" />
+                                    </Grid>
+
+                                    <Label Text="{Binding IsActive, StringFormat='Статус: {0}'}" 
+                                           FontSize="12" />
+
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Button Text="💬 Чат" 
+                                                Clicked="OnOpenChatClicked"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                                TextColor="White" />
+                                        <Button Text="❌ Деактивировать" 
+                                                Clicked="OnDeactivateGroupClicked"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{DynamicResource DangerColor}"
+                                                TextColor="White" />
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Студенты выбранной группы -->
+                <StackLayout x:Name="StudentsSection" IsVisible="False">
+                    <Label Text="Студенты группы:" FontSize="16" FontAttributes="Bold" />
+
+                    <!-- Добавление студента -->
+                    <Border BackgroundColor="#F0F8FF" Padding="10" Margin="0,10">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Entry x:Name="StudentUsernameEntry" 
+                                   Placeholder="Имя пользователя студента" />
+                            <Button Text="➕ Добавить" 
+                                    Clicked="OnAddStudentClicked"
+                                    BackgroundColor="{DynamicResource SecondaryColor}"
+                                    TextColor="White" />
                         </Grid>
                     </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
 
-        <Grid Grid.Row="2" RowDefinitions="Auto,Auto" ColumnDefinitions="*" Padding="12">
-            <Border Padding="12" BackgroundColor="{DynamicResource CardColor}">
-                <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
-                    <Entry x:Name="GroupNameEntry" Placeholder="Название группы" />
-                    <Picker x:Name="CoursePicker" Title="Курс" ItemDisplayBinding="{Binding CourseName}" />
-                    <Button Text="Создать" Clicked="OnCreateGroupClicked" BackgroundColor="{DynamicResource PrimaryColor}" TextColor="White" />
-                </Grid>
-            </Border>
-            <Border Grid.Row="1" Padding="12" BackgroundColor="#F8F9FA" Stroke="#DDD" StrokeThickness="1" StrokeShape="RoundRectangle 10" Margin="0,8,0,0">
-                <VerticalStackLayout>
-                    <Label Text="Состав выбранной группы" FontAttributes="Bold" />
-                    <CollectionView x:Name="GroupStudentsCollection" SelectionMode="None">
+                    <!-- Список студентов -->
+                    <CollectionView x:Name="GroupStudentsCollection">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Grid ColumnDefinitions="Auto,*,Auto" Padding="6">
-                                    <Label Text="👤" />
-                                    <Label Grid.Column="1" Text="{Binding Username}" />
-                                    <Button Grid.Column="2" Text="Удалить" Clicked="OnRemoveStudentClicked" CommandParameter="{Binding .}" />
-                                </Grid>
+                                <Border BackgroundColor="#F8F9FA" 
+                                        Stroke="#DDD" 
+                                        StrokeThickness="1" 
+                                        Padding="10"
+                                        Margin="0,2">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <VerticalStackLayout>
+                                            <Label Text="{Binding Username}" FontSize="14" />
+                                            <Label Text="{Binding FirstName, StringFormat='{0}'}" 
+                                                   FontSize="12" 
+                                                   TextColor="#666" />
+                                        </VerticalStackLayout>
+                                        <Button Text="🗑️ Удалить" 
+                                                Clicked="OnRemoveStudentClicked"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{DynamicResource DangerColor}"
+                                                TextColor="White"
+                                                FontSize="10" />
+                                    </Grid>
+                                </Border>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,6,0,0">
-                        <Entry x:Name="StudentUsernameEntry" Placeholder="Имя пользователя" />
-                        <Button Text="Добавить" Clicked="OnAddStudentClicked" />
-                    </Grid>
-                </VerticalStackLayout>
-            </Border>
-        </Grid>
+                </StackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
     </Grid>
 </ContentPage>

@@ -2,31 +2,98 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.CourseDetailPage"
-             Title="Курс">
+             Title="Детали курса">
 
-    <Grid RowDefinitions="Auto,*">
-        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
-            <HorizontalStackLayout>
-                <Button Text="←" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="White" />
-                <Label x:Name="CourseTitle" Text="Курс" FontSize="20" TextColor="White" FontAttributes="Bold" HorizontalOptions="Center" />
-            </HorizontalStackLayout>
-        </Border>
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
 
-        <ScrollView Grid.Row="1">
-            <VerticalStackLayout Padding="15" Spacing="12">
-                <Button Text="Чат с преподавателем" x:Name="TeacherChatButton" Clicked="OnTeacherChatClicked" />
-                <Label Text="📖 Теория" FontAttributes="Bold" />
-                <CollectionView x:Name="TheoryCollection" SelectionMode="None" />
+            <Label x:Name="CourseTitle" 
+                   Text="Название курса" 
+                   FontSize="24" 
+                   FontAttributes="Bold" 
+                   HorizontalOptions="Center" />
 
-                <Label Text="🧩 Практика" FontAttributes="Bold" />
-                <CollectionView x:Name="PracticeCollection" SelectionMode="Single" SelectionChanged="OnPracticeSelected" />
+            <!-- Теория -->
+            <Frame Style="{DynamicResource StandardFrameStyle}">
+                <VerticalStackLayout Spacing="10">
+                    <Label x:Name="TheoryLabel" Text="Теория" FontSize="18" FontAttributes="Bold" />
+                    <CollectionView x:Name="TheoryCollection" 
+                                  SelectionMode="Single"
+                                  SelectionChanged="OnTheorySelected">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="10" ColumnDefinitions="*, Auto">
+                                    <Label Text="{Binding Title}" 
+                                           FontSize="16" 
+                                           VerticalOptions="Center" />
+                                    <Label Grid.Column="1" 
+                                           Text="📖" 
+                                           FontSize="16" 
+                                           VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
 
-                <Label Text="📝 Тесты" FontAttributes="Bold" />
-                <CollectionView x:Name="TestsCollection" SelectionMode="Single" SelectionChanged="OnTestSelected" />
-            </VerticalStackLayout>
-        </ScrollView>
-    </Grid>
+            <!-- Практика -->
+            <Frame Style="{DynamicResource StandardFrameStyle}">
+                <VerticalStackLayout Spacing="10">
+                    <Label x:Name="PracticeLabel" Text="Практика" FontSize="18" FontAttributes="Bold" />
+                    <CollectionView x:Name="PracticeCollection" 
+                                  SelectionMode="Single"
+                                  SelectionChanged="OnPracticeSelected">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="10" ColumnDefinitions="*, Auto">
+                                    <Label Text="{Binding Title}" 
+                                           FontSize="16" 
+                                           VerticalOptions="Center" />
+                                    <Label Grid.Column="1" 
+                                           Text="💻" 
+                                           FontSize="16" 
+                                           VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
 
+            <!-- Тесты -->
+            <Frame Style="{DynamicResource StandardFrameStyle}">
+                <VerticalStackLayout Spacing="10">
+                    <Label x:Name="TestsLabel" Text="Тесты" FontSize="18" FontAttributes="Bold" />
+                    <CollectionView x:Name="TestsCollection" 
+                                  SelectionMode="Single"
+                                  SelectionChanged="OnTestSelected">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="10" ColumnDefinitions="*, Auto">
+                                    <Label Text="{Binding Title}" 
+                                           FontSize="16" 
+                                           VerticalOptions="Center" />
+                                    <Label Grid.Column="1" 
+                                           Text="📝" 
+                                           FontSize="16" 
+                                           VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Кнопки действий -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Text="Чат с преподавателем" 
+                        Clicked="OnTeacherChatClicked" 
+                        BackgroundColor="{DynamicResource SecondaryColor}" />
+                <Button Text="Назад" 
+                        Clicked="OnBackClicked" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
-
-

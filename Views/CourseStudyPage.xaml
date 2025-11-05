@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.CourseStudyPage"
+             Title="Изучение курса">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Заголовок -->
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
+            <HorizontalStackLayout>
+                <Label x:Name="CourseTitleLabel" 
+                       Text="Курс" 
+                       FontSize="20" 
+                       TextColor="White" 
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
+                <Button Text="Назад" 
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        Margin="20,0,0,0" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Содержание курса -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="15" Spacing="10">
+                <Label Text="Уроки курса:" FontSize="18" FontAttributes="Bold" />
+
+                <CollectionView x:Name="LessonsCollection" SelectionMode="Single"
+                                SelectionChanged="OnLessonSelected">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="#F8F9FA" 
+                                    Stroke="#DDD" 
+                                    StrokeThickness="1" 
+                                    Padding="12"
+                                    Margin="0,5">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Label Grid.Column="0" 
+                                           Text="{Binding Order, StringFormat='{0}.'}" 
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           VerticalOptions="Center" />
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                        <Label Text="{Binding Title}" 
+                                               FontSize="16" 
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding LessonType, Converter={StaticResource LessonTypeConverter}}" 
+                                               FontSize="12" 
+                                               TextColor="#666" />
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="2" 
+                                           Text="▶️" 
+                                           FontSize="16"
+                                           VerticalOptions="Center" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>

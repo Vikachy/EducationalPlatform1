@@ -27,7 +27,6 @@ namespace EducationalPlatform.Views
 
             // Инициализация конвертеров
             Resources.Add("PublishedConverter", new PublishedToTextConverter());
-            Resources.Add("StatusColorConverter", new StatusColorConverter());
             Resources.Add("PublishButtonConverter", new PublishButtonTextConverter());
             Resources.Add("PublishButtonColorConverter", new PublishButtonColorConverter());
 
@@ -299,25 +298,12 @@ namespace EducationalPlatform.Views
         public int Score { get; set; }
     }
 
-    // Конвертеры
+    // Конвертеры (только уникальные для этой страницы)
     public class PublishedToTextConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return (bool)value ? "Опубликован" : "Черновик";
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class StatusColorConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return (bool)value ? Color.FromArgb("#4CAF50") : Color.FromArgb("#FF9800");
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

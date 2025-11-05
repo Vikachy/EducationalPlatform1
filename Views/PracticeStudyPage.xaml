@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.PracticeStudyPage"
+             Title="Практическое задание">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Заголовок -->
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
+            <HorizontalStackLayout>
+                <Label x:Name="TitleLabel" 
+                       Text="Практика" 
+                       FontSize="20" 
+                       TextColor="White" 
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
+                <Button Text="Назад" 
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        Margin="20,0,0,0" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Содержание задания -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="15">
+
+                <!-- Описание задания -->
+                <Label x:Name="DescriptionLabel" 
+                       FontSize="16"
+                       LineBreakMode="WordWrap" />
+
+                <!-- Стартовый код -->
+                <StackLayout x:Name="CodeSection" IsVisible="False">
+                    <Label Text="Стартовый код:" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryColor}" />
+                    <Editor x:Name="StarterCodeEditor" 
+                            HeightRequest="150"
+                            IsEnabled="False"
+                            BackgroundColor="#F5F5F5" />
+                    <Button Text="Копировать код" 
+                            Clicked="OnCopyCodeClicked"
+                            BackgroundColor="{DynamicResource SecondaryColor}"
+                            TextColor="White" />
+                </StackLayout>
+
+                <!-- Область для ответа -->
+                <Label Text="Ваш ответ:" 
+                       FontSize="16" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource PrimaryColor}" />
+
+                <!-- Текстовый ответ -->
+                <StackLayout x:Name="TextAnswerSection">
+                    <Editor x:Name="TextAnswerEditor" 
+                            HeightRequest="120"
+                            Placeholder="Введите ваш ответ здесь..." />
+                </StackLayout>
+
+                <!-- Ответ кодом -->
+                <StackLayout x:Name="CodeAnswerSection" IsVisible="False">
+                    <Editor x:Name="CodeAnswerEditor" 
+                            HeightRequest="200"
+                            Placeholder="Напишите ваш код здесь..."
+                            FontFamily="Courier New" />
+                    <Button Text="Запустить код" 
+                            Clicked="OnRunCodeClicked"
+                            BackgroundColor="{DynamicResource AccentColor}"
+                            TextColor="White" />
+                </StackLayout>
+
+                <!-- Загрузка файлов -->
+                <StackLayout x:Name="FileAnswerSection" IsVisible="False">
+                    <Button Text="📎 Выбрать файл" 
+                            Clicked="OnSelectFileClicked"
+                            BackgroundColor="{DynamicResource PrimaryColor}"
+                            TextColor="White" />
+                    <Label x:Name="SelectedFileLabel" 
+                           Text="Файл не выбран"
+                           FontSize="14"
+                           TextColor="#666" />
+                    <Label Text="Поддерживаемые форматы: ZIP, JPG, PNG, PDF" 
+                           FontSize="12"
+                           TextColor="#999" />
+                </StackLayout>
+
+                <!-- Подсказка -->
+                <StackLayout x:Name="HintSection" IsVisible="False">
+                    <Label Text="💡 Подсказка:" 
+                           FontSize="14" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource SecondaryColor}" />
+                    <Label x:Name="HintLabel" 
+                           FontSize="14"
+                           LineBreakMode="WordWrap" />
+                </StackLayout>
+
+                <!-- Результат проверки -->
+                <Border x:Name="ResultSection" 
+                        IsVisible="False"
+                        BackgroundColor="#E8F5E8"
+                        Stroke="#4CAF50"
+                        StrokeThickness="1"
+                        Padding="15">
+                    <VerticalStackLayout>
+                        <Label x:Name="ResultLabel" 
+                               Text="✅ Задание выполнено успешно!"
+                               FontSize="16"
+                               TextColor="#4CAF50" />
+                        <Label x:Name="FeedbackLabel" 
+                               FontSize="14"
+                               TextColor="#666" />
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Кнопки -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="10" Padding="15">
+            <Button Text="Проверить" 
+                    Clicked="OnCheckAnswerClicked"
+                    BackgroundColor="{DynamicResource PrimaryColor}"
+                    TextColor="White" />
+            <Button Text="Следующий ➡️" 
+                    Clicked="OnNextClicked"
+                    BackgroundColor="{DynamicResource SecondaryColor}"
+                    TextColor="White" />
+        </Grid>
+
+    </Grid>
+</ContentPage>

@@ -10,7 +10,7 @@ namespace EducationalPlatform.Views
         private readonly SettingsService _settingsService;
         private readonly int _courseId;
         private readonly int _lessonId;
-        private DatabaseService.TestMeta? _meta;
+        private TestMeta? _meta;
         private int? _attemptId;
 
         public TestPage(User user, DatabaseService dbService, SettingsService settingsService, int courseId, int lessonId)
@@ -58,6 +58,10 @@ namespace EducationalPlatform.Views
         }
     }
 }
+
+
+
+
 
 
 

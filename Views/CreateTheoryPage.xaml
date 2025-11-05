@@ -2,11 +2,104 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.CreateTheoryPage"
-             Title="CreateTheoryPage">
-    <VerticalStackLayout>
-        <Label 
-            Text="Welcome to .NET MAUI!"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+             Title="Создание теории">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <Label Text="Создание теоретического урока" 
+                   FontSize="24" FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
+                <VerticalStackLayout Spacing="15">
+
+                    <Label Text="Название урока:" Style="{DynamicResource StandardLabelStyle}"/>
+                    <Entry x:Name="TitleEntry" Placeholder="Введите название урока" />
+
+                    <Label Text="Порядок урока:" Style="{DynamicResource StandardLabelStyle}"/>
+                    <Entry x:Name="OrderEntry" Placeholder="1" Keyboard="Numeric" />
+
+                    <Label Text="Содержание:" Style="{DynamicResource StandardLabelStyle}"/>
+                    <Editor x:Name="ContentEditor" 
+                            HeightRequest="200"
+                            Placeholder="Введите содержание урока простым текстом..."
+                            AutoSize="TextChanges" />
+
+                    <!-- Секция загрузки файлов -->
+                    <Frame BackgroundColor="#F8F9FA" Padding="15">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Прикрепленные файлы:" 
+                                   FontSize="16" 
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource PrimaryColor}" />
+
+                            <Label Text="Разрешенные типы: ZIP, PDF, Word, PowerPoint, PNG" 
+                                   FontSize="12" 
+                                   TextColor="Gray" />
+
+                            <Button Text="📎 Выбрать файлы" 
+                                    Clicked="OnSelectFilesClicked"
+                                    BackgroundColor="{DynamicResource SecondaryColor}" />
+
+                            <!-- Список выбранных файлов -->
+                            <CollectionView x:Name="AttachmentsCollection" 
+                                          HeightRequest="120">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,Auto,Auto" 
+                                              Padding="10" 
+                                              BackgroundColor="White"
+                                              Margin="0,2">
+                                            <Label Text="{Binding FileName}" 
+                                                   FontSize="14"
+                                                   VerticalOptions="Center"
+                                                   LineBreakMode="TailTruncation" />
+                                            <Label Grid.Column="1" 
+                                                   Text="{Binding SizeFormatted}" 
+                                                   FontSize="12"
+                                                   TextColor="Gray"
+                                                   VerticalOptions="Center"
+                                                   Margin="10,0" />
+                                            <Button Grid.Column="2" 
+                                                    Text="❌" 
+                                                    Clicked="OnRemoveAttachmentClicked" 
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="Red"
+                                                    FontSize="12" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+
+                            <!-- Кнопка очистки будет управляться из кода -->
+                            <Button x:Name="ClearAllButton"
+                                    Text="🗑 Очистить все" 
+                                    Clicked="OnClearAllFilesClicked"
+                                    BackgroundColor="#FF6B6B"
+                                    TextColor="White"
+                                    IsVisible="False" />
+
+                            <ProgressBar x:Name="UploadProgressBar" 
+                                       Progress="0"
+                                       IsVisible="False" />
+                            <Label x:Name="UploadStatusLabel" 
+                                   Text="" 
+                                   FontSize="12"
+                                   IsVisible="False" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Text="Назад" Clicked="OnBackClicked" />
+                        <Button Text="Создать теорию" Clicked="OnCreateClicked" 
+                                BackgroundColor="{DynamicResource PrimaryColor}" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

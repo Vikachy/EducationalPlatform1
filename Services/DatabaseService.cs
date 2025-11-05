@@ -1350,44 +1350,6 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
             public int LessonOrder { get; set; }
         }
 
-        public async Task<List<LessonDto>> GetCourseLessonsAsync(int courseId)
-        {
-            var lessons = new List<LessonDto>();
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-                    SELECT l.LessonId, l.ModuleId, l.LessonType, l.Title, l.Content, l.LessonOrder
-                    FROM Lessons l
-                    JOIN CourseModules m ON l.ModuleId = m.ModuleId
-                    WHERE m.CourseId = @CourseId AND l.IsActive = 1
-                    ORDER BY m.ModuleOrder, l.LessonOrder";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@CourseId", courseId);
-
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    lessons.Add(new LessonDto
-                    {
-                        LessonId = reader.GetInt32("LessonId"),
-                        ModuleId = reader.GetInt32("ModuleId"),
-                        LessonType = reader.GetString("LessonType"),
-                        Title = reader.GetString("Title"),
-                        Content = reader.IsDBNull("Content") ? null : reader.GetString("Content"),
-                        LessonOrder = reader.GetInt32("LessonOrder")
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка загрузки уроков: {ex.Message}");
-            }
-            return lessons;
-        }
 
         public async Task<(int? FrameItemId, string? EmojiIcon, string? ThemeName)> GetEquippedItemsAsync(int userId)
         {
@@ -1422,77 +1384,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
             return (frameId, emoji, theme);
         }
 
-        // ДОБАВЛЕНИЕ КОНТЕНТА КУРСА
-        public async Task<int?> AddTheoryLessonAsync(int courseId, string title, string? htmlContent, int order = 1)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
 
-                var query = @"
-                    INSERT INTO Lessons (ModuleId, LessonType, Title, Content, LessonOrder, IsActive)
-                    VALUES ((SELECT TOP 1 ModuleId FROM CourseModules WHERE CourseId = @CourseId ORDER BY ModuleOrder),
-                            'theory', @Title, @Content, @Order, 1);
-                    SELECT SCOPE_IDENTITY();";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@CourseId", courseId);
-                command.Parameters.AddWithValue("@Title", title ?? "");
-                command.Parameters.AddWithValue("@Content", (object?)htmlContent ?? DBNull.Value);
-                command.Parameters.AddWithValue("@Order", order);
-
-                var result = await command.ExecuteScalarAsync();
-                return result == null ? null : Convert.ToInt32(result);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка добавления теории: {ex.Message}");
-                return null;
-            }
-        }
-
-        public async Task<int?> AddPracticeLessonAsync(int courseId, string title, string? starterCode, string? expectedOutput, string? testCasesJson, string? hint, int order = 1)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var lessonQuery = @"
-                    INSERT INTO Lessons (ModuleId, LessonType, Title, LessonOrder, IsActive)
-                    VALUES ((SELECT TOP 1 ModuleId FROM CourseModules WHERE CourseId = @CourseId ORDER BY ModuleOrder),
-                            'practice', @Title, @Order, 1);
-                    SELECT SCOPE_IDENTITY();";
-
-                using var lcmd = new SqlCommand(lessonQuery, connection);
-                lcmd.Parameters.AddWithValue("@CourseId", courseId);
-                lcmd.Parameters.AddWithValue("@Title", title ?? "");
-                lcmd.Parameters.AddWithValue("@Order", order);
-                var lessonIdObj = await lcmd.ExecuteScalarAsync();
-                if (lessonIdObj == null) return null;
-                int lessonId = Convert.ToInt32(lessonIdObj);
-
-                var practiceQuery = @"
-                    INSERT INTO PracticeExercises (LessonId, StarterCode, ExpectedOutput, TestCases, Hint)
-                    VALUES (@LessonId, @StarterCode, @ExpectedOutput, @TestCases, @Hint)";
-
-                using var pcmd = new SqlCommand(practiceQuery, connection);
-                pcmd.Parameters.AddWithValue("@LessonId", lessonId);
-                pcmd.Parameters.AddWithValue("@StarterCode", (object?)starterCode ?? DBNull.Value);
-                pcmd.Parameters.AddWithValue("@ExpectedOutput", (object?)expectedOutput ?? DBNull.Value);
-                pcmd.Parameters.AddWithValue("@TestCases", (object?)testCasesJson ?? DBNull.Value);
-                pcmd.Parameters.AddWithValue("@Hint", (object?)hint ?? DBNull.Value);
-                await pcmd.ExecuteNonQueryAsync();
-
-                return lessonId;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка добавления практики: {ex.Message}");
-                return null;
-            }
-        }
 
         public async Task<bool> CreateCourseAsync(string courseName, string description, int languageId, int difficultyId, int createdByUserId, bool isGroupCourse)
         {
@@ -2539,44 +2431,6 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
             }
         }
 
-        // ПРАКТИКА
-        public class PracticeDto
-        {
-            public int LessonId { get; set; }
-            public string? StarterCode { get; set; }
-            public string? ExpectedOutput { get; set; }
-            public string? TestCasesJson { get; set; }
-            public string? Hint { get; set; }
-        }
-
-        public async Task<PracticeDto?> GetPracticeExerciseAsync(int lessonId)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-                var query = @"SELECT LessonId, StarterCode, ExpectedOutput, TestCases, Hint FROM PracticeExercises WHERE LessonId=@LessonId";
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@LessonId", lessonId);
-                using var reader = await command.ExecuteReaderAsync();
-                if (await reader.ReadAsync())
-                {
-                    return new PracticeDto
-                    {
-                        LessonId = reader.GetInt32("LessonId"),
-                        StarterCode = reader.IsDBNull("StarterCode") ? null : reader.GetString("StarterCode"),
-                        ExpectedOutput = reader.IsDBNull("ExpectedOutput") ? null : reader.GetString("ExpectedOutput"),
-                        TestCasesJson = reader.IsDBNull("TestCases") ? null : reader.GetString("TestCases"),
-                        Hint = reader.IsDBNull("Hint") ? null : reader.GetString("Hint")
-                    };
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка загрузки практики: {ex.Message}");
-            }
-            return null;
-        }
 
         public async Task<bool> UpdateProgressWithScoreAsync(int userId, int courseId, int lessonId, string status, int score)
         {
@@ -2618,43 +2472,6 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 Console.WriteLine($"Ошибка обновления прогресса со счетом: {ex.Message}");
                 return false;
             }
-        }
-
-        // ТЕСТЫ: мета и попытки
-        public class TestMeta
-        {
-            public int TestId { get; set; }
-            public string Title { get; set; } = string.Empty;
-            public int PassingScore { get; set; }
-            public int MaxScore { get; set; }
-        }
-
-        public async Task<TestMeta?> GetTestMetaByLessonAsync(int lessonId)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-                var query = @"SELECT TOP 1 TestId, Title, PassingScore, MaxScore FROM Tests WHERE LessonId=@LessonId";
-                using var cmd = new SqlCommand(query, connection);
-                cmd.Parameters.AddWithValue("@LessonId", lessonId);
-                using var r = await cmd.ExecuteReaderAsync();
-                if (await r.ReadAsync())
-                {
-                    return new TestMeta
-                    {
-                        TestId = r.GetInt32("TestId"),
-                        Title = r.GetString("Title"),
-                        PassingScore = r.GetInt32("PassingScore"),
-                        MaxScore = r.IsDBNull("MaxScore") ? 100 : r.GetInt32("MaxScore")
-                    };
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка получения мета теста: {ex.Message}");
-            }
-            return null;
         }
 
         public async Task<int?> StartTestAttemptAsync(int testId, int studentId, int? groupId)
@@ -2978,5 +2795,1049 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 return false;
             }
         }
+
+
+
+        public async Task<int?> AddTheoryLessonAsync(int courseId, string title, string? htmlContent, int order = 1)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Сначала получаем первый модуль курса
+                var moduleQuery = @"
+            SELECT TOP 1 ModuleId FROM CourseModules 
+            WHERE CourseId = @CourseId 
+            ORDER BY ModuleOrder";
+
+                using var moduleCommand = new SqlCommand(moduleQuery, connection);
+                moduleCommand.Parameters.AddWithValue("@CourseId", courseId);
+                var moduleId = await moduleCommand.ExecuteScalarAsync();
+
+                if (moduleId == null)
+                {
+                    // Создаем модуль, если его нет
+                    var createModuleQuery = @"
+                INSERT INTO CourseModules (CourseId, ModuleName, ModuleOrder)
+                VALUES (@CourseId, 'Основной модуль', 1);
+                SELECT SCOPE_IDENTITY();";
+
+                    using var createModuleCommand = new SqlCommand(createModuleQuery, connection);
+                    createModuleCommand.Parameters.AddWithValue("@CourseId", courseId);
+                    moduleId = await createModuleCommand.ExecuteScalarAsync();
+                }
+
+                var query = @"
+            INSERT INTO Lessons (ModuleId, LessonType, Title, Content, LessonOrder, IsActive)
+            VALUES (@ModuleId, 'theory', @Title, @Content, @Order, 1);
+            SELECT SCOPE_IDENTITY();";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@ModuleId", Convert.ToInt32(moduleId));
+                command.Parameters.AddWithValue("@Title", title ?? "");
+                command.Parameters.AddWithValue("@Content", (object?)htmlContent ?? DBNull.Value);
+                command.Parameters.AddWithValue("@Order", order);
+
+                var result = await command.ExecuteScalarAsync();
+                return result == null ? null : Convert.ToInt32(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка добавления теории: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<int?> AddPracticeLessonAsync(int courseId, string title, string? starterCode, string? expectedOutput, string? testCases, string? hint, int order = 1)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Сначала получаем первый модуль курса
+                var moduleQuery = @"
+            SELECT TOP 1 ModuleId FROM CourseModules 
+            WHERE CourseId = @CourseId 
+            ORDER BY ModuleOrder";
+
+                using var moduleCommand = new SqlCommand(moduleQuery, connection);
+                moduleCommand.Parameters.AddWithValue("@CourseId", courseId);
+                var moduleId = await moduleCommand.ExecuteScalarAsync();
+
+                if (moduleId == null)
+                {
+                    // Создаем модуль, если его нет
+                    var createModuleQuery = @"
+                INSERT INTO CourseModules (CourseId, ModuleName, ModuleOrder)
+                VALUES (@CourseId, 'Основной модуль', 1);
+                SELECT SCOPE_IDENTITY();";
+
+                    using var createModuleCommand = new SqlCommand(createModuleQuery, connection);
+                    createModuleCommand.Parameters.AddWithValue("@CourseId", courseId);
+                    moduleId = await createModuleCommand.ExecuteScalarAsync();
+                }
+
+                // Создаем урок
+                var lessonQuery = @"
+            INSERT INTO Lessons (ModuleId, LessonType, Title, LessonOrder, IsActive)
+            VALUES (@ModuleId, 'practice', @Title, @Order, 1);
+            SELECT SCOPE_IDENTITY();";
+
+                using var lessonCommand = new SqlCommand(lessonQuery, connection);
+                lessonCommand.Parameters.AddWithValue("@ModuleId", Convert.ToInt32(moduleId));
+                lessonCommand.Parameters.AddWithValue("@Title", title ?? "");
+                lessonCommand.Parameters.AddWithValue("@Order", order);
+
+                var lessonId = await lessonCommand.ExecuteScalarAsync();
+                if (lessonId == null) return null;
+
+                // Создаем практическое задание
+                var practiceQuery = @"
+            INSERT INTO PracticeExercises (LessonId, StarterCode, ExpectedOutput, TestCases, Hint)
+            VALUES (@LessonId, @StarterCode, @ExpectedOutput, @TestCases, @Hint)";
+
+                using var practiceCommand = new SqlCommand(practiceQuery, connection);
+                practiceCommand.Parameters.AddWithValue("@LessonId", Convert.ToInt32(lessonId));
+                practiceCommand.Parameters.AddWithValue("@StarterCode", (object?)starterCode ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@ExpectedOutput", (object?)expectedOutput ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@TestCases", (object?)testCases ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@Hint", (object?)hint ?? DBNull.Value);
+
+                await practiceCommand.ExecuteNonQueryAsync();
+                return Convert.ToInt32(lessonId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка добавления практики: {ex.Message}");
+                return null;
+            }
+        }
+
+        // Добавьте эти методы в DatabaseService:
+
+        // ТЕОРИЯ - простой текст вместо HTML
+        public async Task<int?> AddSimpleTheoryAsync(int courseId, string title, string content, int order = 1)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var moduleId = await GetOrCreateModuleAsync(connection, courseId);
+
+                var query = @"
+            INSERT INTO Lessons (ModuleId, LessonType, Title, Content, LessonOrder, IsActive)
+            VALUES (@ModuleId, 'theory', @Title, @Content, @Order, 1);
+            SELECT SCOPE_IDENTITY();";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@ModuleId", moduleId);
+                command.Parameters.AddWithValue("@Title", title);
+                command.Parameters.AddWithValue("@Content", content);
+                command.Parameters.AddWithValue("@Order", order);
+
+                var result = await command.ExecuteScalarAsync();
+                return result == null ? null : Convert.ToInt32(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка добавления теории: {ex.Message}");
+                return null;
+            }
+        }
+
+        // ПРАКТИКА с разными типами ответов
+        public async Task<int?> AddPracticeWithAnswerTypeAsync(int courseId, string title, string description,
+            string answerType, string? starterCode, string? expectedAnswer, string? hint, int order = 1)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var moduleId = await GetOrCreateModuleAsync(connection, courseId);
+
+                // Создаем урок
+                var lessonQuery = @"
+            INSERT INTO Lessons (ModuleId, LessonType, Title, Content, LessonOrder, IsActive)
+            VALUES (@ModuleId, 'practice', @Title, @Description, @Order, 1);
+            SELECT SCOPE_IDENTITY();";
+
+                using var lessonCommand = new SqlCommand(lessonQuery, connection);
+                lessonCommand.Parameters.AddWithValue("@ModuleId", moduleId);
+                lessonCommand.Parameters.AddWithValue("@Title", title);
+                lessonCommand.Parameters.AddWithValue("@Description", description);
+                lessonCommand.Parameters.AddWithValue("@Order", order);
+
+                var lessonId = await lessonCommand.ExecuteScalarAsync();
+                if (lessonId == null) return null;
+
+                // Создаем практическое задание
+                var practiceQuery = @"
+            INSERT INTO PracticeExercises (LessonId, StarterCode, ExpectedOutput, TestCases, Hint, AnswerType)
+            VALUES (@LessonId, @StarterCode, @ExpectedAnswer, @AnswerType, @Hint, @AnswerType)";
+
+                using var practiceCommand = new SqlCommand(practiceQuery, connection);
+                practiceCommand.Parameters.AddWithValue("@LessonId", Convert.ToInt32(lessonId));
+                practiceCommand.Parameters.AddWithValue("@StarterCode", (object?)starterCode ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@ExpectedAnswer", (object?)expectedAnswer ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@AnswerType", answerType);
+                practiceCommand.Parameters.AddWithValue("@Hint", (object?)hint ?? DBNull.Value);
+
+                await practiceCommand.ExecuteNonQueryAsync();
+                return Convert.ToInt32(lessonId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка добавления практики: {ex.Message}");
+                return null;
+            }
+        }
+
+        // ТЕСТ с вопросами и ответами
+        public async Task<int?> CreateTestWithQuestionsAsync(int courseId, string title, string description,
+            int timeLimit, int passingScore, List<QuestionCreationModel> questions)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var transaction = connection.BeginTransaction();
+
+                try
+                {
+                    var moduleId = await GetOrCreateModuleAsync(connection, courseId, transaction);
+
+                    // Создаем урок-тест
+                    var lessonQuery = @"
+                INSERT INTO Lessons (ModuleId, LessonType, Title, Content, LessonOrder, IsActive)
+                VALUES (@ModuleId, 'test', @Title, @Description, 1, 1);
+                SELECT SCOPE_IDENTITY();";
+
+                    using var lessonCommand = new SqlCommand(lessonQuery, connection, transaction);
+                    lessonCommand.Parameters.AddWithValue("@ModuleId", moduleId);
+                    lessonCommand.Parameters.AddWithValue("@Title", title);
+                    lessonCommand.Parameters.AddWithValue("@Description", description);
+
+                    var lessonId = await lessonCommand.ExecuteScalarAsync();
+                    if (lessonId == null)
+                    {
+                        transaction.Rollback();
+                        return null;
+                    }
+
+                    // Создаем тест
+                    var testQuery = @"
+                INSERT INTO Tests (LessonId, Title, Description, TimeLimitMinutes, PassingScore)
+                VALUES (@LessonId, @Title, @Description, @TimeLimit, @PassingScore);
+                SELECT SCOPE_IDENTITY();";
+
+                    using var testCommand = new SqlCommand(testQuery, connection, transaction);
+                    testCommand.Parameters.AddWithValue("@LessonId", Convert.ToInt32(lessonId));
+                    testCommand.Parameters.AddWithValue("@Title", title);
+                    testCommand.Parameters.AddWithValue("@Description", description);
+                    testCommand.Parameters.AddWithValue("@TimeLimit", timeLimit);
+                    testCommand.Parameters.AddWithValue("@PassingScore", passingScore);
+
+                    var testId = await testCommand.ExecuteScalarAsync();
+                    if (testId == null)
+                    {
+                        transaction.Rollback();
+                        return null;
+                    }
+
+                    // Добавляем вопросы и ответы
+                    foreach (var question in questions)
+                    {
+                        var questionQuery = @"
+                    INSERT INTO Questions (TestId, QuestionText, QuestionType, Score, QuestionOrder)
+                    VALUES (@TestId, @QuestionText, @QuestionType, @Score, @QuestionOrder);
+                    SELECT SCOPE_IDENTITY();";
+
+                        using var questionCommand = new SqlCommand(questionQuery, connection, transaction);
+                        questionCommand.Parameters.AddWithValue("@TestId", Convert.ToInt32(testId));
+                        questionCommand.Parameters.AddWithValue("@QuestionText", question.QuestionText);
+                        questionCommand.Parameters.AddWithValue("@QuestionType", question.QuestionType);
+                        questionCommand.Parameters.AddWithValue("@Score", question.Score);
+                        questionCommand.Parameters.AddWithValue("@QuestionOrder", questions.IndexOf(question) + 1);
+
+                        var questionId = await questionCommand.ExecuteScalarAsync();
+                        if (questionId == null)
+                        {
+                            transaction.Rollback();
+                            return null;
+                        }
+
+                        // Добавляем варианты ответов
+                        foreach (var answer in question.AnswerOptions)
+                        {
+                            var answerQuery = @"
+                        INSERT INTO AnswerOptions (QuestionId, AnswerText, IsCorrect)
+                        VALUES (@QuestionId, @AnswerText, @IsCorrect)";
+
+                            using var answerCommand = new SqlCommand(answerQuery, connection, transaction);
+                            answerCommand.Parameters.AddWithValue("@QuestionId", Convert.ToInt32(questionId));
+                            answerCommand.Parameters.AddWithValue("@AnswerText", answer.AnswerText);
+                            answerCommand.Parameters.AddWithValue("@IsCorrect", answer.IsCorrect);
+
+                            await answerCommand.ExecuteNonQueryAsync();
+                        }
+                    }
+
+                    transaction.Commit();
+                    return Convert.ToInt32(lessonId);
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка создания теста с вопросами: {ex.Message}");
+                return null;
+            }
+        }
+
+        // УДАЛЕНИЕ контента
+        public async Task<bool> DeleteLessonAsync(int lessonId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Сначала проверяем тип урока
+                var typeQuery = "SELECT LessonType FROM Lessons WHERE LessonId = @LessonId";
+                using var typeCommand = new SqlCommand(typeQuery, connection);
+                typeCommand.Parameters.AddWithValue("@LessonId", lessonId);
+                var lessonType = await typeCommand.ExecuteScalarAsync() as string;
+
+                using var transaction = connection.BeginTransaction();
+
+                try
+                {
+                    // Удаляем в зависимости от типа урока
+                    if (lessonType == "practice")
+                    {
+                        var deletePracticeQuery = "DELETE FROM PracticeExercises WHERE LessonId = @LessonId";
+                        using var practiceCommand = new SqlCommand(deletePracticeQuery, connection, transaction);
+                        practiceCommand.Parameters.AddWithValue("@LessonId", lessonId);
+                        await practiceCommand.ExecuteNonQueryAsync();
+                    }
+                    else if (lessonType == "test")
+                    {
+                        // Получаем ID теста
+                        var testIdQuery = "SELECT TestId FROM Tests WHERE LessonId = @LessonId";
+                        using var testIdCommand = new SqlCommand(testIdQuery, connection, transaction);
+                        testIdCommand.Parameters.AddWithValue("@LessonId", lessonId);
+                        var testId = await testIdCommand.ExecuteScalarAsync();
+
+                        if (testId != null)
+                        {
+                            // Удаляем ответы студентов
+                            var deleteAnswersQuery = @"
+                        DELETE sa FROM StudentAnswers sa
+                        INNER JOIN TestAttempts ta ON sa.AttemptId = ta.AttemptId
+                        WHERE ta.TestId = @TestId";
+                            using var answersCommand = new SqlCommand(deleteAnswersQuery, connection, transaction);
+                            answersCommand.Parameters.AddWithValue("@TestId", testId);
+                            await answersCommand.ExecuteNonQueryAsync();
+
+                            // Удаляем попытки
+                            var deleteAttemptsQuery = "DELETE FROM TestAttempts WHERE TestId = @TestId";
+                            using var attemptsCommand = new SqlCommand(deleteAttemptsQuery, connection, transaction);
+                            attemptsCommand.Parameters.AddWithValue("@TestId", testId);
+                            await attemptsCommand.ExecuteNonQueryAsync();
+
+                            // Удаляем варианты ответов
+                            var deleteOptionsQuery = @"
+                        DELETE ao FROM AnswerOptions ao
+                        INNER JOIN Questions q ON ao.QuestionId = q.QuestionId
+                        WHERE q.TestId = @TestId";
+                            using var optionsCommand = new SqlCommand(deleteOptionsQuery, connection, transaction);
+                            optionsCommand.Parameters.AddWithValue("@TestId", testId);
+                            await optionsCommand.ExecuteNonQueryAsync();
+
+                            // Удаляем вопросы
+                            var deleteQuestionsQuery = "DELETE FROM Questions WHERE TestId = @TestId";
+                            using var questionsCommand = new SqlCommand(deleteQuestionsQuery, connection, transaction);
+                            questionsCommand.Parameters.AddWithValue("@TestId", testId);
+                            await questionsCommand.ExecuteNonQueryAsync();
+
+                            // Удаляем тест
+                            var deleteTestQuery = "DELETE FROM Tests WHERE TestId = @TestId";
+                            using var testCommand = new SqlCommand(deleteTestQuery, connection, transaction);
+                            testCommand.Parameters.AddWithValue("@TestId", testId);
+                            await testCommand.ExecuteNonQueryAsync();
+                        }
+                    }
+
+                    // Удаляем прогресс студентов
+                    var deleteProgressQuery = "DELETE FROM StudentProgress WHERE LessonId = @LessonId";
+                    using var progressCommand = new SqlCommand(deleteProgressQuery, connection, transaction);
+                    progressCommand.Parameters.AddWithValue("@LessonId", lessonId);
+                    await progressCommand.ExecuteNonQueryAsync();
+
+                    // Удаляем урок
+                    var deleteLessonQuery = "DELETE FROM Lessons WHERE LessonId = @LessonId";
+                    using var lessonCommand = new SqlCommand(deleteLessonQuery, connection, transaction);
+                    lessonCommand.Parameters.AddWithValue("@LessonId", lessonId);
+                    var result = await lessonCommand.ExecuteNonQueryAsync();
+
+                    transaction.Commit();
+                    return result > 0;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка удаления урока: {ex.Message}");
+                return false;
+            }
+        }
+
+        
+
+        // Вспомогательный метод для получения/создания модуля
+        private async Task<int> GetOrCreateModuleAsync(SqlConnection connection, int courseId, SqlTransaction? transaction = null)
+        {
+            var moduleQuery = @"
+        SELECT TOP 1 ModuleId FROM CourseModules 
+        WHERE CourseId = @CourseId 
+        ORDER BY ModuleOrder";
+
+            using var moduleCommand = transaction == null
+                ? new SqlCommand(moduleQuery, connection)
+                : new SqlCommand(moduleQuery, connection, transaction);
+
+            moduleCommand.Parameters.AddWithValue("@CourseId", courseId);
+            var moduleId = await moduleCommand.ExecuteScalarAsync();
+
+            if (moduleId == null)
+            {
+                var createModuleQuery = @"
+            INSERT INTO CourseModules (CourseId, ModuleName, ModuleOrder)
+            VALUES (@CourseId, 'Основной модуль', 1);
+            SELECT SCOPE_IDENTITY();";
+
+                using var createModuleCommand = transaction == null
+                    ? new SqlCommand(createModuleQuery, connection)
+                    : new SqlCommand(createModuleQuery, connection, transaction);
+
+                createModuleCommand.Parameters.AddWithValue("@CourseId", courseId);
+                moduleId = await createModuleCommand.ExecuteScalarAsync();
+            }
+
+            return Convert.ToInt32(moduleId);
+        }
+
+        public async Task<string?> GetLessonContentAsync(int lessonId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = "SELECT Content FROM Lessons WHERE LessonId = @LessonId";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+
+                var result = await command.ExecuteScalarAsync();
+                return result?.ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка получения содержания урока: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<int?> GetCourseIdByLessonAsync(int lessonId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT c.CourseId 
+            FROM Courses c
+            INNER JOIN CourseModules m ON c.CourseId = m.CourseId
+            INNER JOIN Lessons l ON m.ModuleId = l.ModuleId
+            WHERE l.LessonId = @LessonId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+
+                var result = await command.ExecuteScalarAsync();
+                return result == null ? null : Convert.ToInt32(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка получения ID курса: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async Task<List<AnswerOption>> GetAnswerOptionsAsync(int questionId)
+        {
+            var options = new List<AnswerOption>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT AnswerId, AnswerText, IsCorrect
+            FROM AnswerOptions
+            WHERE QuestionId = @QuestionId
+            ORDER BY AnswerId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@QuestionId", questionId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    options.Add(new AnswerOption
+                    {
+                        AnswerId = reader.GetInt32("AnswerId"),
+                        AnswerText = reader.GetString("AnswerText"),
+                        IsCorrect = reader.GetBoolean("IsCorrect")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки вариантов ответов: {ex.Message}");
+            }
+            return options;
+        }
+        public async Task<bool> SaveStudentAnswerAsync(int attemptId, int questionId, object userAnswer, bool isCorrect)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                string query = @"
+            INSERT INTO StudentAnswers (AttemptId, QuestionId, SelectedAnswerId, CodeAnswer, IsCorrect)
+            VALUES (@AttemptId, @QuestionId, @SelectedAnswerId, @CodeAnswer, @IsCorrect)";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@AttemptId", attemptId);
+                command.Parameters.AddWithValue("@QuestionId", questionId);
+                command.Parameters.AddWithValue("@IsCorrect", isCorrect);
+
+                // Обрабатываем разные типы ответов
+                if (userAnswer is int selectedAnswerId)
+                {
+                    command.Parameters.AddWithValue("@SelectedAnswerId", selectedAnswerId);
+                    command.Parameters.AddWithValue("@CodeAnswer", DBNull.Value);
+                }
+                else if (userAnswer is List<int> selectedAnswers)
+                {
+                    // Для множественного выбора сохраняем первый выбранный ответ (можно улучшить)
+                    command.Parameters.AddWithValue("@SelectedAnswerId", selectedAnswers.FirstOrDefault());
+                    command.Parameters.AddWithValue("@CodeAnswer", DBNull.Value);
+                }
+                else if (userAnswer is string textAnswer)
+                {
+                    command.Parameters.AddWithValue("@SelectedAnswerId", DBNull.Value);
+                    command.Parameters.AddWithValue("@CodeAnswer", textAnswer);
+                }
+                else
+                {
+                    command.Parameters.AddWithValue("@SelectedAnswerId", DBNull.Value);
+                    command.Parameters.AddWithValue("@CodeAnswer", DBNull.Value);
+                }
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения ответа студента: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<PracticeDto?> GetPracticeExerciseAsync(int lessonId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+                var query = @"SELECT LessonId, StarterCode, ExpectedOutput, TestCases, Hint, Description 
+                      FROM PracticeExercises WHERE LessonId=@LessonId";
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    return new PracticeDto
+                    {
+                        LessonId = reader.GetInt32("LessonId"),
+                        StarterCode = reader.IsDBNull("StarterCode") ? null : reader.GetString("StarterCode"),
+                        ExpectedOutput = reader.IsDBNull("ExpectedOutput") ? null : reader.GetString("ExpectedOutput"),
+                        TestCasesJson = reader.IsDBNull("TestCases") ? null : reader.GetString("TestCases"),
+                        Hint = reader.IsDBNull("Hint") ? null : reader.GetString("Hint"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description")
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки практики: {ex.Message}");
+            }
+            return null;
+        }
+
+
+        public async Task<int?> AddPracticeWithAnswerTypeAsync(
+            int courseId,
+            string title,
+            string description,
+            string answerType,
+            string starterCode,
+            string expectedAnswer,
+            string hint,
+            int maxFileSize = 10,
+            string allowedFileTypes = "")
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var moduleId = await GetOrCreateModuleAsync(connection, courseId);
+
+                // Создаем урок
+                var lessonQuery = @"
+            INSERT INTO Lessons (ModuleId, LessonType, Title, Content, LessonOrder, IsActive)
+            VALUES (@ModuleId, 'practice', @Title, @Description, 1, 1);
+            SELECT SCOPE_IDENTITY();";
+
+                using var lessonCommand = new SqlCommand(lessonQuery, connection);
+                lessonCommand.Parameters.AddWithValue("@ModuleId", moduleId);
+                lessonCommand.Parameters.AddWithValue("@Title", title);
+                lessonCommand.Parameters.AddWithValue("@Description", description);
+
+                var lessonId = await lessonCommand.ExecuteScalarAsync();
+                if (lessonId == null) return null;
+
+                // Создаем практическое задание с новыми полями
+                var practiceQuery = @"
+            INSERT INTO PracticeExercises (LessonId, StarterCode, ExpectedOutput, TestCases, Hint, AnswerType, MaxFileSize, AllowedFileTypes)
+            VALUES (@LessonId, @StarterCode, @ExpectedAnswer, @AnswerType, @Hint, @AnswerType, @MaxFileSize, @AllowedFileTypes)";
+
+                using var practiceCommand = new SqlCommand(practiceQuery, connection);
+                practiceCommand.Parameters.AddWithValue("@LessonId", Convert.ToInt32(lessonId));
+                practiceCommand.Parameters.AddWithValue("@StarterCode", (object?)starterCode ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@ExpectedAnswer", (object?)expectedAnswer ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@AnswerType", answerType);
+                practiceCommand.Parameters.AddWithValue("@Hint", (object?)hint ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@MaxFileSize", maxFileSize);
+                practiceCommand.Parameters.AddWithValue("@AllowedFileTypes", (object?)allowedFileTypes ?? DBNull.Value);
+
+                await practiceCommand.ExecuteNonQueryAsync();
+                return Convert.ToInt32(lessonId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка добавления практики: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<List<CourseLesson>> GetCourseLessonsAsync(int courseId)
+        {
+            var lessons = new List<CourseLesson>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT l.LessonId, l.ModuleId, l.LessonType, l.Title, l.Content, l.LessonOrder, l.IsActive
+            FROM Lessons l
+            INNER JOIN CourseModules m ON l.ModuleId = m.ModuleId
+            WHERE m.CourseId = @CourseId
+            ORDER BY l.LessonOrder";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@CourseId", courseId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    lessons.Add(new CourseLesson
+                    {
+                        LessonId = reader.GetInt32("LessonId"),
+                        ModuleId = reader.GetInt32("ModuleId"),
+                        LessonType = reader.GetString("LessonType"),
+                        Title = reader.GetString("Title"),
+                        Content = reader.IsDBNull("Content") ? null : reader.GetString("Content"),
+                        LessonOrder = reader.GetInt32("LessonOrder"),
+                        IsActive = reader.GetBoolean("IsActive")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки уроков курса: {ex.Message}");
+            }
+            return lessons;
+        }
+
+        // Методы для работы с практическими заданиями
+        public async Task<bool> UpdatePracticeExerciseAsync(PracticeDto practice)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Сначала обновляем урок
+                var lessonQuery = @"
+            UPDATE Lessons 
+            SET Title = @Title, 
+                Content = @Description
+            WHERE LessonId = @LessonId";
+
+                using var lessonCommand = new SqlCommand(lessonQuery, connection);
+                lessonCommand.Parameters.AddWithValue("@LessonId", practice.LessonId);
+                lessonCommand.Parameters.AddWithValue("@Title", practice.Title ?? "");
+                lessonCommand.Parameters.AddWithValue("@Description", practice.Description ?? "");
+                await lessonCommand.ExecuteNonQueryAsync();
+
+                // Проверяем существование практического задания
+                var checkPracticeQuery = "SELECT COUNT(*) FROM PracticeExercises WHERE LessonId = @LessonId";
+                using var checkCommand = new SqlCommand(checkPracticeQuery, connection);
+                checkCommand.Parameters.AddWithValue("@LessonId", practice.LessonId);
+                var exists = Convert.ToInt32(await checkCommand.ExecuteScalarAsync()) > 0;
+
+                string practiceQuery;
+                if (exists)
+                {
+                    // Обновляем существующее задание
+                    practiceQuery = @"
+                UPDATE PracticeExercises 
+                SET StarterCode = @StarterCode,
+                    ExpectedOutput = @ExpectedOutput,
+                    TestCases = @TestCases,
+                    Hint = @Hint
+                WHERE LessonId = @LessonId";
+                }
+                else
+                {
+                    // Создаем новое задание
+                    practiceQuery = @"
+                INSERT INTO PracticeExercises (LessonId, StarterCode, ExpectedOutput, TestCases, Hint)
+                VALUES (@LessonId, @StarterCode, @ExpectedOutput, @TestCases, @Hint)";
+                }
+
+                using var practiceCommand = new SqlCommand(practiceQuery, connection);
+                practiceCommand.Parameters.AddWithValue("@LessonId", practice.LessonId);
+                practiceCommand.Parameters.AddWithValue("@StarterCode", (object?)practice.StarterCode ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@ExpectedOutput", (object?)practice.ExpectedOutput ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@TestCases", (object?)practice.TestCasesJson ?? DBNull.Value);
+                practiceCommand.Parameters.AddWithValue("@Hint", (object?)practice.Hint ?? DBNull.Value);
+
+                var result = await practiceCommand.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обновления практики: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<PracticeDto?> GetPracticeExerciseWithLessonDataAsync(int lessonId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT l.LessonId, l.Title, l.Content as Description,
+                   pe.StarterCode, pe.ExpectedOutput, pe.TestCases, 
+                   pe.Hint
+            FROM Lessons l
+            LEFT JOIN PracticeExercises pe ON l.LessonId = pe.LessonId
+            WHERE l.LessonId = @LessonId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    return new PracticeDto
+                    {
+                        LessonId = reader.GetInt32("LessonId"),
+                        Title = reader.IsDBNull("Title") ? null : reader.GetString("Title"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        StarterCode = reader.IsDBNull("StarterCode") ? null : reader.GetString("StarterCode"),
+                        ExpectedOutput = reader.IsDBNull("ExpectedOutput") ? null : reader.GetString("ExpectedOutput"),
+                        TestCasesJson = reader.IsDBNull("TestCases") ? null : reader.GetString("TestCases"),
+                        Hint = reader.IsDBNull("Hint") ? null : reader.GetString("Hint")
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки практики с данными урока: {ex.Message}");
+            }
+            return null;
+        }
+
+        // Методы для работы с тестами
+        public async Task<bool> UpdateTestMetaAsync(int testId, string title, string description, int timeLimit, int passingScore)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE Tests 
+            SET Title = @Title,
+                Description = @Description,
+                TimeLimitMinutes = @TimeLimit,
+                PassingScore = @PassingScore
+            WHERE TestId = @TestId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@TestId", testId);
+                command.Parameters.AddWithValue("@Title", title);
+                command.Parameters.AddWithValue("@Description", description ?? "");
+                command.Parameters.AddWithValue("@TimeLimit", timeLimit);
+                command.Parameters.AddWithValue("@PassingScore", passingScore);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обновления теста: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<TestMeta?> GetTestMetaByLessonAsync(int lessonId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT t.TestId, t.Title, t.Description, t.TimeLimitMinutes, t.PassingScore, t.MaxScore
+            FROM Tests t
+            WHERE t.LessonId = @LessonId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    return new TestMeta
+                    {
+                        TestId = reader.GetInt32("TestId"),
+                        Title = reader.GetString("Title"),
+                        Description = reader.IsDBNull("Description") ? "" : reader.GetString("Description"),
+                        TimeLimitMinutes = reader.GetInt32("TimeLimitMinutes"),
+                        PassingScore = reader.GetInt32("PassingScore"),
+                        MaxScore = reader.GetInt32("MaxScore")
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка получения метаданных теста: {ex.Message}");
+            }
+            return null;
+        }
+
+        public async Task<List<Question>> GetTestQuestionsAsync(int testId)
+        {
+            var questions = new List<Question>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT q.QuestionId, q.QuestionText, q.QuestionType, q.Score, q.QuestionOrder
+            FROM Questions q
+            WHERE q.TestId = @TestId
+            ORDER BY q.QuestionOrder";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@TestId", testId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var question = new Question
+                    {
+                        QuestionId = reader.GetInt32("QuestionId"),
+                        QuestionText = reader.GetString("QuestionText"),
+                        QuestionType = reader.GetString("QuestionType"),
+                        Score = reader.GetInt32("Score"),
+                        QuestionOrder = reader.GetInt32("QuestionOrder")
+                    };
+
+                    // Загружаем варианты ответов для этого вопроса
+                    question.AnswerOptions = await GetAnswerOptionsAsync(question.QuestionId);
+                    questions.Add(question);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки вопросов теста: {ex.Message}");
+            }
+            return questions;
+        }
+
+
+        public async Task<int?> AddQuestionAsync(int testId, string questionText, string questionType, int score, int order)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            INSERT INTO Questions (TestId, QuestionText, QuestionType, Score, QuestionOrder)
+            VALUES (@TestId, @QuestionText, @QuestionType, @Score, @Order);
+            SELECT SCOPE_IDENTITY();";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@TestId", testId);
+                command.Parameters.AddWithValue("@QuestionText", questionText);
+                command.Parameters.AddWithValue("@QuestionType", questionType);
+                command.Parameters.AddWithValue("@Score", score);
+                command.Parameters.AddWithValue("@Order", order);
+
+                var result = await command.ExecuteScalarAsync();
+                return result == null ? null : Convert.ToInt32(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка добавления вопроса: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<bool> AddAnswerOptionAsync(int questionId, string answerText, bool isCorrect)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            INSERT INTO AnswerOptions (QuestionId, AnswerText, IsCorrect)
+            VALUES (@QuestionId, @AnswerText, @IsCorrect)";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@QuestionId", questionId);
+                command.Parameters.AddWithValue("@AnswerText", answerText);
+                command.Parameters.AddWithValue("@IsCorrect", isCorrect);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка добавления варианта ответа: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteQuestionAsync(int questionId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var transaction = connection.BeginTransaction();
+
+                try
+                {
+                    // Сначала удаляем варианты ответов
+                    var deleteOptionsQuery = "DELETE FROM AnswerOptions WHERE QuestionId = @QuestionId";
+                    using var optionsCommand = new SqlCommand(deleteOptionsQuery, connection, transaction);
+                    optionsCommand.Parameters.AddWithValue("@QuestionId", questionId);
+                    await optionsCommand.ExecuteNonQueryAsync();
+
+                    // Затем удаляем вопрос
+                    var deleteQuestionQuery = "DELETE FROM Questions WHERE QuestionId = @QuestionId";
+                    using var questionCommand = new SqlCommand(deleteQuestionQuery, connection, transaction);
+                    questionCommand.Parameters.AddWithValue("@QuestionId", questionId);
+                    var result = await questionCommand.ExecuteNonQueryAsync();
+
+                    transaction.Commit();
+                    return result > 0;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка удаления вопроса: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateQuestionAsync(int questionId, string questionText, string questionType, int score)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE Questions 
+            SET QuestionText = @QuestionText,
+                QuestionType = @QuestionType,
+                Score = @Score
+            WHERE QuestionId = @QuestionId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@QuestionId", questionId);
+                command.Parameters.AddWithValue("@QuestionText", questionText);
+                command.Parameters.AddWithValue("@QuestionType", questionType);
+                command.Parameters.AddWithValue("@Score", score);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обновления вопроса: {ex.Message}");
+                return false;
+            }
+        }
+
+
     }
 }
