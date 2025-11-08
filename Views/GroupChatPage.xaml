@@ -2,37 +2,56 @@
 <ContentPage x:Class="EducationalPlatform.Views.GroupChatPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:models="clr-namespace:EducationalPlatform.Models"
-             xmlns:services="clr-namespace:EducationalPlatform.Services">
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             Title="Чат группы">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:FileTypeToIconConverter x:Key="FileTypeToIconConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Header -->
+        <!-- Header как в Telegram -->
         <Border Grid.Row="0" 
-                BackgroundColor="{DynamicResource PrimaryColor}"
+                BackgroundColor="#2E86AB"
+                StrokeThickness="0"
                 Padding="10">
-            <Grid ColumnDefinitions="Auto,*,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto" 
+                  VerticalOptions="Center"
+                  HeightRequest="50">
+
                 <Button Grid.Column="0" 
                         Text="←" 
                         Clicked="OnBackClicked"
                         BackgroundColor="Transparent"
                         TextColor="White"
+                        FontSize="18"
+                        WidthRequest="40"
+                        HeightRequest="40"/>
+
+                <VerticalStackLayout Grid.Column="1" 
+                                   Spacing="2"
+                                   HorizontalOptions="Start">
+                    <Label Text="{Binding Title}"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label Text="онлайн"
+                           FontSize="12"
+                           TextColor="LightGray" />
+                </VerticalStackLayout>
+
+                <Button Grid.Column="2" 
+                        Text="👥"
+                        Clicked="OnMembersClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
                         FontSize="16"
-                        WidthRequest="40"/>
-
-                <Label Grid.Column="1" 
-                       Text="{Binding Title}"
-                       TextColor="White"
-                       FontSize="18"
-                       FontAttributes="Bold"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center"/>
-
-                <Label Grid.Column="2" 
-                       Text="👥"
-                       FontSize="16"
-                       HorizontalOptions="End"
-                       VerticalOptions="Center"/>
+                        WidthRequest="40"
+                        HeightRequest="40"/>
             </Grid>
         </Border>
 
@@ -40,80 +59,194 @@
         <CollectionView Grid.Row="1"
                         x:Name="MessagesCollectionView"
                         ItemsSource="{Binding Messages}"
-                        SelectionMode="None">
+                        SelectionMode="None"
+                        VerticalScrollBarVisibility="Always">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Grid Padding="10,5"
-                          ColumnDefinitions="*,Auto">
+                          ColumnDefinitions="Auto,*,Auto">
 
                         <!-- Other user's message -->
                         <Frame Grid.Column="0"
+                               Grid.ColumnSpan="2"
                                IsVisible="{Binding IsMyMessage, Converter={StaticResource InverseBoolConverter}}"
-                               BackgroundColor="{DynamicResource SecondaryColor}"
+                               BackgroundColor="#FFFFFF"
                                Padding="12"
                                HorizontalOptions="Start"
-                               MaximumWidthRequest="300">
-                            <VerticalStackLayout>
-                                <Label Text="{Binding MessageText}"
-                                       TextColor="{DynamicResource TextColor}"
-                                       FontSize="14"/>
-                                <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}"
-                                       TextColor="Gray"
+                               MaximumWidthRequest="280"
+                               HasShadow="False"
+                               CornerRadius="18"
+                               BorderColor="#E0E0E0">
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" 
+                                  ColumnSpacing="8" RowSpacing="4">
+
+                                <!-- Avatar -->
+                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                        BackgroundColor="LightGray"
+                                        Stroke="LightGray"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 20"
+                                        WidthRequest="36"
+                                        HeightRequest="36"
+                                        VerticalOptions="Start">
+                                    <Image Source="{Binding SenderAvatar}"
+                                           Aspect="AspectFill"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"
+                                           WidthRequest="32"
+                                           HeightRequest="32" />
+                                </Border>
+
+                                <!-- Sender Name -->
+                                <Label Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding SenderName}"
+                                       FontSize="12"
+                                       TextColor="#2E86AB"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="End" />
+
+                                <!-- Message Text or File -->
+                                <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
+                                    <!-- Text Message -->
+                                    <Label Text="{Binding MessageText}"
+                                           TextColor="{DynamicResource TextColor}"
+                                           FontSize="14"
+                                           LineBreakMode="WordWrap"
+                                           IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
+
+                                    <!-- File Message -->
+                                    <Grid ColumnDefinitions="Auto,*" 
+                                          ColumnSpacing="8"
+                                          IsVisible="{Binding IsFileMessage}">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
+                                               FontSize="16"
+                                               VerticalOptions="Center" />
+                                        <VerticalStackLayout Grid.Column="1">
+                                            <Label Text="{Binding FileName}"
+                                                   FontSize="13"
+                                                   FontAttributes="Bold"
+                                                   LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding FileSize}"
+                                                   FontSize="11"
+                                                   TextColor="Gray" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </VerticalStackLayout>
+
+                                <!-- Time -->
+                                <Label Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding SentDate, StringFormat='{0:HH:mm}'}"
                                        FontSize="10"
-                                       HorizontalOptions="End"/>
-                            </VerticalStackLayout>
+                                       TextColor="Gray"
+                                       HorizontalOptions="End"
+                                       VerticalOptions="End" />
+                            </Grid>
                         </Frame>
 
                         <!-- My message -->
                         <Frame Grid.Column="1"
+                               Grid.ColumnSpan="2"
                                IsVisible="{Binding IsMyMessage}"
-                               BackgroundColor="{DynamicResource PrimaryColor}"
+                               BackgroundColor="#DCF8C6"
                                Padding="12"
                                HorizontalOptions="End"
-                               MaximumWidthRequest="300">
-                            <VerticalStackLayout>
-                                <Label Text="{Binding MessageText}"
-                                       TextColor="White"
-                                       FontSize="14"/>
-                                <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}"
-                                       TextColor="LightGray"
-                                       FontSize="10"
-                                       HorizontalOptions="End"/>
-                            </VerticalStackLayout>
+                               MaximumWidthRequest="280"
+                               HasShadow="False"
+                               CornerRadius="18">
+                            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto"
+                                  RowSpacing="4">
+
+                                <!-- Message Text or File -->
+                                <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="4">
+                                    <!-- Text Message -->
+                                    <Label Text="{Binding MessageText}"
+                                           TextColor="#000000"
+                                           FontSize="14"
+                                           LineBreakMode="WordWrap"
+                                           IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
+
+                                    <!-- File Message -->
+                                    <Grid ColumnDefinitions="Auto,*" 
+                                          ColumnSpacing="8"
+                                          IsVisible="{Binding IsFileMessage}">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
+                                               FontSize="16"
+                                               VerticalOptions="Center" />
+                                        <VerticalStackLayout Grid.Column="1">
+                                            <Label Text="{Binding FileName}"
+                                                   FontSize="13"
+                                                   FontAttributes="Bold"
+                                                   LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding FileSize}"
+                                                   FontSize="11"
+                                                   TextColor="#666666" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </VerticalStackLayout>
+
+                                <!-- Time and Status -->
+                                <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                      HorizontalOptions="End"
+                                                      Spacing="4"
+                                                      VerticalOptions="End">
+                                    <Label Text="{Binding SentDate, StringFormat='{0:HH:mm}'}"
+                                           FontSize="10"
+                                           TextColor="#666666" />
+                                    <Label Text="✓✓"
+                                           FontSize="10"
+                                           TextColor="#34B7F1"
+                                           IsVisible="{Binding IsDelivered}" />
+                                </HorizontalStackLayout>
+                            </Grid>
                         </Frame>
                     </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <!-- Message Input -->
+        <!-- Message Input как в Telegram -->
         <Border Grid.Row="2"
-                BackgroundColor="{DynamicResource CardBackgroundColor}"
-                Padding="10"
-                Stroke="{DynamicResource BorderColor}"
-                StrokeThickness="1">
+                BackgroundColor="White"
+                Stroke="#E0E0E0"
+                StrokeThickness="1"
+                Padding="10">
             <Grid ColumnDefinitions="*,Auto,Auto" 
-                  ColumnSpacing="10">
+                  ColumnSpacing="8"
+                  VerticalOptions="Center">
 
-                <Entry Grid.Column="0"
-                       x:Name="MessageEntry"
-                       Placeholder="Введите сообщение..."
-                       Completed="OnMessageSent"
-                       BackgroundColor="Transparent"/>
+                <!-- Поле ввода -->
+                <Frame Grid.Column="0"
+                       BackgroundColor="#F1F1F1"
+                       Padding="12"
+                       HasShadow="False"
+                       CornerRadius="20">
+                    <Entry x:Name="MessageEntry"
+                           Placeholder="Сообщение..."
+                           Completed="OnMessageSent"
+                           BackgroundColor="Transparent" />
+                </Frame>
 
                 <Button Grid.Column="1"
                         Text="📎"
                         Clicked="OnAttachFileClicked"
                         BackgroundColor="Transparent"
-                        TextColor="{DynamicResource PrimaryColor}"
-                        WidthRequest="40"/>
+                        TextColor="#2E86AB"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        FontSize="16" />
 
                 <Button Grid.Column="2"
                         Text="➤"
                         Clicked="OnSendMessageClicked"
-                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        BackgroundColor="#2E86AB"
                         TextColor="White"
-                        WidthRequest="40"/>
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20"
+                        FontSize="16"
+                        FontAttributes="Bold" />
             </Grid>
         </Border>
 

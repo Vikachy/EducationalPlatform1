@@ -5,24 +5,150 @@
              Title="Практическое задание">
 
     <ScrollView>
-        <VerticalStackLayout Padding="15" Spacing="10">
-            <Label x:Name="TitleLabel" FontAttributes="Bold" FontSize="18" />
-            <Editor x:Name="CodeEditor" Placeholder="Введите решение" AutoSize="TextChanges" HeightRequest="160"/>
-            <Button Text="Проверить" Clicked="OnCheckClicked" BackgroundColor="{DynamicResource PrimaryColor}" TextColor="White" />
-            <Label x:Name="ResultLabel" FontSize="14" />
+        <VerticalStackLayout Spacing="20" Padding="15">
+
+            <!-- Заголовок -->
+            <Label x:Name="TitleLabel" 
+                   FontSize="24" 
+                   FontAttributes="Bold" 
+                   HorizontalOptions="Center" 
+                   TextColor="{DynamicResource PrimaryColor}" />
+
+            <!-- Описание -->
+            <Border BackgroundColor="#F8F9FA"
+                    Stroke="#E9ECEF"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="15">
+                <Label x:Name="DescriptionLabel" 
+                       FontSize="16" 
+                       LineBreakMode="WordWrap" />
+            </Border>
+
+            <!-- Секция подсказки -->
+            <Border x:Name="HintSection"
+                    BackgroundColor="#FFF3CD"
+                    Stroke="#FFEAA7"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="15"
+                    IsVisible="False">
+                <VerticalStackLayout Spacing="8">
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="💡" 
+                               FontSize="16" />
+                        <Label Text="Подсказка" 
+                               FontSize="16" 
+                               FontAttributes="Bold" 
+                               TextColor="#856404" />
+                    </HorizontalStackLayout>
+                    <Label x:Name="HintLabel" 
+                           FontSize="14" 
+                           LineBreakMode="WordWrap"
+                           TextColor="#856404" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Редактор кода -->
+            <Border BackgroundColor="White"
+                    Stroke="#E0E0E0"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="0">
+                <VerticalStackLayout Spacing="0">
+                    <Border BackgroundColor="#2E86AB"
+                            Padding="10">
+                        <Label Text="Редактор кода" 
+                               FontSize="14" 
+                               FontAttributes="Bold" 
+                               TextColor="White" />
+                    </Border>
+                    <Editor x:Name="CodeEditor" 
+                            HeightRequest="200" 
+                            AutoSize="TextChanges"
+                            Placeholder="Введите ваш код здесь..."
+                            Margin="10"
+                            FontFamily="Courier New" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Секция вложений -->
+            <Border x:Name="AttachmentsSection"
+                    BackgroundColor="White"
+                    Stroke="#E0E0E0"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="0"
+                    IsVisible="False">
+                <VerticalStackLayout Spacing="0">
+                    <Border BackgroundColor="#6C757D"
+                            Padding="10">
+                        <Label Text="📎 Прикрепленные файлы" 
+                               FontSize="14" 
+                               FontAttributes="Bold" 
+                               TextColor="White" />
+                    </Border>
+                    <CollectionView x:Name="AttachmentsCollection"
+                                    HeightRequest="150"
+                                    Margin="10">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto,*,Auto" 
+                                      Padding="10,8"
+                                      ColumnSpacing="10">
+                                    <Label Grid.Column="0" 
+                                           Text="{Binding FileIcon}"
+                                           FontSize="16"
+                                           VerticalOptions="Center" />
+                                    <VerticalStackLayout Grid.Column="1">
+                                        <Label Text="{Binding FileName}" 
+                                               FontSize="14" 
+                                               FontAttributes="Bold"
+                                               LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding FileSize}" 
+                                               FontSize="12" 
+                                               TextColor="Gray" />
+                                    </VerticalStackLayout>
+                                    <Button Grid.Column="2" 
+                                            Text="📥" 
+                                            Clicked="OnDownloadAttachmentClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="Transparent"
+                                            WidthRequest="40"
+                                            HeightRequest="40" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Кнопка проверки -->
+            <Button Text="✅ Проверить решение" 
+                    Clicked="OnCheckClicked"
+                    BackgroundColor="{DynamicResource PrimaryColor}"
+                    TextColor="White"
+                    HeightRequest="50"
+                    CornerRadius="10"
+                    FontSize="16"
+                    FontAttributes="Bold" />
+
+            <!-- Результат -->
+            <Border x:Name="ResultSection"
+                    BackgroundColor="#F8F9FA"
+                    Stroke="#E9ECEF"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="15"
+                    IsVisible="False">
+                <Label x:Name="ResultLabel" 
+                       FontSize="16" 
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+            </Border>
+
         </VerticalStackLayout>
     </ScrollView>
 
 </ContentPage>
-
-
-
-
-
-
-
-
-
-
-
 

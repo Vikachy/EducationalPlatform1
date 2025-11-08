@@ -47,6 +47,23 @@
         </Setter>
     </Style>
 
+    <!-- Добавьте эти стили в ваш ResourceDictionary -->
+
+    <Style x:Key="StandardPickerStyle" TargetType="Picker">
+        <Setter Property="BackgroundColor" Value="White" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="TitleColor" Value="#666" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="HeightRequest" Value="45" />
+    </Style>
+
+    <Style x:Key="StandardEditorStyle" TargetType="Editor">
+        <Setter Property="BackgroundColor" Value="White" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="PlaceholderColor" Value="#666" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="AutoSize" Value="TextChanges" />
+    </Style>
 
 
 </ResourceDictionary>

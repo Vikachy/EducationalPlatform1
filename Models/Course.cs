@@ -60,6 +60,15 @@ namespace EducationalPlatform.Models
         public string? Hint { get; set; }
     }
 
+    public class StudentGroupChat
+    {
+        public int GroupId { get; set; }
+        public string GroupName { get; set; } = string.Empty;
+        public string CourseName { get; set; } = string.Empty;
+        public int StudentCount { get; set; }
+        public string TeacherName { get; set; } = string.Empty;
+    }
+
     public class TeacherCourse : Course
     {
         public List<StudyGroup> Groups { get; set; } = new List<StudyGroup>();

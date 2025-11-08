@@ -1,7 +1,5 @@
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
-using Microsoft.Maui.Platform;
-using Microsoft.Maui;
 using System.Collections.ObjectModel;
 
 namespace EducationalPlatform.Views
@@ -11,12 +9,13 @@ namespace EducationalPlatform.Views
         private readonly User _currentUser;
         private readonly DatabaseService _dbService;
         private readonly SettingsService _settingsService;
+        private readonly FileService _fileService;
         private readonly int _lessonId;
         private int _courseId;
         private List<CourseLesson> _allLessons;
         private int _currentLessonIndex;
 
-        public ObservableCollection<string> Attachments { get; set; } = new();
+        public ObservableCollection<AttachmentViewModel> Attachments { get; set; } = new();
 
         public TheoryStudyPage(User user, DatabaseService dbService, SettingsService settingsService, int lessonId)
         {
@@ -24,11 +23,10 @@ namespace EducationalPlatform.Views
             _currentUser = user;
             _dbService = dbService;
             _settingsService = settingsService;
+            _fileService = new FileService();
             _lessonId = lessonId;
 
             BindingContext = this;
-            AttachmentsCollection.ItemsSource = Attachments;
-
             LoadTheoryContent();
         }
 
@@ -36,6 +34,9 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                // Показываем индикатор загрузки
+                ContentLabel.Text = "Загрузка...";
+
                 // Получаем курс урока
                 var courseId = await _dbService.GetCourseIdByLessonAsync(_lessonId);
                 if (courseId.HasValue)
@@ -54,8 +55,8 @@ namespace EducationalPlatform.Views
                         var lessonContent = await _dbService.GetLessonContentAsync(_lessonId);
                         ContentLabel.Text = lessonContent ?? "Содержание урока пока не добавлено.";
 
-                        // Парсим прикрепленные файлы из содержания
-                        ParseAttachments(lessonContent);
+                        // Загружаем прикрепленные файлы
+                        await LoadAttachments();
 
                         _currentLessonIndex = _allLessons.FindIndex(l => l.LessonId == _lessonId);
                         UpdateNavigationButtons();
@@ -72,40 +73,77 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
+                ContentLabel.Text = $"Ошибка загрузки: {ex.Message}";
                 await DisplayAlert("Ошибка", $"Не удалось загрузить теорию: {ex.Message}", "OK");
             }
         }
 
-        private void ParseAttachments(string content)
+        private async Task LoadAttachments()
         {
-            if (string.IsNullOrEmpty(content)) return;
-
-            // Ищем ссылки в содержании (простой парсинг)
-            var lines = content.Split('\n');
-            bool inAttachmentsSection = false;
-
-            foreach (var line in lines)
+            try
             {
-                if (line.Contains("Прикрепленные файлы:"))
-                {
-                    inAttachmentsSection = true;
-                    continue;
-                }
+                Attachments.Clear();
 
-                if (inAttachmentsSection)
+                var attachments = await GetLessonAttachmentsAsync(_lessonId);
+                if (attachments != null && attachments.Any())
                 {
-                    if (line.Trim().StartsWith("•") && Uri.IsWellFormedUriString(line.Trim().Substring(1).Trim(), UriKind.Absolute))
+                    foreach (var attachment in attachments)
                     {
-                        Attachments.Add(line.Trim().Substring(1).Trim());
+                        Attachments.Add(new AttachmentViewModel
+                        {
+                            FileName = attachment.FileName,
+                            FileSize = attachment.FileSize,
+                            FilePath = attachment.FilePath,
+                            FileIcon = _fileService.GetFileIcon(attachment.FileType)
+                        });
                     }
-                    else if (string.IsNullOrWhiteSpace(line))
-                    {
-                        break; // Конец секции прикрепленных файлов
-                    }
+
+                    AttachmentsSection.IsVisible = true;
+                }
+                else
+                {
+                    AttachmentsSection.IsVisible = false;
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки вложений: {ex.Message}");
+                AttachmentsSection.IsVisible = false;
+            }
+        }
 
-            AttachmentsSection.IsVisible = Attachments.Any();
+        // Временная реализация до добавления метода в DatabaseService
+        private async Task<List<LessonAttachment>> GetLessonAttachmentsAsync(int lessonId)
+        {
+            try
+            {
+                // TODO: Замените на реальный вызов к БД когда будет готов метод
+                // return await _dbService.GetLessonAttachmentsAsync(lessonId);
+
+                // Временная заглушка с тестовыми данными
+                return new List<LessonAttachment>
+                {
+                    new LessonAttachment
+                    {
+                        FileName = "lecture_notes.pdf",
+                        FileSize = "3.2 MB",
+                        FilePath = "https://example.com/files/lecture_notes.pdf", // Используйте реальные URL
+                        FileType = ".pdf"
+                    },
+                    new LessonAttachment
+                    {
+                        FileName = "presentation.pptx",
+                        FileSize = "5.1 MB",
+                        FilePath = "https://example.com/files/presentation.pptx",
+                        FileType = ".pptx"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки вложений урока: {ex.Message}");
+                return new List<LessonAttachment>();
+            }
         }
 
         private void UpdateNavigationButtons()
@@ -116,15 +154,34 @@ namespace EducationalPlatform.Views
 
         private async void OnOpenAttachmentClicked(object sender, EventArgs e)
         {
-            if (sender is Button btn && btn.CommandParameter is string url)
+            if (sender is Button btn && btn.CommandParameter is AttachmentViewModel attachment)
             {
                 try
                 {
-                    await Launcher.OpenAsync(new Uri(url));
+                    if (string.IsNullOrEmpty(attachment.FilePath))
+                    {
+                        await DisplayAlert("Ошибка", "Файл не найден", "OK");
+                        return;
+                    }
+
+                    // Показываем индикатор загрузки
+                    await DisplayAlert("Информация", $"Начинаем загрузку: {attachment.FileName}", "OK");
+
+                    // Используем FileService для скачивания файла
+                    var success = await _fileService.DownloadAndOpenFileAsync(attachment.FilePath, attachment.FileName);
+
+                    if (success)
+                    {
+                        await DisplayAlert("Успех", $"Файл {attachment.FileName} успешно скачан и открыт", "OK");
+                    }
+                    else
+                    {
+                        await DisplayAlert("Ошибка", $"Не удалось скачать файл {attachment.FileName}", "OK");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Ошибка", $"Не удалось открыть ссылку: {ex.Message}", "OK");
+                    await DisplayAlert("Ошибка", $"Не удалось открыть файл: {ex.Message}", "OK");
                 }
             }
         }
@@ -152,11 +209,11 @@ namespace EducationalPlatform.Views
                 }
                 else if (nextLesson.LessonType == "practice")
                 {
-                    await Navigation.PushAsync(new PracticeStudyPage(_currentUser, _dbService, _settingsService, nextLesson.LessonId));
+                    await Navigation.PushAsync(new PracticePage(_currentUser, _dbService, _settingsService, _courseId, nextLesson.LessonId, nextLesson.Title));
                 }
                 else if (nextLesson.LessonType == "test")
                 {
-                    await Navigation.PushAsync(new TestStudyPage(_currentUser, _dbService, _settingsService, nextLesson.LessonId));
+                     await Navigation.PushAsync(new TestStudyPage(_currentUser, _dbService, _settingsService, nextLesson.LessonId));
                 }
 
                 Navigation.RemovePage(this);

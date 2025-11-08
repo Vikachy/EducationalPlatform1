@@ -1,193 +1,167 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Maui.Storage;
+﻿using Microsoft.Maui.Storage;
 
 namespace EducationalPlatform.Services
 {
     public class FileService
     {
-        private readonly string _avatarsFolder = "Avatars";
-        private readonly string _documentsFolder = "Documents";
-        private readonly string _tempFolder = "Temp";
+        private readonly string _documentsFolder;
 
         public FileService()
         {
-            CreateDirectories();
-        }
-
-        private void CreateDirectories()
-        {
-            try
+            _documentsFolder = Path.Combine(FileSystem.AppDataDirectory, "Documents");
+            if (!Directory.Exists(_documentsFolder))
             {
-                var documentsPath = FileSystem.AppDataDirectory;
-                var avatarsPath = Path.Combine(documentsPath, _avatarsFolder);
-                var documentsFolderPath = Path.Combine(documentsPath, _documentsFolder);
-                var tempPath = Path.Combine(documentsPath, _tempFolder);
-
-                if (!Directory.Exists(avatarsPath))
-                    Directory.CreateDirectory(avatarsPath);
-                
-                if (!Directory.Exists(documentsFolderPath))
-                    Directory.CreateDirectory(documentsFolderPath);
-                
-                if (!Directory.Exists(tempPath))
-                    Directory.CreateDirectory(tempPath);
+                Directory.CreateDirectory(_documentsFolder);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка создания папок: {ex.Message}");
-            }
-        }
-
-        public async Task<string> SaveAvatarAsync(Stream imageStream, string fileName)
-        {
-            try
-            {
-                var avatarsPath = Path.Combine(FileSystem.AppDataDirectory, _avatarsFolder);
-                var fullPath = Path.Combine(avatarsPath, fileName);
-
-                using (var fileStream = File.Create(fullPath))
-                {
-                    await imageStream.CopyToAsync(fileStream);
-                }
-
-                return fullPath;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка сохранения аватара: {ex.Message}");
-                throw;
-            }
-        }
-
-        public async Task<string> SaveDocumentAsync(Stream documentStream, string fileName)
-        {
-            try
-            {
-                var documentsPath = Path.Combine(FileSystem.AppDataDirectory, _documentsFolder);
-                var fullPath = Path.Combine(documentsPath, fileName);
-
-                using (var fileStream = File.Create(fullPath))
-                {
-                    await documentStream.CopyToAsync(fileStream);
-                }
-
-                return fullPath;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка сохранения документа: {ex.Message}");
-                throw;
-            }
-        }
-
-        public async Task<string> SaveTempFileAsync(Stream fileStream, string fileName)
-        {
-            try
-            {
-                var tempPath = Path.Combine(FileSystem.AppDataDirectory, _tempFolder);
-                var fullPath = Path.Combine(tempPath, fileName);
-
-                using (var stream = File.Create(fullPath))
-                {
-                    await fileStream.CopyToAsync(stream);
-                }
-
-                return fullPath;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка сохранения временного файла: {ex.Message}");
-                throw;
-            }
-        }
-
-        public bool FileExists(string filePath)
-        {
-            return File.Exists(filePath);
-        }
-
-        public void DeleteFile(string filePath)
-        {
-            try
-            {
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка удаления файла: {ex.Message}");
-            }
-        }
-
-        public void DeleteTempFiles()
-        {
-            try
-            {
-                var tempPath = Path.Combine(FileSystem.AppDataDirectory, _tempFolder);
-                if (Directory.Exists(tempPath))
-                {
-                    var files = Directory.GetFiles(tempPath);
-                    foreach (var file in files)
-                    {
-                        File.Delete(file);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка очистки временных файлов: {ex.Message}");
-            }
-        }
-
-        public long GetFileSize(string filePath)
-        {
-            try
-            {
-                if (File.Exists(filePath))
-                {
-                    var fileInfo = new FileInfo(filePath);
-                    return fileInfo.Length;
-                }
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка получения размера файла: {ex.Message}");
-                return 0;
-            }
-        }
-
-        public string GetFileExtension(string fileName)
-        {
-            return Path.GetExtension(fileName).ToLower();
-        }
-
-        public bool IsValidImageFile(string fileName)
-        {
-            var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
-            var extension = GetFileExtension(fileName);
-            return validExtensions.Contains(extension);
-        }
-
-        public bool IsValidDocumentFile(string fileName)
-        {
-            var validExtensions = new[] { ".pdf", ".doc", ".docx", ".txt", ".rtf" };
-            var extension = GetFileExtension(fileName);
-            return validExtensions.Contains(extension);
         }
 
         public string GenerateUniqueFileName(string originalFileName)
         {
             var extension = Path.GetExtension(originalFileName);
-            var nameWithoutExtension = Path.GetFileNameWithoutExtension(originalFileName);
+            var fileName = Path.GetFileNameWithoutExtension(originalFileName);
             var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            return $"{nameWithoutExtension}_{timestamp}{extension}";
+            var random = new Random().Next(1000, 9999);
+
+            return $"{fileName}_{timestamp}_{random}{extension}";
         }
+
+        public async Task<string?> SaveDocumentAsync(Stream fileStream, string fileName)
+        {
+            try
+            {
+                var filePath = Path.Combine(_documentsFolder, fileName);
+
+                using (var file = File.Create(filePath))
+                {
+                    await fileStream.CopyToAsync(file);
+                }
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения файла: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<bool> DownloadFileAsync(string filePath, string downloadFileName)
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                    return false;
+
+                // Для Android используем MediaStore
+                if (DeviceInfo.Platform == DevicePlatform.Android)
+                {
+                    await ShareFileAsync(filePath, downloadFileName);
+                    return true;
+                }
+                else
+                {
+                    // Для других платформ используем стандартный механизм
+                    await Share.Default.RequestAsync(new ShareFileRequest
+                    {
+                        Title = "Скачать файл",
+                        File = new ShareFile(filePath)
+                    });
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка скачивания файла: {ex.Message}");
+                return false;
+            }
+        }
+
+        private async Task ShareFileAsync(string filePath, string fileName)
+        {
+            try
+            {
+                await Share.Default.RequestAsync(new ShareFileRequest
+                {
+                    Title = "Скачать файл",
+                    File = new ShareFile(filePath)
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка шеринга файла: {ex.Message}");
+            }
+        }
+
+        public string GetFileSize(string filePath)
+        {
+            try
+            {
+                var fileInfo = new FileInfo(filePath);
+                long bytes = fileInfo.Length;
+
+                if (bytes >= 1 << 30) // GB
+                    return $"{(bytes / (1 << 30)):F1} GB";
+                if (bytes >= 1 << 20) // MB
+                    return $"{(bytes / (1 << 20)):F1} MB";
+                if (bytes >= 1 << 10) // KB
+                    return $"{(bytes / (1 << 10)):F1} KB";
+
+                return $"{bytes} B";
+            }
+            catch
+            {
+                return "Неизвестно";
+            }
+        }
+
+        public string GetFileIcon(string fileType)
+        {
+            return fileType?.ToLower() switch
+            {
+                ".pdf" => "📄",
+                ".doc" or ".docx" => "📝",
+                ".ppt" or ".pptx" => "📊",
+                ".xls" or ".xlsx" => "📈",
+                ".zip" or ".rar" or ".7z" => "📦",
+                ".txt" => "📃",
+                ".cs" or ".java" or ".py" or ".js" => "💻",
+                ".jpg" or ".jpeg" or ".png" or ".gif" => "🖼️",
+                ".mp4" or ".avi" or ".mov" => "🎬",
+                ".mp3" or ".wav" => "🎵",
+                _ => "📎"
+            };
+        }
+
+        // Добавьте этот метод в ваш FileService класс
+        public async Task<bool> DownloadAndOpenFileAsync(string fileUrl, string fileName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(fileUrl))
+                    return false;
+
+                // Для веб-URL пытаемся открыть в браузере
+                if (fileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    await Launcher.OpenAsync(new Uri(fileUrl));
+                    return true;
+                }
+
+                // Для локальных файлов
+                if (File.Exists(fileUrl))
+                {
+                    await Launcher.OpenAsync(new Uri(fileUrl));
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка открытия файла: {ex.Message}");
+                return false;
+            }
+        }
+
     }
 }

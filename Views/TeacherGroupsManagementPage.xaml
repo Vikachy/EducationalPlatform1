@@ -17,7 +17,7 @@
         <!-- Контент -->
         <ScrollView Grid.Row="1" Padding="15">
             <VerticalStackLayout Spacing="20">
-                
+
                 <!-- Создание новой группы -->
                 <Border BackgroundColor="#E3F2FD" 
                         Stroke="#2196F3" 
@@ -28,22 +28,17 @@
                         <Label Text="Создать новую группу" 
                                FontSize="16" 
                                FontAttributes="Bold" />
-                        
+
                         <Entry x:Name="NewGroupNameEntry" 
                                Placeholder="Название группы" />
-                        
+
                         <Picker x:Name="CoursePicker"
                                 Title="Выберите курс"
                                 ItemDisplayBinding="{Binding CourseName}" />
-                        
+
                         <Button Text="Создать группу" 
                                 Clicked="OnCreateGroupClicked" 
                                 BackgroundColor="#2196F3" 
-                                TextColor="White" />
-
-                        <Button Text="Создать группу из списка логинов"
-                                Clicked="OnCreateGroupWithUsersClicked"
-                                BackgroundColor="#2E86AB"
                                 TextColor="White" />
                     </VerticalStackLayout>
                 </Border>
@@ -52,7 +47,7 @@
                 <Label Text="Мои группы" 
                        FontSize="16" 
                        FontAttributes="Bold" />
-                
+
                 <CollectionView x:Name="GroupsCollectionView" 
                                 ItemsSource="{Binding Groups}">
                     <CollectionView.ItemTemplate>
@@ -63,44 +58,94 @@
                                     StrokeThickness="1" 
                                     StrokeShape="RoundRectangle 5" 
                                     Padding="15">
-                                <Grid ColumnDefinitions="Auto,*,Auto" VerticalOptions="Center">
-                                    <Label Grid.Column="0" 
+                                <Grid ColumnDefinitions="Auto,*,Auto" 
+                                      RowDefinitions="Auto,Auto"
+                                      VerticalOptions="Center">
+
+                                    <!-- Иконка и основная информация -->
+                                    <Label Grid.Row="0" Grid.Column="0" 
+                                           Grid.RowSpan="2"
                                            Text="👥" 
                                            FontSize="20" 
                                            VerticalOptions="Center" 
                                            Margin="0,0,10,0" />
-                                    
-                                    <VerticalStackLayout Grid.Column="1">
+
+                                    <VerticalStackLayout Grid.Row="0" Grid.Column="1">
                                         <Label Text="{Binding GroupName}" 
                                                FontSize="14" 
                                                FontAttributes="Bold" />
                                         <Label Text="{Binding CourseName}" 
                                                FontSize="12" 
                                                TextColor="#666" />
-                                        <Label Text="{Binding StudentCount, StringFormat='Студентов: {0}'}" 
-                                               FontSize="10" 
-                                               TextColor="#999" />
                                     </VerticalStackLayout>
-                                    
-                                    <VerticalStackLayout Grid.Column="2" Spacing="5">
-                                        <Button Text="Студенты" 
+
+                                    <Label Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding StudentCount, StringFormat='Студентов: {0}'}" 
+                                           FontSize="10" 
+                                           TextColor="#999" />
+
+                                    <!-- Кнопки управления -->
+                                    <Grid Grid.Row="0" Grid.Column="2"
+                                          Grid.RowSpan="2"
+                                          ColumnDefinitions="Auto,Auto"
+                                          RowDefinitions="*,*"
+                                          RowSpacing="5"
+                                          ColumnSpacing="5">
+
+                                        <Button Grid.Row="0" Grid.Column="0"
+                                                Text="✏️" 
+                                                BackgroundColor="#FFC107" 
+                                                TextColor="White" 
+                                                FontSize="10"
+                                                HeightRequest="25"
+                                                WidthRequest="25"
+                                                Clicked="OnEditGroupClicked"
+                                                CommandParameter="{Binding .}" />
+
+                                        <Button Grid.Row="0" Grid.Column="1"
+                                                Text="👥" 
                                                 BackgroundColor="#4CAF50" 
                                                 TextColor="White" 
                                                 FontSize="10"
                                                 HeightRequest="25"
-                                                Clicked="OnViewStudentsClicked" />
-                                        <Button Text="Чат" 
+                                                WidthRequest="25"
+                                                Clicked="OnManageStudentsClicked"
+                                                CommandParameter="{Binding .}" />
+
+                                        <Button Grid.Row="1" Grid.Column="0"
+                                                Text="💬" 
                                                 BackgroundColor="#2196F3" 
                                                 TextColor="White" 
                                                 FontSize="10"
                                                 HeightRequest="25"
-                                                Clicked="OnChatClicked" />
-                                    </VerticalStackLayout>
+                                                WidthRequest="25"
+                                                Clicked="OnChatClicked"
+                                                CommandParameter="{Binding .}" />
+
+                                        <Button Grid.Row="1" Grid.Column="1"
+                                                Text="🗑️" 
+                                                BackgroundColor="#F44336" 
+                                                TextColor="White" 
+                                                FontSize="10"
+                                                HeightRequest="25"
+                                                WidthRequest="25"
+                                                Clicked="OnDeleteGroupClicked"
+                                                CommandParameter="{Binding .}" />
+                                    </Grid>
                                 </Grid>
                             </Border>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
+
+                <!-- Сообщение если групп нет -->
+                <Label x:Name="NoGroupsLabel"
+                       Text="У вас пока нет учебных групп. Создайте первую группу!"
+                       FontSize="14"
+                       TextColor="Gray"
+                       HorizontalOptions="Center"
+                       IsVisible="False" />
+
             </VerticalStackLayout>
         </ScrollView>
 
@@ -114,8 +159,4 @@
                 BorderWidth="1" 
                 Margin="20" />
     </Grid>
-
 </ContentPage>
-
-
-

@@ -13,10 +13,60 @@
                    FontAttributes="Bold" 
                    HorizontalOptions="Center" />
 
+            <!-- Групповые чаты студента -->
+            <Frame x:Name="ChatsSection"
+                   Style="{DynamicResource StandardFrameStyle}"
+                   IsVisible="False">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="💬 Групповые чаты" FontSize="18" FontAttributes="Bold" />
+                    <CollectionView x:Name="StudentChatsCollection" 
+                                  ItemsSource="{Binding StudentGroups}"
+                                  SelectionMode="Single"
+                                  SelectionChanged="OnGroupChatSelected">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,5" 
+                                        BackgroundColor="#F8F9FA" 
+                                        Stroke="#E0E0E0" 
+                                        StrokeThickness="1" 
+                                        StrokeShape="RoundRectangle 8" 
+                                        Padding="12">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" VerticalOptions="Center">
+                                        <!-- Иконка группы -->
+                                        <Label Grid.Column="0" 
+                                               Text="👥" 
+                                               FontSize="20" 
+                                               VerticalOptions="Center" 
+                                               Margin="0,0,10,0" />
+
+                                        <!-- Информация о группе -->
+                                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                            <Label Text="{Binding GroupName}" 
+                                                   FontSize="14" 
+                                                   FontAttributes="Bold" />
+                                            <Label Text="{Binding StudentCount, StringFormat='Участников: {0}'}" 
+                                                   FontSize="11" 
+                                                   TextColor="#666" />
+                                        </VerticalStackLayout>
+
+                                        <!-- Кнопка входа в чат -->
+                                        <Label Grid.Column="2" 
+                                               Text="➤" 
+                                               FontSize="16" 
+                                               TextColor="{DynamicResource PrimaryColor}"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
             <!-- Теория -->
             <Frame Style="{DynamicResource StandardFrameStyle}">
                 <VerticalStackLayout Spacing="10">
-                    <Label x:Name="TheoryLabel" Text="Теория" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="TheoryLabel" Text="📖 Теория" FontSize="18" FontAttributes="Bold" />
                     <CollectionView x:Name="TheoryCollection" 
                                   SelectionMode="Single"
                                   SelectionChanged="OnTheorySelected">
@@ -27,9 +77,10 @@
                                            FontSize="16" 
                                            VerticalOptions="Center" />
                                     <Label Grid.Column="1" 
-                                           Text="📖" 
+                                           Text="➤" 
                                            FontSize="16" 
-                                           VerticalOptions="Center" />
+                                           VerticalOptions="Center" 
+                                           TextColor="{DynamicResource PrimaryColor}"/>
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -40,7 +91,7 @@
             <!-- Практика -->
             <Frame Style="{DynamicResource StandardFrameStyle}">
                 <VerticalStackLayout Spacing="10">
-                    <Label x:Name="PracticeLabel" Text="Практика" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="PracticeLabel" Text="💻 Практика" FontSize="18" FontAttributes="Bold" />
                     <CollectionView x:Name="PracticeCollection" 
                                   SelectionMode="Single"
                                   SelectionChanged="OnPracticeSelected">
@@ -51,9 +102,10 @@
                                            FontSize="16" 
                                            VerticalOptions="Center" />
                                     <Label Grid.Column="1" 
-                                           Text="💻" 
+                                           Text="➤" 
                                            FontSize="16" 
-                                           VerticalOptions="Center" />
+                                           VerticalOptions="Center" 
+                                           TextColor="{DynamicResource PrimaryColor}"/>
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -64,7 +116,7 @@
             <!-- Тесты -->
             <Frame Style="{DynamicResource StandardFrameStyle}">
                 <VerticalStackLayout Spacing="10">
-                    <Label x:Name="TestsLabel" Text="Тесты" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="TestsLabel" Text="📝 Тесты" FontSize="18" FontAttributes="Bold" />
                     <CollectionView x:Name="TestsCollection" 
                                   SelectionMode="Single"
                                   SelectionChanged="OnTestSelected">
@@ -75,9 +127,10 @@
                                            FontSize="16" 
                                            VerticalOptions="Center" />
                                     <Label Grid.Column="1" 
-                                           Text="📝" 
+                                           Text="➤" 
                                            FontSize="16" 
-                                           VerticalOptions="Center" />
+                                           VerticalOptions="Center" 
+                                           TextColor="{DynamicResource PrimaryColor}"/>
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -85,13 +138,19 @@
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Кнопки действий -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                <Button Text="Чат с преподавателем" 
-                        Clicked="OnTeacherChatClicked" 
-                        BackgroundColor="{DynamicResource SecondaryColor}" />
-                <Button Text="Назад" 
-                        Clicked="OnBackClicked" />
+            <!-- В секции кнопок действий -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Padding="15">
+                <Button Text="💬 Чат с преподавателем" 
+            Clicked="OnTeacherChatClicked" 
+            BackgroundColor="{DynamicResource SecondaryColor}"
+            HeightRequest="50" 
+            CornerRadius="10" />
+                <Button Text="← Назад" 
+            Clicked="OnBackClicked"
+            BackgroundColor="{DynamicResource PrimaryColor}"
+            TextColor="White"
+            HeightRequest="50" 
+            CornerRadius="10" />
             </Grid>
 
         </VerticalStackLayout>

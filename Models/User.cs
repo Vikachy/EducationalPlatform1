@@ -24,6 +24,7 @@ namespace EducationalPlatform.Models
         public bool IsActive { get; set; } = true;
         public string? RoleName { get; set; }
         public bool HasPrivacyConsent { get; set; } = false;
+
     }
 
     public class PrivacyConsent

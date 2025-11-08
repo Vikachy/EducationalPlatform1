@@ -32,12 +32,18 @@ namespace EducationalPlatform.Views
 
         private async void OnAddQuestionClicked(object sender, EventArgs e)
         {
-            // Создаем временную коллекцию для передачи в модальное окно
-            var tempQuestions = new ObservableCollection<ExtendedQuestionCreationModel>(Questions);
-            await Navigation.PushModalAsync(new CreateQuestionPage(tempQuestions));
+            await Navigation.PushModalAsync(new CreateQuestionPage(
+                Questions,
+                null,
+                OnQuestionSaved
+            ));
+        }
 
-            // Обновляем основную коллекцию после закрытия модального окна
-            // Это будет обработано в OnAppearing или через MessagingCenter
+        private void OnQuestionSaved(ExtendedQuestionCreationModel question)
+        {
+            // Вопрос уже добавлен в коллекцию через CreateQuestionPage
+            // Обновляем отображение
+            OnPropertyChanged(nameof(Questions));
         }
 
         private void OnRemoveQuestionClicked(object sender, EventArgs e)
@@ -52,8 +58,11 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button btn && btn.CommandParameter is ExtendedQuestionCreationModel question)
             {
-                var tempQuestions = new ObservableCollection<ExtendedQuestionCreationModel>(Questions);
-                await Navigation.PushModalAsync(new CreateQuestionPage(tempQuestions, question));
+                await Navigation.PushModalAsync(new CreateQuestionPage(
+                    Questions,
+                    question,
+                    OnQuestionSaved
+                ));
             }
         }
 
@@ -130,7 +139,8 @@ namespace EducationalPlatform.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            // Здесь можно обновить данные, если нужно
+            // Обновляем отображение при возвращении на страницу
+            OnPropertyChanged(nameof(Questions));
         }
     }
 }

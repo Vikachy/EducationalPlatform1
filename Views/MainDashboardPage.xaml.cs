@@ -42,6 +42,23 @@ namespace EducationalPlatform.Views
             InitializeDashboard();
         }
 
+        public bool IsTeacher => _currentUser?.RoleId == 2; // 2 - учитель
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+
+            // ПОКАЗЫВАЕМ ПАНЕЛЬ УЧИТЕЛЯ ЕСЛИ НУЖНО
+            TeacherPanel.IsVisible = IsTeacher;
+            TeacherButtonsLayout.IsVisible = IsTeacher;
+
+            // Обновляем данные при каждом появлении страницы
+            if (_currentUser != null)
+            {
+                InitializeDashboard();
+            }
+        }
+
         private async void OnManageCourseContentClicked(object sender, EventArgs e)
         {
             if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
@@ -86,7 +103,6 @@ namespace EducationalPlatform.Views
                 await DisplayAlert("Доступ запрещен", "Эта функция доступна только преподавателям", "OK");
             }
         }
-
 
         protected override void OnDisappearing()
         {
@@ -151,12 +167,23 @@ namespace EducationalPlatform.Views
                 var avatarImage = this.FindByName<Image>("AvatarImage");
                 if (avatarImage != null && _dbService != null && _currentUser != null)
                 {
+                    // Получаем путь к аватару из базы данных
                     var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
 
                     if (!string.IsNullOrEmpty(currentAvatar))
                     {
-                        avatarImage.Source = ImageSource.FromFile(currentAvatar);
-                        _currentUser.AvatarUrl = currentAvatar;
+                        // Если путь существует и файл доступен - используем его
+                        if (File.Exists(currentAvatar))
+                        {
+                            avatarImage.Source = ImageSource.FromFile(currentAvatar);
+                            _currentUser.AvatarUrl = currentAvatar;
+                        }
+                        else
+                        {
+                            // Если файл не найден, используем дефолтный аватар
+                            avatarImage.Source = "default_avatar.png";
+                            Console.WriteLine($"Аватар не найден по пути: {currentAvatar}");
+                        }
                     }
                     else
                     {
@@ -167,6 +194,12 @@ namespace EducationalPlatform.Views
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка загрузки аватара: {ex.Message}");
+                // В случае ошибки показываем дефолтный аватар
+                var avatarImage = this.FindByName<Image>("AvatarImage");
+                if (avatarImage != null)
+                {
+                    avatarImage.Source = "default_avatar.png";
+                }
             }
         }
 
@@ -174,44 +207,42 @@ namespace EducationalPlatform.Views
         {
             if (_currentUser == null || _settingsService == null || _dbService == null) return;
 
-            // Получаем случайное приветствие из базы данных
-            var greeting = await _dbService.GetRandomLoginGreetingAsync(
-                _currentUser.LanguagePref ?? "ru",
-                _currentUser.InterfaceStyle == "teen"
-            );
-
-            // Обновляем приветствие
-            if (WelcomeLabel != null)
+            try
             {
-                WelcomeLabel.Text = greeting;
-            }
+                // Получаем случайное приветствие из базы данных
+                var greeting = await _dbService.GetRandomLoginGreetingAsync(
+                    _currentUser.LanguagePref ?? "ru",
+                    _currentUser.InterfaceStyle == "teen"
+                );
 
-            UpdatePageTexts();
-
-            // Загружаем аватар пользователя
-            await LoadUserAvatar();
-
-            // Показываем панель учителя если пользователь - учитель, админ или контент-менеджер
-            if (_currentUser.RoleId == 2 || _currentUser.RoleId == 3 || _currentUser.RoleId == 4)
-            {
-                var teacherPanel = this.FindByName<Border>("TeacherPanel");
-                if (teacherPanel != null)
+                // Обновляем приветствие
+                if (WelcomeLabel != null)
                 {
-                    teacherPanel.IsVisible = true;
+                    WelcomeLabel.Text = greeting;
                 }
+
+                UpdatePageTexts();
+
+                // Загружаем аватар пользователя
+                await LoadUserAvatar();
+
+                // Показываем панель учителя если пользователь - учитель, админ или контент-менеджер
+                if (_currentUser.RoleId == 2 || _currentUser.RoleId == 3 || _currentUser.RoleId == 4)
+                {
+                    var teacherPanel = this.FindByName<Border>("TeacherPanel");
+                    if (teacherPanel != null)
+                    {
+                        teacherPanel.IsVisible = true;
+                    }
+                }
+
+                LoadMyCourses();
+                LoadTodayTasks();
+                LoadNews();
             }
-
-            LoadMyCourses();
-            LoadTodayTasks();
-            LoadNews();
-        }
-
-        protected override void OnAppearing()
-        {
-            base.OnAppearing();
-            if (_currentUser != null)
+            catch (Exception ex)
             {
-                InitializeDashboard();
+                await DisplayAlert("Ошибка", $"Не удалось инициализировать дашборд: {ex.Message}", "OK");
             }
         }
 
@@ -226,8 +257,8 @@ namespace EducationalPlatform.Views
                     var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
                     if (courses.Any())
                     {
-                        // Переходим на страницу управления группами
-                        await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService, null));
+                        // Переходим на страницу управления группами (теперь с 3 аргументами)
+                        await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService));
                     }
                     else
                     {

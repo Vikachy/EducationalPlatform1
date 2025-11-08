@@ -8,13 +8,17 @@ namespace EducationalPlatform.Views
         private readonly ObservableCollection<ExtendedQuestionCreationModel> _questions;
         private readonly ExtendedQuestionCreationModel _editingQuestion;
         private readonly bool _isEditing;
+        private readonly Action<ExtendedQuestionCreationModel> _onQuestionSaved;
 
         public ObservableCollection<ExtendedAnswerOptionModel> AnswerOptions { get; set; } = new();
 
-        public CreateQuestionPage(ObservableCollection<ExtendedQuestionCreationModel> questions, ExtendedQuestionCreationModel question = null)
+        public CreateQuestionPage(ObservableCollection<ExtendedQuestionCreationModel> questions,
+                                ExtendedQuestionCreationModel question = null,
+                                Action<ExtendedQuestionCreationModel> onQuestionSaved = null)
         {
             InitializeComponent();
             _questions = questions;
+            _onQuestionSaved = onQuestionSaved;
 
             if (question != null)
             {
@@ -124,6 +128,9 @@ namespace EducationalPlatform.Views
                 {
                     _questions.Add(question);
                 }
+
+                // Вызываем callback если он есть
+                _onQuestionSaved?.Invoke(question);
 
                 await Navigation.PopModalAsync();
             }

@@ -17,7 +17,7 @@
                        FontAttributes="Bold"
                        TextColor="White"
                        HorizontalOptions="Center" />
-                
+
                 <Label Text="{Binding OnlineCount, StringFormat='Онлайн: {0}'}"
                        FontSize="12"
                        TextColor="White"
@@ -36,13 +36,7 @@
                             Margin="5"
                             StrokeThickness="0"
                             StrokeShape="RoundRectangle 15">
-                        <Border.Stroke>
-                            <SolidColorBrush Color="{Binding IsMyMessage, Converter={StaticResource BoolToColorConverter}}" />
-                        </Border.Stroke>
-                        <Border.Background>
-                            <SolidColorBrush Color="{Binding IsMyMessage, Converter={StaticResource BoolToBackgroundColorConverter}}" />
-                        </Border.Background>
-                        
+
                         <VerticalStackLayout Spacing="5">
                             <!-- Имя отправителя и время -->
                             <Grid ColumnDefinitions="*,Auto">
@@ -50,22 +44,41 @@
                                        Text="{Binding SenderName}"
                                        FontSize="12"
                                        FontAttributes="Bold"
-                                       TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToTextColorConverter}}" />
-                                
+                                       TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToColorConverter}}" />
+
                                 <Label Grid.Column="1"
                                        Text="{Binding SentDate, StringFormat='{0:HH:mm}'}"
                                        FontSize="10"
                                        TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToTimeColorConverter}}" />
                             </Grid>
-                            
+
                             <!-- Текст сообщения -->
                             <Label Text="{Binding MessageText}"
                                    FontSize="14"
                                    TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToTextColorConverter}}"
                                    LineBreakMode="WordWrap" />
-                            
+
+                            <!-- Файловое сообщение -->
+                            <Grid ColumnDefinitions="Auto,*" 
+                                  ColumnSpacing="8"
+                                  IsVisible="{Binding IsFileMessage}">
+                                <Label Grid.Column="0"
+                                       Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
+                                       FontSize="16"
+                                       VerticalOptions="Center" />
+                                <VerticalStackLayout Grid.Column="1">
+                                    <Label Text="{Binding FileName}"
+                                           FontSize="13"
+                                           FontAttributes="Bold"
+                                           LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding FileSize}"
+                                           FontSize="11"
+                                           TextColor="Gray" />
+                                </VerticalStackLayout>
+                            </Grid>
+
                             <!-- Статус прочтения -->
-                            <Label Text="{Binding ReadStatus}"
+                            <Label Text="Прочитано"
                                    FontSize="10"
                                    TextColor="{Binding IsMyMessage, Converter={StaticResource BoolToTimeColorConverter}}"
                                    HorizontalOptions="End"
@@ -89,7 +102,7 @@
                        Placeholder="Введите сообщение..."
                        Completed="OnMessageSent"
                        ReturnType="Send" />
-                
+
                 <!-- Кнопка прикрепления файла -->
                 <Button Grid.Column="1"
                         Text="📎"
@@ -98,7 +111,7 @@
                         WidthRequest="40"
                         HeightRequest="40"
                         Clicked="OnAttachFileClicked" />
-                
+
                 <!-- Кнопка отправки -->
                 <Button Grid.Column="2"
                         Text="➤"
@@ -111,4 +124,3 @@
         </Border>
     </Grid>
 </ContentPage>
-

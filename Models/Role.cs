@@ -37,5 +37,7 @@ namespace EducationalPlatform.Models
         public bool IsActive { get; set; } = true;
         public int MaxStudents { get; set; }
         public int StudentCount { get; set; }
+        public string CourseName { get; set; } = string.Empty; 
+
     }
 }

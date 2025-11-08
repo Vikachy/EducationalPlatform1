@@ -449,7 +449,7 @@
         CornerRadius="20" />
 
                         <!-- ДОБАВЛЕННЫЕ КНОПКИ -->
-                        <VerticalStackLayout Spacing="10" IsVisible="{Binding IsTeacher}">
+                        <VerticalStackLayout Spacing="10" x:Name="TeacherButtonsLayout" IsVisible="False">
                             <Button Text="➕ Создать тест" 
                     Clicked="OnCreateTestClicked"
                     BackgroundColor="{DynamicResource SecondaryColor}"

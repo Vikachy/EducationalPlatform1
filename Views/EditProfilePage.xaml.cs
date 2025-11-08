@@ -57,33 +57,29 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // ��������� ����������
-                var status = await Permissions.RequestAsync<Permissions.Photos>();
-                if (status != PermissionStatus.Granted)
-                {
-                    await DisplayAlert("������", "���������� ���������� �� ������ � �����������", "OK");
-                    return;
-                }
-
                 var result = await FilePicker.PickAsync(new PickOptions
                 {
-                    PickerTitle = "�������� ������",
+                    PickerTitle = "Выберите аватар",
                     FileTypes = FilePickerFileType.Images
                 });
 
                 if (result != null)
                 {
+                    // Проверяем размер файла (макс 5MB)
+                    var fileInfo = new FileInfo(result.FullPath);
+                    if (fileInfo.Length > 5 * 1024 * 1024)
+                    {
+                        await DisplayAlert("Ошибка", "Размер файла не должен превышать 5MB", "OK");
+                        return;
+                    }
+
                     _selectedImage = result;
-
-                    // ���������� ������ �� ����� ������
                     AvatarPreview.Source = ImageSource.FromFile(result.FullPath);
-
-                    Console.WriteLine($"������ ����: {result.FileName}, ����: {result.FullPath}");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("������", $"�� ������� ������� �����������: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка", $"Не удалось выбрать изображение: {ex.Message}", "OK");
             }
         }
 

@@ -115,11 +115,11 @@
                                            FontSize="16" 
                                            FontAttributes="Bold" />
                                     <Label Grid.Column="1"
-                                           Text="{Binding IsPublished, Converter={StaticResource PublishedConverter}}" 
-                                           BackgroundColor="{Binding IsPublished, Converter={StaticResource StatusColorConverter}}"
-                                           TextColor="White" 
-                                           Padding="5,2"
-                                           FontSize="10" />
+                                       Text="{Binding IsPublished, Converter={StaticResource PublishedConverter}}" 
+                                       BackgroundColor="{Binding IsPublished, Converter={StaticResource PublishButtonColorConverter}}"
+                                       TextColor="White" 
+                                       Padding="5,2"
+                                       FontSize="10" />
                                 </Grid>
 
                                 <Label Text="{Binding Description}" 

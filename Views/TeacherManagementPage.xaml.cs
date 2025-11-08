@@ -186,12 +186,26 @@ namespace EducationalPlatform.Views
             {
                 try
                 {
+                    // Теперь передаем 4 аргумента
                     await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService, course));
                 }
                 catch (Exception ex)
                 {
                     await DisplayAlert("Ошибка", $"Не удалось открыть группы: {ex.Message}", "OK");
                 }
+            }
+        }
+
+        private async void OnGroupsClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                // Переходим на общую страницу управления группами (3 аргумента)
+                await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось открыть группы: {ex.Message}", "OK");
             }
         }
 
@@ -238,18 +252,6 @@ namespace EducationalPlatform.Views
         private async void OnReportsClicked(object sender, EventArgs e)
         {
             await DisplayAlert("Отчеты", "Экспорт отчетов в Word/Excel", "OK");
-        }
-
-        private async void OnGroupsClicked(object sender, EventArgs e)
-        {
-            try
-            {
-                await Navigation.PushAsync(new TeacherGroupsManagementPage(_currentUser, _dbService, _settingsService));
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", $"Не удалось открыть группы: {ex.Message}", "OK");
-            }
         }
 
         private async void OnTestsClicked(object sender, EventArgs e)

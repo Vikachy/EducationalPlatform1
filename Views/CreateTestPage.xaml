@@ -24,11 +24,11 @@
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto" ColumnSpacing="20">
                         <VerticalStackLayout Grid.Column="0" Spacing="5">
                             <Label Text="Лимит времени (мин):" Style="{DynamicResource StandardLabelStyle}"/>
-                            <Entry Text="{Binding TimeLimit}" Keyboard="Numeric" />
+                            <Entry Text="{Binding TimeLimit, StringFormat='{0}'}" Keyboard="Numeric" />
                         </VerticalStackLayout>
                         <VerticalStackLayout Grid.Column="1" Spacing="5">
                             <Label Text="Проходной балл:" Style="{DynamicResource StandardLabelStyle}"/>
-                            <Entry Text="{Binding PassingScore}" Keyboard="Numeric" />
+                            <Entry Text="{Binding PassingScore, StringFormat='{0}'}" Keyboard="Numeric" />
                         </VerticalStackLayout>
                     </Grid>
 

@@ -26,6 +26,7 @@ namespace EducationalPlatform
             return new Window(new AppShell());
         }
 
+
         // Метод для настройки реального email
         public static void ConfigureRealEmailService(string smtpServer, int port, string username, string password)
         {

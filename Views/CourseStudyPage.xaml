@@ -39,10 +39,10 @@
                                     Margin="0,5">
                                 <Grid ColumnDefinitions="Auto,*,Auto">
                                     <Label Grid.Column="0" 
-                                           Text="{Binding Order, StringFormat='{0}.'}" 
-                                           FontSize="16"
-                                           FontAttributes="Bold"
-                                           VerticalOptions="Center" />
+                                       Text="{Binding LessonOrder, StringFormat='{0}.'}" 
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="Center" />
                                     <VerticalStackLayout Grid.Column="1" Spacing="4">
                                         <Label Text="{Binding Title}" 
                                                FontSize="16" 
