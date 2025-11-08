@@ -9,7 +9,14 @@
         <Label Grid.Row="0" Text="Выберите студентов для группы" 
                FontSize="16" FontAttributes="Bold" 
                HorizontalOptions="Center" Margin="10"/>
-
+        
+        <ActivityIndicator Grid.Row="0" Grid.RowSpan="3" 
+                       x:Name="loadingIndicator"
+                       IsRunning="{Binding IsBusy}"
+                       IsVisible="{Binding IsBusy}"
+                       VerticalOptions="Center" 
+                       HorizontalOptions="Center"
+                       Color="#512BD4"/>
         <!-- Список студентов -->
         <CollectionView Grid.Row="1" x:Name="StudentsCollectionView">
             <CollectionView.ItemTemplate>

@@ -1,4 +1,4 @@
-using EducationalPlatform.Models;
+п»їusing EducationalPlatform.Models;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using EducationalPlatform.Services;
@@ -17,13 +17,24 @@ namespace EducationalPlatform.Views
         public StudentSelectionPage(List<StudentSelectionItem> students, string groupName, int groupId, int courseId, DatabaseService dbService)
         {
             InitializeComponent();
-            Title = $"Выбор студентов: {groupName}";
+            Title = $"Р’С‹Р±РѕСЂ СЃС‚СѓРґРµРЅС‚РѕРІ: {groupName}";
 
             _groupId = groupId;
             _courseId = courseId;
             _dbService = dbService;
 
-            Students = new ObservableCollection<StudentSelectionItem>(students);
+            Console.WriteLine($"рџЋЇ РЎРѕР·РґР°РµРј СЃС‚СЂР°РЅРёС†Сѓ РІС‹Р±РѕСЂР° СЃС‚СѓРґРµРЅС‚РѕРІ РґР»СЏ РіСЂСѓРїРїС‹ {groupId}");
+            Console.WriteLine($"рџ“Љ РџРѕР»СѓС‡РµРЅРѕ СЃС‚СѓРґРµРЅС‚РѕРІ РґР»СЏ РІС‹Р±РѕСЂР°: {students?.Count ?? 0}");
+
+            if (students != null)
+            {
+                foreach (var student in students)
+                {
+                    Console.WriteLine($"   - {student.Student?.Username} (ID: {student.Student?.UserId})");
+                }
+            }
+
+            Students = new ObservableCollection<StudentSelectionItem>(students ?? new List<StudentSelectionItem>());
             StudentsCollectionView.ItemsSource = Students;
             BindingContext = this;
         }
@@ -39,43 +50,68 @@ namespace EducationalPlatform.Views
 
                 if (!selectedStudents.Any())
                 {
-                    await DisplayAlert("Внимание", "Выберите хотя бы одного студента", "OK");
+                    await DisplayAlert("Р’РЅРёРјР°РЅРёРµ", "Р’С‹Р±РµСЂРёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРЅРѕРіРѕ СЃС‚СѓРґРµРЅС‚Р°", "OK");
                     return;
                 }
 
-                // Показываем индикатор загрузки
+                Console.WriteLine($"рџЋЇ Р’С‹Р±СЂР°РЅРѕ СЃС‚СѓРґРµРЅС‚РѕРІ: {selectedStudents.Count}");
+                foreach (var student in selectedStudents)
+                {
+                    Console.WriteLine($"   - {student.Username} (ID: {student.UserId})");
+                }
+
                 IsBusy = true;
 
-                // Сохраняем студентов в группу
+
+                // 1. РЎРѕС…СЂР°РЅСЏРµРј СЃС‚СѓРґРµРЅС‚РѕРІ РІ РіСЂСѓРїРїСѓ
+                Console.WriteLine($"рџ”„ РЎРѕС…СЂР°РЅСЏРµРј СЃС‚СѓРґРµРЅС‚РѕРІ РІ РіСЂСѓРїРїСѓ {_groupId}...");
                 bool success = await _dbService.AddStudentsToGroupAsync(_groupId, selectedStudents);
+
+                Console.WriteLine($"рџ“ќ Р РµР·СѓР»СЊС‚Р°С‚ СЃРѕС…СЂР°РЅРµРЅРёСЏ РІ РіСЂСѓРїРїСѓ: {success}");
 
                 if (success)
                 {
-                    // Добавляем студентов в групповой чат
+                    // 2. Р”РѕР±Р°РІР»СЏРµРј СЃС‚СѓРґРµРЅС‚РѕРІ РІ С‚Р°Р±Р»РёС†Сѓ СѓС‡Р°СЃС‚РЅРёРєРѕРІ С‡Р°С‚Р°
+                    Console.WriteLine($"рџ”„ Р”РѕР±Р°РІР»СЏРµРј СЃС‚СѓРґРµРЅС‚РѕРІ РІ СѓС‡Р°СЃС‚РЅРёРєРё С‡Р°С‚Р° РіСЂСѓРїРїС‹ {_groupId}...");
                     bool chatSuccess = await _dbService.AddStudentsToGroupChatAsync(_groupId, selectedStudents);
+                    Console.WriteLine($"рџ“ќ Р РµР·СѓР»СЊС‚Р°С‚ РґРѕР±Р°РІР»РµРЅРёСЏ РІ С‡Р°С‚: {chatSuccess}");
 
-                    // Отправляем системное сообщение в чат группы
+                    // 3. РћС‚РїСЂР°РІР»СЏРµРј СЃРёСЃС‚РµРјРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ
                     await _dbService.AddSystemMessageToGroupAsync(_groupId,
-                        $"В группу добавлено {selectedStudents.Count} новых студентов");
+                        $"Р’ РіСЂСѓРїРїСѓ РґРѕР±Р°РІР»РµРЅРѕ {selectedStudents.Count} РЅРѕРІС‹С… СЃС‚СѓРґРµРЅС‚РѕРІ");
 
-                    // Вызываем событие для обновления UI в родительской странице
-                    StudentsSelected?.Invoke(this, selectedStudents);
+                    // 4. РћР±РЅРѕРІР»СЏРµРј UI С‡РµСЂРµР· MainThread
+                    MainThread.BeginInvokeOnMainThread(async () =>
+                    {
+                        StudentsSelected?.Invoke(this, selectedStudents);
 
-                    string message = chatSuccess ?
-                        $"Добавлено {selectedStudents.Count} студентов в группу и чат" :
-                        $"Добавлено {selectedStudents.Count} студентов в группу (ошибка добавления в чат)";
+                        string message = chatSuccess ?
+                            $"вњ… РЈСЃРїРµС€РЅРѕ РґРѕР±Р°РІР»РµРЅРѕ {selectedStudents.Count} СЃС‚СѓРґРµРЅС‚РѕРІ РІ РіСЂСѓРїРїСѓ Рё С‡Р°С‚!" :
+                            $"вљ пёЏ Р”РѕР±Р°РІР»РµРЅРѕ {selectedStudents.Count} СЃС‚СѓРґРµРЅС‚РѕРІ РІ РіСЂСѓРїРїСѓ (РІРѕР·РјРѕР¶РЅС‹ РїСЂРѕР±Р»РµРјС‹ СЃ С‡Р°С‚РѕРј)";
 
-                    await DisplayAlert("Успех", message, "OK");
-                    await Navigation.PopAsync();
+                        await DisplayAlert("РЈСЃРїРµС…", message, "OK");
+
+                        // Р—Р°РєСЂС‹РІР°РµРј СЃС‚СЂР°РЅРёС†Сѓ
+                        await Navigation.PopAsync();
+                    });
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось добавить студентов в группу", "OK");
+                    MainThread.BeginInvokeOnMainThread(async () =>
+                    {
+                        await DisplayAlert("РћС€РёР±РєР°", "РќРµ СѓРґР°Р»РѕСЃСЊ РґРѕР±Р°РІРёС‚СЊ СЃС‚СѓРґРµРЅС‚РѕРІ РІ РіСЂСѓРїРїСѓ", "OK");
+                    });
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка при сохранении: {ex.Message}", "OK");
+                Console.WriteLine($"рџ’Ґ РљР РРўРР§Р•РЎРљРђРЇ РћРЁРР‘РљРђ: {ex.Message}");
+                Console.WriteLine($"рџ”Ќ StackTrace: {ex.StackTrace}");
+
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await DisplayAlert("РћС€РёР±РєР°", $"РћС€РёР±РєР° РїСЂРё СЃРѕС…СЂР°РЅРµРЅРёРё: {ex.Message}", "OK");
+                });
             }
             finally
             {
@@ -88,26 +124,26 @@ namespace EducationalPlatform.Views
             Navigation.PopAsync();
         }
 
-        // Метод для быстрого выбора всех студентов
+        // РњРµС‚РѕРґ РґР»СЏ Р±С‹СЃС‚СЂРѕРіРѕ РІС‹Р±РѕСЂР° РІСЃРµС… СЃС‚СѓРґРµРЅС‚РѕРІ
         private void OnSelectAllClicked(object sender, EventArgs e)
         {
             foreach (var student in Students)
             {
                 student.IsSelected = true;
             }
-            // Обновляем привязку
+            // РћР±РЅРѕРІР»СЏРµРј РїСЂРёРІСЏР·РєСѓ
             StudentsCollectionView.ItemsSource = null;
             StudentsCollectionView.ItemsSource = Students;
         }
 
-        // Метод для сброса выбора
+        // РњРµС‚РѕРґ РґР»СЏ СЃР±СЂРѕСЃР° РІС‹Р±РѕСЂР°
         private void OnDeselectAllClicked(object sender, EventArgs e)
         {
             foreach (var student in Students)
             {
                 student.IsSelected = false;
             }
-            // Обновляем привязку
+            // РћР±РЅРѕРІР»СЏРµРј РїСЂРёРІСЏР·РєСѓ
             StudentsCollectionView.ItemsSource = null;
             StudentsCollectionView.ItemsSource = Students;
         }

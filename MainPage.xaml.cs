@@ -145,7 +145,6 @@ namespace EducationalPlatform
             return $"{username.Substring(0, 2)}***@{domain}";
         }
 
-        // Остальные методы остаются без изменений...
         private void OnEntryCompleted(object? sender, EventArgs e)
         {
             OnLoginClicked(sender, e);

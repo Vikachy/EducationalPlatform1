@@ -1,6 +1,5 @@
 ﻿using EducationalPlatform.Models;
 using EducationalPlatform.Services;
-using static Microsoft.Maui.ApplicationModel.Permissions;
 
 namespace EducationalPlatform.Views
 {
@@ -26,12 +25,12 @@ namespace EducationalPlatform.Views
             LanguagePicker.SelectedIndex = _settingsService.CurrentLanguage == "ru" ? 0 : 1;
             ThemePicker.SelectedIndex = _settingsService.CurrentTheme == "standard" ? 0 : 1;
 
+            // Устанавливаем состояния уведомлений
+            EmailNotifications.IsChecked = Preferences.Get("EmailNotifications", true);
+            PushNotifications.IsChecked = Preferences.Get("PushNotifications", true);
+
             // Обновляем отображение текущих настроек
             UpdateCurrentSettingsDisplay();
-
-            // Устанавливаем состояния чекбоксов
-            EmailNotifications.IsChecked = true;
-            PushNotifications.IsChecked = true;
         }
 
         private void UpdateCurrentSettingsDisplay()
@@ -52,7 +51,6 @@ namespace EducationalPlatform.Views
                 _settingsService.ApplyLanguage(language);
                 UpdateCurrentSettingsDisplay();
 
-                // Показываем сообщение об успехе
                 DisplayAlert("Успех", "Язык изменен! ✨", "OK");
             }
         }
@@ -65,9 +63,21 @@ namespace EducationalPlatform.Views
                 _settingsService.ApplyTheme(theme);
                 UpdateCurrentSettingsDisplay();
 
-                // Показываем сообщение об успехе
                 DisplayAlert("Успех", "Тема изменена! 🎨", "OK");
             }
+        }
+
+        // Обработчики уведомлений
+        private void OnEmailNotificationsChanged(object sender, CheckedChangedEventArgs e)
+        {
+            Preferences.Set("EmailNotifications", e.Value);
+            Console.WriteLine($"📧 Email уведомления: {(e.Value ? "включены" : "выключены")}");
+        }
+
+        private void OnPushNotificationsChanged(object sender, CheckedChangedEventArgs e)
+        {
+            Preferences.Set("PushNotifications", e.Value);
+            Console.WriteLine($"🔔 Push уведомления: {(e.Value ? "включены" : "выключены")}");
         }
 
         private async void OnSaveSettingsClicked(object sender, EventArgs e)
@@ -82,7 +92,15 @@ namespace EducationalPlatform.Views
 
                 if (success)
                 {
+                    // Сохраняем настройки уведомлений
+                    Preferences.Set("EmailNotifications", EmailNotifications.IsChecked);
+                    Preferences.Set("PushNotifications", PushNotifications.IsChecked);
+
                     await DisplayAlert("Сохранено", "Настройки успешно сохранены! ✅", "OK");
+
+                    // Применяем тему ко всем страницам
+                    App.Current.Resources["PrimaryColor"] = _settingsService.CurrentTheme == "teen" ?
+                        Color.FromArgb("#FF6B9C") : Color.FromArgb("#2E86AB");
                 }
                 else
                 {
@@ -100,6 +118,15 @@ namespace EducationalPlatform.Views
         private async void OnBackClicked(object sender, EventArgs e)
         {
             await Navigation.PopAsync();
+        }
+
+        // Просмотр текущей темы
+        private void OnCheckThemeClicked(object sender, EventArgs e)
+        {
+            string currentTheme = _settingsService.GetCurrentTheme();
+            string themeName = currentTheme == "standard" ? "Стандартная" : "Для подростков";
+
+            DisplayAlert("Текущая тема", $"Активна тема: {themeName}", "OK");
         }
     }
 }

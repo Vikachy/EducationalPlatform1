@@ -306,8 +306,11 @@ namespace EducationalPlatform.Views
 
             try
             {
+                Console.WriteLine($"🎯 Начинаем добавление студентов в группу {selectedGroup.GroupName} (ID: {selectedGroup.GroupId})");
+
                 // Загружаем всех студентов
                 var allStudents = await _dbService.GetAllStudentsAsync();
+                Console.WriteLine($"📊 Загружено всех студентов: {allStudents?.Count ?? 0}");
 
                 // Создаем список для выбора
                 var selectionItems = allStudents.Select(s => new StudentSelectionItem
@@ -315,6 +318,8 @@ namespace EducationalPlatform.Views
                     Student = s,
                     IsSelected = false
                 }).ToList();
+
+                Console.WriteLine($"🎯 Создано элементов для выбора: {selectionItems.Count}");
 
                 // Открываем страницу выбора
                 var selectionPage = new StudentSelectionPage(
@@ -328,6 +333,8 @@ namespace EducationalPlatform.Views
                 {
                     if (selectedStudents.Any())
                     {
+                        Console.WriteLine($"🔄 Обрабатываем выбранных студентов: {selectedStudents.Count}");
+
                         // Сохраняем студентов в группу и чат
                         bool success = await _dbService.AddStudentsToGroupAsync(selectedGroup.GroupId, selectedStudents);
 
@@ -359,6 +366,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"💥 ОШИБКА при выборе студентов: {ex.Message}");
                 await DisplayAlert("Ошибка", $"Ошибка при выборе студентов: {ex.Message}", "OK");
             }
         }

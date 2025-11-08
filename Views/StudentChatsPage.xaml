@@ -4,22 +4,16 @@
              x:Class="EducationalPlatform.Views.StudentChatsPage"
              Title="Мои чаты"
              xmlns:converters="clr-namespace:EducationalPlatform.Converters"
-             xmlns:models="clr-namespace:EducationalPlatform.Models">
+             xmlns:models="clr-namespace:EducationalPlatform.Models"
+             BackgroundColor="{DynamicResource BackgroundColor}">
 
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
             <converters:FileTypeToIconConverter x:Key="FileTypeToIconConverter" />
-
-            <!-- ДОБАВЬТЕ ЭТИ КОНВЕРТЕРЫ -->
             <converters:ChatTypeToColorConverter x:Key="ChatTypeToColorConverter" />
             <converters:ChatTypeToIconConverter x:Key="ChatTypeToIconConverter" />
-
-            <!-- Конвертер для цвета типа чата -->
-            <Color x:Key="GroupChatColor">#4CAF50</Color>
-            <Color x:Key="TeacherChatColor">#2196F3</Color>
-            <Color x:Key="SupportChatColor">#FF9800</Color>
         </ResourceDictionary>
     </ContentPage.Resources>
 
@@ -32,74 +26,42 @@
             </Grid>
         </Border>
 
-        <!-- Две колонки: слева список чатов, справа текущий чат -->
+        <!-- Основная панель с двумя колонками -->
         <Grid Grid.Row="1" ColumnDefinitions="350,*">
-            <!-- Список всех чатов слева -->
-            <CollectionView Grid.Column="0" 
+            <!-- Список чатов слева -->
+            <CollectionView Grid.Column="0"
                             x:Name="AllChatsCollectionView"
                             ItemsSource="{Binding AllChats}"
                             SelectionMode="Single"
                             SelectionChanged="OnChatSelected">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid Margin="10,5" 
-                              BackgroundColor="White" 
-                              Padding="15">
+                        <Grid Margin="10,5" BackgroundColor="White" Padding="15">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Иконка типа чата -->
-                            <Frame Grid.Column="0" 
-                                   BackgroundColor="{Binding ChatType, Converter={StaticResource ChatTypeToColorConverter}}"
-                                   CornerRadius="20"
-                                   HeightRequest="40"
-                                   WidthRequest="40"
-                                   Padding="0"
-                                   VerticalOptions="Center">
+                            <Frame Grid.Column="0" BackgroundColor="{Binding ChatType, Converter={StaticResource ChatTypeToColorConverter}}"
+                                   CornerRadius="20" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center">
                                 <Label Text="{Binding ChatType, Converter={StaticResource ChatTypeToIconConverter}}"
-                                       FontSize="16"
-                                       TextColor="White"
-                                       HorizontalOptions="Center"
-                                       VerticalOptions="Center"/>
+                                       FontSize="16" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
                             </Frame>
 
-                            <!-- Информация о чате -->
                             <VerticalStackLayout Grid.Column="1" Margin="10,0" Spacing="4">
-                                <Label Text="{Binding ChatName}" 
-                                       FontSize="16" 
-                                       FontAttributes="Bold"
-                                       LineBreakMode="TailTruncation"/>
-
-                                <Label Text="{Binding Description}" 
-                                       FontSize="12" 
-                                       TextColor="#666"
-                                       LineBreakMode="TailTruncation"/>
-
-                                <Label Text="{Binding LastMessage}" 
-                                       FontSize="11"
-                                       TextColor="#888"
-                                       MaxLines="1"
-                                       LineBreakMode="TailTruncation"/>
+                                <Label Text="{Binding ChatName}" FontSize="16" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding Description}" FontSize="12" TextColor="#666" LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding LastMessage}" FontSize="11" TextColor="#888" MaxLines="1" LineBreakMode="TailTruncation" />
                             </VerticalStackLayout>
 
-                            <!-- Время и счетчик непрочитанных -->
                             <VerticalStackLayout Grid.Column="2" HorizontalOptions="End" Spacing="4">
-                                <Label Text="{Binding LastMessageTime, StringFormat='{0:HH:mm}'}" 
-                                       FontSize="10" 
-                                       TextColor="Gray"/>
+                                <Label Text="{Binding LastMessageTime, StringFormat='{0:HH:mm}'}"
+                                       FontSize="10" TextColor="Gray" />
 
                                 <Frame IsVisible="{Binding UnreadMessages, Converter={StaticResource GreaterThanZeroConverter}}"
-                                       BackgroundColor="Red"
-                                       CornerRadius="10"
-                                       Padding="6,2"
-                                       HorizontalOptions="End">
-                                    <Label Text="{Binding UnreadMessages}" 
-                                           FontSize="10" 
-                                           TextColor="White"
-                                           FontAttributes="Bold"/>
+                                       BackgroundColor="Red" CornerRadius="10" Padding="6,2" HorizontalOptions="End">
+                                    <Label Text="{Binding UnreadMessages}" FontSize="10" TextColor="White" FontAttributes="Bold" />
                                 </Frame>
                             </VerticalStackLayout>
                         </Grid>
@@ -107,18 +69,16 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <!-- Правая панель: текущий чат -->
-            <!-- ИСПРАВЛЕНА ПРИВЯЗКА: используем HasActiveChat вместо ActiveChat с InverseBoolConverter -->
+            <!-- Панель текущего чата справа -->
             <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" IsVisible="{Binding HasActiveChat}">
-                <!-- Заголовок чата -->
                 <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
                     <VerticalStackLayout>
-                        <Label x:Name="ChatTitleLabel" Text="Выберите чат" FontSize="18" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+                        <Label x:Name="ChatTitleLabel" Text="Выберите чат" FontSize="18"
+                               FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
                         <Label x:Name="ChatSubtitleLabel" Text="Начните общение" FontSize="12" TextColor="White" HorizontalOptions="Center" />
                     </VerticalStackLayout>
                 </Border>
 
-                <!-- Сообщения -->
                 <CollectionView Grid.Row="1"
                                 x:Name="MessagesCollectionView"
                                 ItemsSource="{Binding Messages}"
@@ -137,67 +97,26 @@
                                        CornerRadius="18"
                                        BorderColor="#E0E0E0">
                                     <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
-                                        <!-- Avatar -->
                                         <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
-                                                BackgroundColor="LightGray"
-                                                Stroke="LightGray"
-                                                StrokeThickness="1"
-                                                StrokeShape="RoundRectangle 20"
-                                                WidthRequest="36"
-                                                HeightRequest="36"
+                                                BackgroundColor="LightGray" Stroke="LightGray" StrokeThickness="1"
+                                                StrokeShape="RoundRectangle 20" WidthRequest="36" HeightRequest="36"
                                                 VerticalOptions="Start">
-                                            <Image Source="{Binding SenderAvatar}"
-                                                   Aspect="AspectFill"
-                                                   HorizontalOptions="Center"
-                                                   VerticalOptions="Center"
-                                                   WidthRequest="32"
-                                                   HeightRequest="32" />
+                                            <Image Source="{Binding SenderAvatar}" Aspect="AspectFill"
+                                                   HorizontalOptions="Center" VerticalOptions="Center"
+                                                   WidthRequest="32" HeightRequest="32" />
                                         </Border>
-
-                                        <!-- Sender Name -->
-                                        <Label Grid.Row="0" Grid.Column="1"
-                                               Text="{Binding SenderName}"
-                                               FontSize="12"
-                                               TextColor="#2E86AB"
-                                               FontAttributes="Bold"
-                                               VerticalOptions="End" />
-
-                                        <!-- Message Content -->
+                                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding SenderName}" FontSize="12" TextColor="#2E86AB" FontAttributes="Bold" VerticalOptions="End" />
                                         <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
-                                            <!-- Text Message -->
-                                            <Label Text="{Binding MessageText}"
-                                                   TextColor="#333333"
-                                                   FontSize="14"
-                                                   LineBreakMode="WordWrap"
-                                                   IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
-
-                                            <!-- File Message -->
-                                            <Grid ColumnDefinitions="Auto,*" 
-                                                  ColumnSpacing="8"
-                                                  IsVisible="{Binding IsFileMessage}">
-                                                <Label Grid.Column="0"
-                                                       Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
-                                                       FontSize="16"
-                                                       VerticalOptions="Center" />
+                                            <Label Text="{Binding MessageText}" TextColor="#333333" FontSize="14" LineBreakMode="WordWrap" IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
+                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsFileMessage}">
+                                                <Label Grid.Column="0" Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}" FontSize="16" VerticalOptions="Center" />
                                                 <VerticalStackLayout Grid.Column="1">
-                                                    <Label Text="{Binding FileName}"
-                                                           FontSize="13"
-                                                           FontAttributes="Bold"
-                                                           LineBreakMode="TailTruncation" />
-                                                    <Label Text="{Binding FileSize}"
-                                                           FontSize="11"
-                                                           TextColor="Gray" />
+                                                    <Label Text="{Binding FileName}" FontSize="13" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+                                                    <Label Text="{Binding FileSize}" FontSize="11" TextColor="Gray" />
                                                 </VerticalStackLayout>
                                             </Grid>
                                         </VerticalStackLayout>
-
-                                        <!-- Time -->
-                                        <Label Grid.Row="1" Grid.Column="1"
-                                               Text="{Binding SentAt, StringFormat='{0:HH:mm}'}"
-                                               FontSize="10"
-                                               TextColor="Gray"
-                                               HorizontalOptions="End"
-                                               VerticalOptions="End" />
+                                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding SentAt, StringFormat='{0:HH:mm}'}" FontSize="10" TextColor="Gray" HorizontalOptions="End" VerticalOptions="End" />
                                     </Grid>
                                 </Frame>
 
@@ -210,95 +129,43 @@
                                        MaximumWidthRequest="300"
                                        CornerRadius="18">
                                     <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="4">
-                                        <!-- Message Content -->
                                         <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="4">
-                                            <!-- Text Message -->
-                                            <Label Text="{Binding MessageText}"
-                                                   TextColor="#000000"
-                                                   FontSize="14"
-                                                   LineBreakMode="WordWrap"
-                                                   IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
-
-                                            <!-- File Message -->
-                                            <Grid ColumnDefinitions="Auto,*" 
-                                                  ColumnSpacing="8"
-                                                  IsVisible="{Binding IsFileMessage}">
-                                                <Label Grid.Column="0"
-                                                       Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
-                                                       FontSize="16"
-                                                       VerticalOptions="Center" />
+                                            <Label Text="{Binding MessageText}" TextColor="#000000" FontSize="14" LineBreakMode="WordWrap" IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
+                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsFileMessage}">
+                                                <Label Grid.Column="0" Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}" FontSize="16" VerticalOptions="Center" />
                                                 <VerticalStackLayout Grid.Column="1">
-                                                    <Label Text="{Binding FileName}"
-                                                           FontSize="13"
-                                                           FontAttributes="Bold"
-                                                           LineBreakMode="TailTruncation" />
-                                                    <Label Text="{Binding FileSize}"
-                                                           FontSize="11"
-                                                           TextColor="#666666" />
+                                                    <Label Text="{Binding FileName}" FontSize="13" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+                                                    <Label Text="{Binding FileSize}" FontSize="11" TextColor="#666666" />
                                                 </VerticalStackLayout>
                                             </Grid>
                                         </VerticalStackLayout>
-
-                                        <!-- Time and Status -->
-                                        <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                                              HorizontalOptions="End"
-                                                              Spacing="4"
-                                                              VerticalOptions="End">
-                                            <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}"
-                                                   FontSize="10"
-                                                   TextColor="#666666" />
-                                            <Label Text="✓✓"
-                                                   FontSize="10"
-                                                   TextColor="#34B7F1"
-                                                   IsVisible="{Binding IsDelivered}" />
+                                        <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" HorizontalOptions="End" Spacing="4" VerticalOptions="End">
+                                            <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}" FontSize="10" TextColor="#666666" />
+                                            <Label Text="✓✓" FontSize="10" TextColor="#34B7F1" IsVisible="{Binding IsDelivered}" />
                                         </HorizontalStackLayout>
                                     </Grid>
                                 </Frame>
+
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
-                <!-- Ввод сообщения -->
+                <!-- Панель ввода сообщений -->
                 <Border Grid.Row="2" BackgroundColor="White" Stroke="#E0E0E0" StrokeThickness="1" Padding="10">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                        <Entry Grid.Column="0" 
-                               x:Name="MessageEntry" 
-                               Placeholder="Введите сообщение..." 
-                               Completed="OnMessageSent" 
-                               ReturnType="Send" />
-                        <Button Grid.Column="1" 
-                                Text="📎" 
-                                BackgroundColor="Transparent" 
-                                TextColor="#2E86AB" 
-                                WidthRequest="40" 
-                                HeightRequest="40" 
-                                Clicked="OnAttachFileClicked" />
-                        <Button Grid.Column="2" 
-                                Text="➤" 
-                                BackgroundColor="#2E86AB" 
-                                TextColor="White" 
-                                WidthRequest="40" 
-                                HeightRequest="40" 
-                                Clicked="OnSendMessageClicked" />
+                        <Entry Grid.Column="0" x:Name="MessageEntry" Placeholder="Введите сообщение..." Completed="OnMessageSent" ReturnType="Send" />
+                        <Button Grid.Column="1" Text="📎" BackgroundColor="Transparent" TextColor="#2E86AB" WidthRequest="40" HeightRequest="40" Clicked="OnAttachFileClicked" />
+                        <Button Grid.Column="2" Text="➤" BackgroundColor="#2E86AB" TextColor="White" WidthRequest="40" HeightRequest="40" Clicked="OnSendMessageClicked" />
                     </Grid>
                 </Border>
             </Grid>
 
-            <!-- Заглушка когда чат не выбран -->
-            <!-- ИСПРАВЛЕНА ПРИВЯЗКА: используем InverseBoolConverter с HasActiveChat -->
-            <VerticalStackLayout Grid.Column="1" 
-                                IsVisible="{Binding HasActiveChat, Converter={StaticResource InverseBoolConverter}}"
-                                HorizontalOptions="Center"
-                                VerticalOptions="Center"
-                                Spacing="20">
-                <Label Text="💬" FontSize="80" HorizontalOptions="Center"/>
-                <Label Text="Выберите чат для общения" 
-                       FontSize="18" 
-                       HorizontalOptions="Center"
-                       TextColor="Gray"/>
+            <!-- Заглушка при отсутствии выбранного чата -->
+            <VerticalStackLayout Grid.Column="1" IsVisible="{Binding HasActiveChat, Converter={StaticResource InverseBoolConverter}}" HorizontalOptions="Center" VerticalOptions="Center" Spacing="20">
+                <Label Text="💬" FontSize="80" HorizontalOptions="Center" />
+                <Label Text="Выберите чат для общения" FontSize="18" HorizontalOptions="Center" TextColor="Gray" />
             </VerticalStackLayout>
         </Grid>
     </Grid>
 </ContentPage>
-

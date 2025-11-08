@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
 using System.ComponentModel;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace EducationalPlatform.Views
 {
@@ -17,7 +19,6 @@ namespace EducationalPlatform.Views
         private StudentChatItem? _activeChat;
         private Timer? _refreshTimer;
 
-        // Публичное свойство с уведомлением об изменении
         public StudentChatItem? ActiveChat
         {
             get => _activeChat;
@@ -32,7 +33,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Дополнительное свойство для удобства привязки
         public bool HasActiveChat => ActiveChat != null;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -50,10 +50,27 @@ namespace EducationalPlatform.Views
             _settingsService = settingsService;
 
             BindingContext = this;
+
+            // Проверяем и создаем таблицы при создании страницы
+            _ = InitializeChatTables();
+
             AllChatsCollectionView.ItemsSource = AllChats;
             MessagesCollectionView.ItemsSource = Messages;
 
             LoadAllChats();
+        }
+
+        private async Task InitializeChatTables()
+        {
+            try
+            {
+                await _dbService.CheckAndCreateMissingTables();
+                await _dbService.CreateMissingChatTables();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка инициализации таблиц: {ex.Message}");
+            }
         }
 
         protected override void OnAppearing()
@@ -75,19 +92,25 @@ namespace EducationalPlatform.Views
                 AllChats.Clear();
                 IsBusy = true;
 
+                Console.WriteLine($"🔍 Загружаем чаты для студента {_currentUser.UserId}");
+
+                // ВРЕМЕННО КОММЕНТИРУЕМ - вызывает ошибку
+                // await _dbService.CheckChatTableStructure();
+
                 var chats = await _dbService.GetStudentAllChatsAsync(_currentUser.UserId);
 
-                Console.WriteLine($"🔍 Загружено чатов: {chats?.Count ?? 0} для студента {_currentUser.UserId}");
+                Console.WriteLine($"📊 Получено чатов: {chats?.Count ?? 0}");
 
                 if (chats == null || !chats.Any())
                 {
-                    await DisplayAlert("Информация", "У вас пока нет чатов.", "OK");
+                    Console.WriteLine("ℹ️ Чатов не найдено, проверяем группы студента...");
+                    await CheckStudentGroups();
                     return;
                 }
 
                 foreach (var chat in chats)
                 {
-                    Console.WriteLine($"💬 Чат: {chat.ChatName}, тип: {chat.ChatType}, участников: {chat.ParticipantCount}");
+                    Console.WriteLine($"💬 Добавляем чат: {chat.ChatName}, ID: {chat.ChatId}");
                     AllChats.Add(chat);
                 }
 
@@ -95,11 +118,58 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Ошибка загрузки чатов: {ex.Message}");
                 await DisplayAlert("Ошибка", $"Не удалось загрузить чаты: {ex.Message}", "OK");
             }
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        private async Task CheckStudentGroups()
+        {
+            try
+            {
+                using var connection = new SqlConnection(_dbService.ConnectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT sg.GroupId, sg.GroupName, c.CourseName
+            FROM GroupEnrollments ge
+            INNER JOIN StudyGroups sg ON ge.GroupId = sg.GroupId
+            INNER JOIN Courses c ON sg.CourseId = c.CourseId
+            WHERE ge.StudentId = @StudentId 
+                AND ge.Status = 'active'
+                AND sg.IsActive = 1";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@StudentId", _currentUser.UserId); // ← ЭТО int
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                int groupCount = 0;
+                while (await reader.ReadAsync())
+                {
+                    groupCount++;
+                    // ЭТА СТРОКА 156 - она корректна
+                    Console.WriteLine($"👥 Студент состоит в группе: {reader.GetString("GroupName")} (Курс: {reader.GetString("CourseName")})");
+                }
+
+                if (groupCount == 0)
+                {
+                    await DisplayAlert("Информация", "Вы не состоите ни в одной активной группе", "OK");
+                }
+                else
+                {
+                    await DisplayAlert("Диагностика",
+                        $"Вы состоите в {groupCount} группах, но чаты не найдены. " +
+                        "Обратитесь к преподавателю для настройки чатов.", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка проверки групп: {ex.Message}");
             }
         }
 
@@ -109,15 +179,11 @@ namespace EducationalPlatform.Views
             {
                 try
                 {
+                    Console.WriteLine($"🎯 Выбран чат: {selectedChat.ChatName}, тип: {selectedChat.ChatType}");
+
                     ActiveChat = selectedChat;
-
-                    // Обновляем заголовок чата в зависимости от типа
                     UpdateChatHeader(selectedChat);
-
-                    // Загружаем сообщения для выбранного чата
                     await LoadChatMessages(selectedChat);
-
-                    // Отмечаем сообщения как прочитанные
                     await MarkMessagesAsRead(selectedChat);
 
                     // Обновляем счетчик непрочитанных
@@ -165,38 +231,45 @@ namespace EducationalPlatform.Views
             try
             {
                 Messages.Clear();
+                Console.WriteLine($"📨 Загружаем сообщения для чата {chat.ChatName}");
 
                 List<ChatMessage> messages = new();
 
                 switch (chat.ChatType)
                 {
                     case "group":
-                        var groupMessages = await _dbService.GetGroupChatMessagesAsync(chat.GroupId.Value);
-                        messages = groupMessages.Select(m => new ChatMessage
+                        if (chat.GroupId.HasValue)
                         {
-                            MessageId = m.MessageId,
-                            SenderId = m.SenderId,
-                            MessageText = m.MessageText,
-                            SentAt = m.SentAt,
-                            IsRead = m.IsRead,
-                            SenderName = m.SenderName,
-                            SenderAvatar = m.SenderAvatar,
-                            IsMyMessage = m.SenderId == _currentUser.UserId
-                        }).ToList();
+                            var groupMessages = await _dbService.GetGroupChatMessagesAsync(chat.GroupId.Value);
+                            messages = groupMessages.Select(m => new ChatMessage
+                            {
+                                MessageId = m.MessageId,
+                                SenderId = m.SenderId,
+                                MessageText = m.MessageText,
+                                SentAt = m.SentAt,
+                                IsRead = m.IsRead,
+                                SenderName = m.SenderName,
+                                SenderAvatar = m.SenderAvatar,
+                                IsMyMessage = m.SenderId == _currentUser.UserId
+                            }).ToList();
+                        }
                         break;
                     case "teacher":
-                        var privateMessages = await _dbService.GetPrivateChatMessagesAsync(_currentUser.UserId, chat.TeacherId.Value);
-                        messages = privateMessages.Select(m => new ChatMessage
+                        if (chat.TeacherId.HasValue)
                         {
-                            MessageId = m.MessageId,
-                            SenderId = m.SenderId,
-                            MessageText = m.MessageText,
-                            SentAt = m.SentAt,
-                            IsRead = m.IsRead,
-                            SenderName = m.SenderName,
-                            SenderAvatar = m.SenderAvatar,
-                            IsMyMessage = m.SenderId == _currentUser.UserId
-                        }).ToList();
+                            var privateMessages = await _dbService.GetPrivateChatMessagesAsync(_currentUser.UserId, chat.TeacherId.Value);
+                            messages = privateMessages.Select(m => new ChatMessage
+                            {
+                                MessageId = m.MessageId,
+                                SenderId = m.SenderId,
+                                MessageText = m.MessageText,
+                                SentAt = m.SentAt,
+                                IsRead = m.IsRead,
+                                SenderName = m.SenderName,
+                                SenderAvatar = m.SenderAvatar,
+                                IsMyMessage = m.SenderId == _currentUser.UserId
+                            }).ToList();
+                        }
                         break;
                     case "support":
                         // TODO: Добавить метод для загрузки сообщений поддержки
@@ -209,6 +282,8 @@ namespace EducationalPlatform.Views
                     Messages.Add(message);
                 }
 
+                Console.WriteLine($"📨 Загружено {messages.Count} сообщений");
+
                 // Прокручиваем к последнему сообщению
                 if (Messages.Count > 0)
                 {
@@ -220,6 +295,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Ошибка загрузки сообщений: {ex.Message}");
                 await DisplayAlert("Ошибка", $"Ошибка загрузки сообщений: {ex.Message}", "OK");
             }
         }
@@ -233,10 +309,12 @@ namespace EducationalPlatform.Views
                 switch (chat.ChatType)
                 {
                     case "group":
-                        await _dbService.MarkGroupMessagesAsReadAsync(chat.GroupId.Value, _currentUser.UserId);
+                        if (chat.GroupId.HasValue)
+                            await _dbService.MarkGroupMessagesAsReadAsync(chat.GroupId.Value, _currentUser.UserId);
                         break;
                     case "teacher":
-                        await _dbService.MarkPrivateMessagesAsReadAsync(_currentUser.UserId, chat.TeacherId.Value);
+                        if (chat.TeacherId.HasValue)
+                            await _dbService.MarkPrivateMessagesAsReadAsync(_currentUser.UserId, chat.TeacherId.Value);
                         break;
                     case "support":
                         await _dbService.MarkSupportMessagesAsReadAsync(_currentUser.UserId);
@@ -248,7 +326,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка отметки сообщений как прочитанных: {ex.Message}");
+                Console.WriteLine($"⚠️ Ошибка отметки сообщений как прочитанных: {ex.Message}");
             }
         }
 
@@ -276,10 +354,12 @@ namespace EducationalPlatform.Views
                 switch (_activeChat.ChatType)
                 {
                     case "group":
-                        success = await _dbService.SendGroupChatMessageAsync(_activeChat.GroupId.Value, _currentUser.UserId, text);
+                        if (_activeChat.GroupId.HasValue)
+                            success = await _dbService.SendGroupChatMessageAsync(_activeChat.GroupId.Value, _currentUser.UserId, text);
                         break;
                     case "teacher":
-                        success = await _dbService.SendPrivateMessageAsync(_currentUser.UserId, _activeChat.TeacherId.Value, text);
+                        if (_activeChat.TeacherId.HasValue)
+                            success = await _dbService.SendPrivateMessageAsync(_currentUser.UserId, _activeChat.TeacherId.Value, text);
                         break;
                     case "support":
                         success = await _dbService.SendSupportMessageAsync(_currentUser.UserId, text);
@@ -290,8 +370,6 @@ namespace EducationalPlatform.Views
                 {
                     MessageEntry.Text = string.Empty;
                     await LoadChatMessages(_activeChat);
-
-                    // Обновляем список чатов чтобы показать последнее сообщение
                     await RefreshChatList();
                 }
                 else
@@ -305,12 +383,11 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Дополнительные методы для работы с разными типами чатов
         private void StartAutoRefresh(StudentChatItem chat)
         {
             _refreshTimer?.Dispose();
             _refreshTimer = new Timer(async _ => await RefreshChatMessages(chat), null,
-                TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+                TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
         }
 
         private async Task RefreshChatMessages(StudentChatItem chat)
@@ -324,7 +401,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка обновления сообщений: {ex.Message}");
+                Console.WriteLine($"⚠️ Ошибка обновления сообщений: {ex.Message}");
             }
         }
 
@@ -349,7 +426,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка обновления списка чатов: {ex.Message}");
+                Console.WriteLine($"⚠️ Ошибка обновления списка чатов: {ex.Message}");
             }
         }
 
@@ -362,12 +439,7 @@ namespace EducationalPlatform.Views
                 var result = await FilePicker.Default.PickAsync(new PickOptions
                 {
                     PickerTitle = "Выберите файл для отправки",
-                    FileTypes = new FilePickerFileType(
-                        new Dictionary<DevicePlatform, IEnumerable<string>>
-                        {
-                            { DevicePlatform.WinUI, new[] { ".pdf", ".doc", ".docx", ".txt", ".zip", ".jpg", ".png" } },
-                            { DevicePlatform.macOS, new[] { ".pdf", ".doc", ".docx", ".txt", ".zip", ".jpg", ".png" } }
-                        })
+                    FileTypes = FilePickerFileType.Images // Можно расширить для других типов
                 });
 
                 if (result != null)
@@ -395,4 +467,3 @@ namespace EducationalPlatform.Views
         }
     }
 }
-
