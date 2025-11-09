@@ -1,12 +1,12 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 namespace EducationalPlatform.Converters
 {
-    public class StatusColorConverter : IValueConverter
+    public class NotNullConverter : IValueConverter
     {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            return value is bool active && active ? Color.FromArgb("#4CAF50") : Color.FromArgb("#F44336");
+            return value != null && !string.IsNullOrWhiteSpace(value.ToString());
         }
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -15,3 +15,4 @@ namespace EducationalPlatform.Converters
         }
     }
 }
+

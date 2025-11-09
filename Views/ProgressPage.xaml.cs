@@ -104,7 +104,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить данные прогресса: {ex.Message}", "OK");
+                await DisplayAlert("Error", $"Failed to load progress data: {ex.Message}", "OK");
             }
         }
 
@@ -208,9 +208,12 @@ namespace EducationalPlatform.Views
         {
             if (e.CurrentSelection.FirstOrDefault() is Achievement selectedAchievement)
             {
+                var localizationService = new LocalizationService();
+                localizationService.SetLanguage(_settingsService?.CurrentLanguage ?? "en");
+                
                 await DisplayAlert(
-                    selectedAchievement.Name ?? "Достижение",
-                    $"{selectedAchievement.Description}\n\nДата получения: {selectedAchievement.EarnedDate:dd.MM.yyyy}",
+                    selectedAchievement.Name ?? localizationService.GetText("achievement"),
+                    $"{selectedAchievement.Description}\n\n{localizationService.GetText("earned_date")}: {selectedAchievement.EarnedDate:dd.MM.yyyy}",
                     "OK");
             }
             var achievementsCollectionView = this.FindByName<CollectionView>("AchievementsCollectionView");
@@ -222,7 +225,9 @@ namespace EducationalPlatform.Views
         {
             if (e.CurrentSelection.FirstOrDefault() is ProgressItem selectedCourse)
             {
-                await DisplayAlert("Курс", $"Переход к курсу: {selectedCourse.CourseName}", "OK");
+                var localizationService = new LocalizationService();
+                localizationService.SetLanguage(_settingsService?.CurrentLanguage ?? "en");
+                await DisplayAlert(localizationService.GetText("course"), $"{localizationService.GetText("go_to_course")}: {selectedCourse.CourseName}", "OK");
             }
             var courseProgressCollectionView = this.FindByName<CollectionView>("CourseProgressCollectionView");
             if (courseProgressCollectionView != null)
@@ -256,11 +261,11 @@ namespace EducationalPlatform.Views
         };
         public string StatusText => Status switch
         {
-            "completed" => "Завершен",
-            "in_progress" => "В процессе",
-            "not_started" => "Не начат",
+            "completed" => "Completed",
+            "in_progress" => "In Progress",
+            "not_started" => "Not Started",
             _ => Status
         };
-        public string FormattedCompletionDate => CompletionDate?.ToString("dd.MM.yyyy") ?? "Не завершен";
+        public string FormattedCompletionDate => CompletionDate?.ToString("dd.MM.yyyy") ?? "Not completed";
     }
 }

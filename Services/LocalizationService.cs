@@ -211,7 +211,11 @@ namespace EducationalPlatform.Services
                 {"file_uploaded", "Файл загружен"},
                 {"file_downloaded", "Файл скачан"},
                 {"email_sent", "Email отправлен"},
-                {"notification_sent", "Уведомление отправлено"}
+                {"notification_sent", "Уведомление отправлено"},
+                {"earned_date", "Дата получения"},
+                {"go_to_course", "Перейти к курсу"},
+                {"equipped", "Надето"},
+                {"message_send_failed", "Не удалось отправить сообщение"}
             };
 
             // Русский язык - подростковый
@@ -405,7 +409,11 @@ namespace EducationalPlatform.Services
                 {"file_uploaded", "Файл загружен! 📤"},
                 {"file_downloaded", "Файл скачан! 📥"},
                 {"email_sent", "Email отправлен! 📧"},
-                {"notification_sent", "Уведомление отправлено! 🔔"}
+                {"notification_sent", "Уведомление отправлено! 🔔"},
+                {"earned_date", "Дата получения"},
+                {"go_to_course", "Перейти к курсу"},
+                {"equipped", "Надето"},
+                {"message_send_failed", "Не удалось отправить сообщение"}
             };
 
             // Английский язык - стандартный
@@ -599,7 +607,11 @@ namespace EducationalPlatform.Services
                 {"file_uploaded", "File uploaded"},
                 {"file_downloaded", "File downloaded"},
                 {"email_sent", "Email sent"},
-                {"notification_sent", "Notification sent"}
+                {"notification_sent", "Notification sent"},
+                {"earned_date", "Earned Date"},
+                {"go_to_course", "Go to Course"},
+                {"equipped", "Equipped"},
+                {"message_send_failed", "Failed to send message"}
             };
 
             // Английский язык - подростковый
@@ -793,7 +805,11 @@ namespace EducationalPlatform.Services
                 {"file_uploaded", "File uploaded! 📤"},
                 {"file_downloaded", "File downloaded! 📥"},
                 {"email_sent", "Email sent! 📧"},
-                {"notification_sent", "Notification sent! 🔔"}
+                {"notification_sent", "Notification sent! 🔔"},
+                {"earned_date", "Earned Date"},
+                {"go_to_course", "Go to Course"},
+                {"equipped", "Equipped"},
+                {"message_send_failed", "Failed to send message"}
             };
         }
 

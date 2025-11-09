@@ -32,7 +32,7 @@ namespace EducationalPlatform.Views
                 UsernameEntry.Text = _currentUser.Username ?? "";
                 EmailEntry.Text = _currentUser.Email ?? "";
 
-                // ��������� ���������� ������ �� ����
+                // Загружаем текущий аватар из БД
                 var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
 
                 if (!string.IsNullOrEmpty(currentAvatar))
@@ -49,7 +49,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("������", $"�� ������� ��������� ������: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка", $"Не удалось загрузить данные: {ex.Message}", "OK");
             }
         }
 
@@ -91,7 +91,7 @@ namespace EducationalPlatform.Views
                 _avatarUrl = null;
                 AvatarPreview.Source = "default_avatar.png";
 
-                // ������� ������ �� ���� ������
+                // Удаляем аватар из БД асинхронно
                 _ = Task.Run(async () =>
                 {
                     await _dbService.UpdateUserAsync(
@@ -103,11 +103,11 @@ namespace EducationalPlatform.Views
                         null);
                 });
 
-                DisplayAlert("�����", "������ ������!", "OK");
+                DisplayAlert("Успех", "Аватар удален!", "OK");
             }
             catch (Exception ex)
             {
-                DisplayAlert("������", $"�� ������� ������� ������: {ex.Message}", "OK");
+                DisplayAlert("Ошибка", $"Не удалось удалить аватар: {ex.Message}", "OK");
             }
         }
 
@@ -118,11 +118,11 @@ namespace EducationalPlatform.Views
                 string.IsNullOrWhiteSpace(UsernameEntry.Text) ||
                 string.IsNullOrWhiteSpace(EmailEntry.Text))
             {
-                await DisplayAlert("������", "��������� ��� ����", "OK");
+                await DisplayAlert("Ошибка", "Заполните все поля", "OK");
                 return;
             }
 
-            // ��������� ������������ username � email
+            // Проверяем уникальность username и email
             bool userExists = await _dbService.CheckUserExistsAsync(
                 UsernameEntry.Text,
                 EmailEntry.Text,
@@ -130,11 +130,11 @@ namespace EducationalPlatform.Views
 
             if (userExists)
             {
-                await DisplayAlert("������", "������������ � ����� ������� ��� email ��� ����������", "OK");
+                await DisplayAlert("Ошибка", "Пользователь с таким логином или email уже существует", "OK");
                 return;
             }
 
-            // ���������� ��������� ��������
+            // Показываем индикатор загрузки
             LoadingIndicator.IsVisible = true;
             LoadingIndicator.IsRunning = true;
 
@@ -142,27 +142,27 @@ namespace EducationalPlatform.Views
             {
                 string finalAvatarUrl = _avatarUrl;
 
-                // ��������� ����� ����������� ���� �������
+                // Загружаем файл если был выбран новый
                 if (_selectedImage != null)
                 {
-                    Console.WriteLine($"�������� �������� �������: {_selectedImage.FileName}");
+                    Console.WriteLine($"Загружаем новый аватар: {_selectedImage.FileName}");
 
                     using var stream = await _selectedImage.OpenReadAsync();
                     finalAvatarUrl = await _dbService.UploadAvatarAsync(stream, _selectedImage.FileName, _currentUser.UserId);
 
                     if (string.IsNullOrEmpty(finalAvatarUrl))
                     {
-                        await DisplayAlert("������", "�� ������� ��������� ������", "OK");
+                        await DisplayAlert("Ошибка", "Не удалось загрузить аватар", "OK");
                         LoadingIndicator.IsVisible = false;
                         LoadingIndicator.IsRunning = false;
                         return;
                     }
 
-                    Console.WriteLine($"������ ������� ��������: {finalAvatarUrl}");
-                    await DisplayAlert("�����", "������ ������� ��������!", "OK");
+                    Console.WriteLine($"Аватар успешно загружен: {finalAvatarUrl}");
+                    await DisplayAlert("Успех", "Новый аватар загружен!", "OK");
                 }
 
-                // ��������� ������ ������������
+                // Обновляем данные пользователя
                 bool success = await _dbService.UpdateUserAsync(
                     _currentUser.UserId,
                     FirstNameEntry.Text,
@@ -173,20 +173,20 @@ namespace EducationalPlatform.Views
 
                 if (success)
                 {
-                    // ��������� ������ � ������� ������������
+                    // Обновляем данные в объекте пользователя
                     _currentUser.FirstName = FirstNameEntry.Text;
                     _currentUser.LastName = LastNameEntry.Text;
                     _currentUser.Username = UsernameEntry.Text;
                     _currentUser.Email = EmailEntry.Text;
                     _currentUser.AvatarUrl = finalAvatarUrl;
 
-                    await DisplayAlert("�����", "������� ������� ��������!", "OK");
+                    await DisplayAlert("Успех", "Профиль успешно обновлен!", "OK");
 
-                    // ������������ �� �������� ������� � ������������ �������
+                    // Переходим на страницу профиля и удаляем текущую страницу
                     var profilePage = new ProfilePage(_currentUser, _dbService, _settingsService);
                     await Navigation.PushAsync(profilePage);
 
-                    // ������� ������� �������� �� ����� ���������
+                    // Удаляем страницу редактирования из стека навигации
                     var existingPages = Navigation.NavigationStack.ToList();
                     foreach (var page in existingPages)
                     {
@@ -199,17 +199,17 @@ namespace EducationalPlatform.Views
                 }
                 else
                 {
-                    await DisplayAlert("������", "�� ������� �������� �������", "OK");
+                    await DisplayAlert("Ошибка", "Не удалось обновить профиль", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("������", $"�� ������� ��������� ���������: {ex.Message}", "OK");
-                Console.WriteLine($"������ ����������: {ex}");
+                await DisplayAlert("Ошибка", $"Не удалось обновить профиль: {ex.Message}", "OK");
+                Console.WriteLine($"Ошибка обновления: {ex}");
             }
             finally
             {
-                // �������� ��������� ��������
+                // Скрываем индикатор загрузки
                 LoadingIndicator.IsVisible = false;
                 LoadingIndicator.IsRunning = false;
             }
@@ -219,11 +219,11 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // ������������ �� �������� ������� ��� ����������
+                // Переходим на страницу профиля или возвращаемся назад
                 var profilePage = new ProfilePage(_currentUser, _dbService, _settingsService);
                 await Navigation.PushAsync(profilePage);
 
-                // ������� ������� �������� �� ����� ���������
+                // Удаляем страницу редактирования из стека навигации
                 var existingPages = Navigation.NavigationStack.ToList();
                 foreach (var page in existingPages)
                 {
@@ -236,18 +236,18 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("������", $"�� ������� ���������: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка", $"Не удалось вернуться: {ex.Message}", "OK");
             }
         }
 
         protected override bool OnBackButtonPressed()
         {
-            // ��������� ����������� ��������� ������ �����
+            // Предотвращаем стандартное поведение кнопки назад
             OnCancelClicked(null, null);
             return true;
         }
 
-        // ���������� ��������� ������ � ����� ��� ��������� � �������� �������
+        // Валидация полей формы в реальном времени для улучшения UX
         private void OnEntryTextChanged(object sender, TextChangedEventArgs e)
         {
             ValidateForm();
@@ -261,14 +261,14 @@ namespace EducationalPlatform.Views
                           !string.IsNullOrWhiteSpace(EmailEntry.Text) &&
                           IsValidEmail(EmailEntry.Text);
 
-            // ����� �������� ���������� ��������� ���������� �����
+            // Здесь можно добавить визуальную индикацию валидности формы
             if (isValid)
             {
-                // ����� �������
+                // Форма валидна
             }
             else
             {
-                // ����� ���������
+                // Форма невалидна
             }
         }
 
@@ -288,38 +288,38 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // ���������� ��� �������� email ��� ������ ������
+        // Валидация email при потере фокуса
         private async void OnEmailUnfocused(object sender, FocusEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(EmailEntry.Text) && !IsValidEmail(EmailEntry.Text))
             {
-                await DisplayAlert("������", "������� ���������� email �����", "OK");
+                await DisplayAlert("Ошибка", "Введите корректный email адрес", "OK");
                 EmailEntry.Focus();
             }
         }
 
-        // ���������� ��� �������� username ��� ������ ������
+        // Валидация username при потере фокуса
         private async void OnUsernameUnfocused(object sender, FocusEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(UsernameEntry.Text))
             {
-                // ��������� ����������� ����� username
+                // Проверяем минимальную длину username
                 if (UsernameEntry.Text.Length < 3)
                 {
-                    await DisplayAlert("������", "����� ������ ��������� ������� 3 �������", "OK");
+                    await DisplayAlert("Ошибка", "Логин должен содержать минимум 3 символа", "OK");
                     UsernameEntry.Focus();
                     return;
                 }
 
-                // ��������� ������������ username (����� �������� ������������)
+                // Проверяем уникальность username (исключая текущего пользователя)
                 bool userExists = await _dbService.CheckUserExistsAsync(
                     UsernameEntry.Text,
-                    "", // ������ email ��� �������� ������ username
+                    "", // Пустой email для проверки только username
                     _currentUser.UserId);
 
                 if (userExists)
                 {
-                    await DisplayAlert("������", "������������ � ����� ������� ��� ����������", "OK");
+                    await DisplayAlert("Ошибка", "Пользователь с таким логином уже существует", "OK");
                     UsernameEntry.Focus();
                 }
             }

@@ -56,13 +56,19 @@ namespace EducationalPlatform.Views
 
             try
             {
-                // для простоты сохраняем локальный путь; в проде загрузили бы в облако и сохранили ссылку
+                // Загружаем файл в облако или сохраняем локально
+                string fileUrl = _pickedZipPath!;
+                
+                // В будущем здесь можно добавить загрузку в облачное хранилище
+                // var fileService = new FileService();
+                // fileUrl = await fileService.UploadFileAsync(_pickedZipPath);
+                
                 bool ok = await _dbService.CreateContestSubmissionAsync(
                     _contestId,
                     _currentUser.UserId,
-                    ProjectNameEntry.Text!,
-                    _pickedZipPath!,
-                    DescriptionEditor.Text);
+                    ProjectNameEntry.Text!.Trim(),
+                    fileUrl,
+                    DescriptionEditor.Text?.Trim());
 
                 if (ok)
                 {

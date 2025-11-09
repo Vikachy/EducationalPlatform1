@@ -88,7 +88,7 @@ namespace EducationalPlatform.Views
     // Конвертер для отображения типов уроков
     public class LessonTypeConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
         {
             return value?.ToString()?.ToLower() switch
             {
@@ -99,7 +99,7 @@ namespace EducationalPlatform.Views
             };
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
         {
             throw new NotImplementedException();
         }

@@ -223,6 +223,19 @@ namespace EducationalPlatform
                     Console.WriteLine($"💰 Текущий баланс: {user.GameCurrency} монет");
                     Console.WriteLine($"🆔 UserId: {user.UserId}");
 
+                    // Применяем тему пользователя из БД (работает на всех устройствах)
+                    if (!string.IsNullOrEmpty(user.InterfaceStyle))
+                    {
+                        _settingsService.ApplyTheme(user.InterfaceStyle);
+                        Console.WriteLine($"🎨 Применена тема: {user.InterfaceStyle}");
+                    }
+                    else
+                    {
+                        // Если тема не установлена, применяем стандартную
+                        _settingsService.ApplyTheme("standard");
+                        await _dbService.SaveUserThemeAsync(user.UserId, "standard");
+                    }
+
                     // ПРОВЕРЯЕМ СОГЛАСИЕ НА ОБРАБОТКУ ДАННЫХ
                     bool hasConsent = await _dbService.CheckUserPrivacyConsentAsync(user.UserId);
                     Console.WriteLine($"📝 Согласие принято: {hasConsent}");

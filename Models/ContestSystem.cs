@@ -20,6 +20,9 @@ namespace EducationalPlatform.Models
         public bool OnlyForGroups { get; set; } = true;
         public ProgrammingLanguage? Language { get; set; }
         public List<ContestSubmission> Submissions { get; set; } = new List<ContestSubmission>();
+        
+        // Удобное свойство для биндинга в XAML
+        public string LanguageName => Language?.LanguageName ?? "Не указан";
     }
 
     public class ContestSubmission
@@ -35,6 +38,10 @@ namespace EducationalPlatform.Models
         public string? TeacherComment { get; set; }
         public User? Student { get; set; }
         public Contest? Contest { get; set; }
+        
+        // Удобные свойства для биндинга в XAML
+        public string ContestName => Contest?.ContestName ?? "Неизвестный конкурс";
+        public string Status => TeacherScore.HasValue ? "Оценено" : "На проверке";
     }
 
     public class ProjectFile

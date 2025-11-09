@@ -53,14 +53,14 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
         {
             try
             {
-                // Сначала проверяем локальные настройки
-                bool hasLocalConsent = Preferences.Get($"PrivacyConsent_{userId}", false);
-                if (hasLocalConsent)
+                // Сначала проверяем SecureStorage (привязано к учетной записи, работает на всех устройствах)
+                var secureConsent = await SecureStorage.GetAsync($"PrivacyConsent_{userId}");
+                if (secureConsent == "true")
                 {
                     return true;
                 }
 
-                // Затем проверяем базу данных
+                // Затем проверяем базу данных (для синхронизации)
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
@@ -73,14 +73,259 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 command.Parameters.AddWithValue("@UserId", userId);
 
                 var result = await command.ExecuteScalarAsync();
-                return Convert.ToInt32(result) > 0;
+                bool hasDbConsent = Convert.ToInt32(result) > 0;
+
+                // Если согласие есть в БД, но нет в SecureStorage - синхронизируем
+                if (hasDbConsent)
+                {
+                    await SecureStorage.SetAsync($"PrivacyConsent_{userId}", "true");
+                    return true;
+                }
+
+                return false;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error checking privacy consent: {ex.Message}");
 
-                // Если ошибка БД, проверяем только настройки
-                return Preferences.Get($"PrivacyConsent_{userId}", false);
+                // Если ошибка, проверяем SecureStorage как fallback
+                try
+                {
+                    var secureConsent = await SecureStorage.GetAsync($"PrivacyConsent_{userId}");
+                    return secureConsent == "true";
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
+        // МЕТОДЫ ДЛЯ РАБОТЫ С ФАЙЛАМИ УРОКОВ
+        public async Task<List<LessonAttachment>> GetLessonAttachmentsAsync(int lessonId)
+        {
+            var attachments = new List<LessonAttachment>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT AttachmentId, LessonId, FileName, FilePath, FileType, FileSize, UploadDate
+            FROM LessonAttachments
+            WHERE LessonId = @LessonId AND IsActive = 1
+            ORDER BY UploadDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    attachments.Add(new LessonAttachment
+                    {
+                        AttachmentId = reader.GetInt32("AttachmentId"),
+                        LessonId = reader.GetInt32("LessonId"),
+                        FileName = reader.GetString("FileName"),
+                        FilePath = reader.GetString("FilePath"),
+                        FileType = reader.GetString("FileType"),
+                        FileSize = reader.GetString("FileSize"),
+                        UploadDate = reader.GetDateTime("UploadDate")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки вложений урока: {ex.Message}");
+            }
+            return attachments;
+        }
+
+        public async Task<bool> SaveLessonAttachmentAsync(int lessonId, string fileName, string filePath, string fileType, long fileSizeBytes)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            INSERT INTO LessonAttachments (LessonId, FileName, FilePath, FileType, FileSize, UploadDate, IsActive)
+            VALUES (@LessonId, @FileName, @FilePath, @FileType, @FileSize, GETDATE(), 1)";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+                command.Parameters.AddWithValue("@FileName", fileName);
+                command.Parameters.AddWithValue("@FilePath", filePath);
+                command.Parameters.AddWithValue("@FileType", fileType);
+                command.Parameters.AddWithValue("@FileSize", FormatFileSize(fileSizeBytes));
+
+                return await command.ExecuteNonQueryAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения вложения: {ex.Message}");
+                return false;
+            }
+        }
+
+        private string FormatFileSize(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]}";
+        }
+
+        public async Task<List<PracticeSubmission>> GetPracticeSubmissionsAsync(int lessonId)
+        {
+            var submissions = new List<PracticeSubmission>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT ps.SubmissionId, ps.StudentId, ps.SubmissionText, ps.SubmissionFileUrl, 
+                   ps.SubmissionDate, ps.TeacherScore, ps.TeacherComment, ps.Status,
+                   u.FirstName + ' ' + u.LastName as StudentName
+            FROM PracticeSubmissions ps
+            JOIN Users u ON ps.StudentId = u.UserId
+            WHERE ps.LessonId = @LessonId
+            ORDER BY ps.SubmissionDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    submissions.Add(new PracticeSubmission
+                    {
+                        SubmissionId = reader.GetInt32("SubmissionId"),
+                        StudentId = reader.GetInt32("StudentId"),
+                        SubmissionText = reader.IsDBNull("SubmissionText") ? null : reader.GetString("SubmissionText"),
+                        SubmissionFileUrl = reader.IsDBNull("SubmissionFileUrl") ? null : reader.GetString("SubmissionFileUrl"),
+                        SubmissionDate = reader.GetDateTime("SubmissionDate"),
+                        TeacherScore = reader.IsDBNull("TeacherScore") ? null : reader.GetInt32("TeacherScore"),
+                        TeacherComment = reader.IsDBNull("TeacherComment") ? null : reader.GetString("TeacherComment"),
+                        Status = reader.GetString("Status"),
+                        StudentName = reader.GetString("StudentName")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки решений: {ex.Message}");
+            }
+            return submissions;
+        }
+
+        public async Task<bool> GradePracticeSubmissionAsync(int submissionId, int teacherId, int score, string? comment)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE PracticeSubmissions 
+            SET TeacherScore = @Score, TeacherComment = @Comment, Status = 'graded', GradedBy = @TeacherId, GradedAt = GETDATE()
+            WHERE SubmissionId = @SubmissionId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@SubmissionId", submissionId);
+                command.Parameters.AddWithValue("@Score", score);
+                command.Parameters.AddWithValue("@Comment", (object?)comment ?? DBNull.Value);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
+
+                return await command.ExecuteNonQueryAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка оценивания решения: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> SavePracticeSubmissionAsync(int lessonId, int studentId, string? submissionText, string? submissionFileUrl)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            INSERT INTO PracticeSubmissions (LessonId, StudentId, SubmissionText, SubmissionFileUrl, SubmissionDate, Status)
+            VALUES (@LessonId, @StudentId, @SubmissionText, @SubmissionFileUrl, GETDATE(), 'submitted')";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+                command.Parameters.AddWithValue("@StudentId", studentId);
+                command.Parameters.AddWithValue("@SubmissionText", (object?)submissionText ?? DBNull.Value);
+                command.Parameters.AddWithValue("@SubmissionFileUrl", (object?)submissionFileUrl ?? DBNull.Value);
+
+                return await command.ExecuteNonQueryAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения решения: {ex.Message}");
+                return false;
+            }
+        }
+
+        // МЕТОДЫ ДЛЯ РАБОТЫ С АВАТАРКОЙ
+        public async Task<bool> UpdateUserAvatarAsync(int userId, string avatarUrl)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE Users 
+            SET AvatarUrl = @AvatarUrl, LastUpdated = GETDATE()
+            WHERE UserId = @UserId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@AvatarUrl", avatarUrl);
+
+                return await command.ExecuteNonQueryAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating avatar: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<string?> GetUserAvatarUrlAsync(int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT AvatarUrl 
+            FROM Users 
+            WHERE UserId = @UserId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteScalarAsync();
+                return result?.ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting avatar URL: {ex.Message}");
+                return null;
             }
         }
 
@@ -1910,6 +2155,32 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
             }
         }
 
+        public async Task<bool> SaveUserThemeAsync(int userId, string theme)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE Users 
+            SET InterfaceStyle = @Theme
+            WHERE UserId = @UserId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Theme", theme);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения темы: {ex.Message}");
+                return false;
+            }
+        }
+
         // СИСТЕМА ПОДДЕРЖКИ
         public async Task<bool> CreateSupportTicketAsync(int userId, string subject, string description, string ticketType = "question")
         {
@@ -2286,7 +2557,11 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                         SubmissionDate = reader.GetDateTime("SubmissionDate"),
                         TeacherScore = reader.IsDBNull("TeacherScore") ? null : reader.GetInt32("TeacherScore"),
                         TeacherComment = reader.IsDBNull("TeacherComment") ? null : reader.GetString("TeacherComment"),
-                        Student = new User { FirstName = reader.GetString("StudentName") }
+                        Student = new User 
+                        { 
+                            FirstName = reader.GetString("StudentName").Split(' ').FirstOrDefault() ?? "",
+                            LastName = reader.GetString("StudentName").Split(' ').Skip(1).FirstOrDefault() ?? ""
+                        }
                     });
                 }
             }
@@ -2355,28 +2630,6 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 Console.WriteLine($"Ошибка загрузки студентов группы: {ex.Message}");
             }
             return students;
-        }
-
-        public async Task<bool> EnrollStudentToGroupAsync(int groupId, int studentId)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-                var query = @"
-            IF NOT EXISTS (SELECT 1 FROM GroupEnrollments WHERE GroupId=@GroupId AND StudentId=@StudentId)
-                INSERT INTO GroupEnrollments (GroupId, StudentId, EnrollmentDate, Status) VALUES (@GroupId, @StudentId, GETDATE(), 'active')";
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@GroupId", groupId);
-                command.Parameters.AddWithValue("@StudentId", studentId);
-                var result = await command.ExecuteNonQueryAsync();
-                return result > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка добавления студента в группу: {ex.Message}");
-                return false;
-            }
         }
 
         public async Task<bool> DeactivateGroupAsync(int groupId)
@@ -2749,13 +3002,13 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
 
                 var query = @"
             SELECT TOP (@Count) 
-                m.MessageId, m.GroupId, m.SenderId, m.MessageText, m.SentDate, m.IsRead,
+                m.MessageId, m.GroupId, m.SenderId, m.MessageText, m.SentAt, m.IsRead,
                 u.FirstName + ' ' + u.LastName as SenderName,
                 ISNULL(u.AvatarUrl, 'default_avatar.png') as SenderAvatar
-            FROM GroupChats m
+            FROM GroupChatMessages m
             JOIN Users u ON m.SenderId = u.UserId
             WHERE m.GroupId = @GroupId
-            ORDER BY m.SentDate ASC";
+            ORDER BY m.SentAt ASC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@GroupId", groupId);
@@ -2770,7 +3023,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                         GroupId = reader.GetInt32("GroupId"),
                         SenderId = reader.GetInt32("SenderId"),
                         MessageText = reader.GetString("MessageText"),
-                        SentAt = reader.GetDateTime("SentDate"),
+                        SentAt = reader.GetDateTime("SentAt"),
                         IsRead = reader.GetBoolean("IsRead"),
                         SenderName = reader.GetString("SenderName"),
                         SenderAvatar = reader.GetString("SenderAvatar") // ЗАПОЛНЯЕМ НОВОЕ СВОЙСТВО
@@ -2849,7 +3102,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 await connection.OpenAsync();
 
                 var query = @"
-            INSERT INTO GroupChats (GroupId, SenderId, MessageText, SentDate, IsRead)
+            INSERT INTO GroupChatMessages (GroupId, SenderId, MessageText, SentAt, IsRead)
             VALUES (@GroupId, @SenderId, @MessageText, GETDATE(), 0)";
 
                 using var command = new SqlCommand(query, connection);
@@ -2875,19 +3128,23 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
+                // Используем правильное имя таблицы - GroupChatMessages
                 var query = @"
-            INSERT INTO GroupChats (GroupId, SenderId, MessageText, SentDate, IsRead, IsSystemMessage)
+            INSERT INTO GroupChatMessages (GroupId, SenderId, MessageText, SentAt, IsRead, IsSystemMessage)
             VALUES (@GroupId, 0, @MessageText, GETDATE(), 0, 1)";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@GroupId", groupId);
                 command.Parameters.AddWithValue("@MessageText", message);
 
-                return await command.ExecuteNonQueryAsync() > 0;
+                var result = await command.ExecuteNonQueryAsync();
+                Console.WriteLine($"✅ Системное сообщение добавлено в группу {groupId}: {message}");
+                return result > 0;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка отправки системного сообщения: {ex.Message}");
+                Console.WriteLine($"❌ Ошибка отправки системного сообщения: {ex.Message}");
+                Console.WriteLine($"🔍 StackTrace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -3099,14 +3356,14 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 await connection.OpenAsync();
 
                 var query = @"
-            SELECT MessageId, SenderId, ReceiverId, MessageText, SentDate, IsRead,
+            SELECT MessageId, SenderId, ReceiverId, MessageText, SentAt, IsRead,
                    u.FirstName + ' ' + u.LastName as SenderName,
                    ISNULL(u.AvatarUrl, 'default_avatar.png') as SenderAvatar
             FROM PrivateChats pc
             JOIN Users u ON pc.SenderId = u.UserId
             WHERE (SenderId = @StudentId AND ReceiverId = @TeacherId)
                OR (SenderId = @TeacherId AND ReceiverId = @StudentId)
-            ORDER BY SentDate ASC";
+            ORDER BY SentAt ASC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@StudentId", studentId);
@@ -3120,7 +3377,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                         MessageId = reader.GetInt32("MessageId"),
                         SenderId = reader.GetInt32("SenderId"),
                         MessageText = reader.GetString("MessageText"),
-                        SentAt = reader.GetDateTime("SentDate"),
+                        SentAt = reader.GetDateTime("SentAt"),
                         IsRead = reader.GetBoolean("IsRead"),
                         SenderName = reader.GetString("SenderName"),
                         SenderAvatar = reader.GetString("SenderAvatar")
@@ -3142,7 +3399,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 await connection.OpenAsync();
 
                 var query = @"
-            INSERT INTO PrivateChats (SenderId, ReceiverId, MessageText, SentDate, IsRead)
+            INSERT INTO PrivateChats (SenderId, ReceiverId, MessageText, SentAt, IsRead)
             VALUES (@SenderId, @ReceiverId, @MessageText, GETDATE(), 0)";
 
                 using var command = new SqlCommand(query, connection);
@@ -4144,86 +4401,186 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
             return students;
         }
 
+        public async Task DebugGroupState(int groupId)
+        {
+            try
+            {
+                Console.WriteLine($"\n🔍 ===== ДИАГНОСТИКА ГРУППЫ {groupId} =====");
+
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // 1. Информация о группе
+                var groupQuery = @"
+        SELECT sg.GroupName, c.CourseName, sg.TeacherId
+        FROM StudyGroups sg
+        INNER JOIN Courses c ON sg.CourseId = c.CourseId
+        WHERE sg.GroupId = @GroupId";
+
+                using var groupCmd = new SqlCommand(groupQuery, connection);
+                groupCmd.Parameters.AddWithValue("@GroupId", groupId);
+
+                using var groupReader = await groupCmd.ExecuteReaderAsync();
+                if (await groupReader.ReadAsync())
+                {
+                    Console.WriteLine($"📋 Группа: {groupReader.GetString("GroupName")}");
+                    Console.WriteLine($"📚 Курс: {groupReader.GetString("CourseName")}");
+                    Console.WriteLine($"👨‍🏫 Преподаватель ID: {groupReader.GetInt32("TeacherId")}");
+                }
+                await groupReader.CloseAsync();
+
+                // 2. Студенты в группе
+                var studentsQuery = @"
+        SELECT COUNT(*) as StudentCount 
+        FROM GroupEnrollments 
+        WHERE GroupId = @GroupId AND Status = 'active'";
+
+                using var studentsCmd = new SqlCommand(studentsQuery, connection);
+                studentsCmd.Parameters.AddWithValue("@GroupId", groupId);
+                var studentCount = Convert.ToInt32(await studentsCmd.ExecuteScalarAsync());
+                Console.WriteLine($"🎓 Студентов в GroupEnrollments: {studentCount}");
+
+                // 3. Участники чата
+                var chatMembersQuery = @"
+        SELECT COUNT(*) as ChatMemberCount 
+        FROM GroupChatMembers 
+        WHERE GroupId = @GroupId";
+
+                using var chatCmd = new SqlCommand(chatMembersQuery, connection);
+                chatCmd.Parameters.AddWithValue("@GroupId", groupId);
+                var chatMemberCount = Convert.ToInt32(await chatCmd.ExecuteScalarAsync());
+                Console.WriteLine($"💬 Участников в GroupChatMembers: {chatMemberCount}");
+
+                // 4. Сообщения в чате
+                var messagesQuery = @"
+        SELECT COUNT(*) as MessageCount 
+        FROM GroupChatMessages 
+        WHERE GroupId = @GroupId";
+
+                using var messagesCmd = new SqlCommand(messagesQuery, connection);
+                messagesCmd.Parameters.AddWithValue("@GroupId", groupId);
+                var messageCount = Convert.ToInt32(await messagesCmd.ExecuteScalarAsync());
+                Console.WriteLine($"💌 Сообщений в GroupChatMessages: {messageCount}");
+
+                // 5. Детальный список участников чата
+                var detailedChatQuery = @"
+        SELECT gcm.UserId, u.Username 
+        FROM GroupChatMembers gcm
+        INNER JOIN Users u ON gcm.UserId = u.UserId
+        WHERE gcm.GroupId = @GroupId";
+
+                using var detailedCmd = new SqlCommand(detailedChatQuery, connection);
+                detailedCmd.Parameters.AddWithValue("@GroupId", groupId);
+
+                using var detailedReader = await detailedCmd.ExecuteReaderAsync();
+                Console.WriteLine($"👥 Детальный список участников чата:");
+                while (await detailedReader.ReadAsync())
+                {
+                    Console.WriteLine($"   - {detailedReader.GetString("Username")} (ID: {detailedReader.GetInt32("UserId")})");
+                }
+                await detailedReader.CloseAsync();
+
+                Console.WriteLine($"🔍 ===== ДИАГНОСТИКА ЗАВЕРШЕНА =====\n");
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка диагностики: {ex.Message}");
+            }
+        }
+
         public async Task<bool> AddStudentsToGroupAsync(int groupId, List<User> students)
         {
             try
             {
-                Console.WriteLine($"🔧 НАЧИНАЕМ добавление {students.Count} студентов в группу {groupId}");
+                Console.WriteLine($"🔧 УНИВЕРСАЛЬНЫЙ МЕТОД: добавляем {students.Count} студентов в группу {groupId}");
 
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
+
+
 
                 using var transaction = connection.BeginTransaction();
 
                 try
                 {
                     int addedCount = 0;
-                    int alreadyExistsCount = 0;
-                    int errorCount = 0;
 
                     foreach (var student in students)
                     {
                         Console.WriteLine($"👤 Обрабатываем студента: {student.Username} (ID: {student.UserId})");
 
-                        // Проверяем, не добавлен ли уже студент
-                        var checkQuery = @"
-                    SELECT COUNT(1) 
-                    FROM GroupEnrollments 
-                    WHERE GroupId = @GroupId 
-                    AND StudentId = @StudentId 
-                    AND Status = 'active'";
+                        // Шаг 1: Проверяем и добавляем в GroupEnrollments
+                        var enrollQuery = @"
+                IF NOT EXISTS (SELECT 1 FROM GroupEnrollments WHERE GroupId = @GroupId AND StudentId = @StudentId AND Status = 'active')
+                BEGIN
+                    INSERT INTO GroupEnrollments (GroupId, StudentId, Status, EnrolledDate)
+                    VALUES (@GroupId, @StudentId, 'active', GETDATE())
+                    PRINT '✅ Добавлен в GroupEnrollments'
+                END
+                ELSE
+                BEGIN
+                    PRINT 'ℹ️ Уже в GroupEnrollments'
+                END";
 
-                        using var checkCommand = new SqlCommand(checkQuery, connection, transaction);
-                        checkCommand.Parameters.AddWithValue("@GroupId", groupId);
-                        checkCommand.Parameters.AddWithValue("@StudentId", student.UserId);
+                        using var enrollCmd = new SqlCommand(enrollQuery, connection, transaction);
+                        enrollCmd.Parameters.AddWithValue("@GroupId", groupId);
+                        enrollCmd.Parameters.AddWithValue("@StudentId", student.UserId);
+                        var enrollResult = await enrollCmd.ExecuteNonQueryAsync();
+                        Console.WriteLine($"📝 GroupEnrollments результат: {enrollResult}");
 
-                        var exists = Convert.ToInt32(await checkCommand.ExecuteScalarAsync()) > 0;
+                        // Шаг 2: Проверяем и добавляем в GroupChatMembers
+                        var chatQuery = @"
+                IF NOT EXISTS (SELECT 1 FROM GroupChatMembers WHERE GroupId = @GroupId AND UserId = @UserId)
+                BEGIN
+                    INSERT INTO GroupChatMembers (GroupId, UserId)
+                    VALUES (@GroupId, @UserId)
+                    PRINT '✅ Добавлен в GroupChatMembers'
+                END
+                ELSE
+                BEGIN
+                    PRINT 'ℹ️ Уже в GroupChatMembers'
+                END";
 
-                        if (!exists)
-                        {
-                            var insertQuery = @"
-                        INSERT INTO GroupEnrollments (GroupId, StudentId, Status, EnrolledDate)
-                        VALUES (@GroupId, @StudentId, 'active', GETDATE())";
+                        using var chatCmd = new SqlCommand(chatQuery, connection, transaction);
+                        chatCmd.Parameters.AddWithValue("@GroupId", groupId);
+                        chatCmd.Parameters.AddWithValue("@UserId", student.UserId);
+                        var chatResult = await chatCmd.ExecuteNonQueryAsync();
+                        Console.WriteLine($"📝 GroupChatMembers результат: {chatResult}");
 
-                            using var command = new SqlCommand(insertQuery, connection, transaction);
-                            command.Parameters.AddWithValue("@GroupId", groupId);
-                            command.Parameters.AddWithValue("@StudentId", student.UserId);
+                        addedCount++;
+                        Console.WriteLine($"🎯 Студент {student.Username} полностью обработан");
+                    }
 
-                            var result = await command.ExecuteNonQueryAsync();
+                    // Шаг 3: Добавляем системное сообщение
+                    if (addedCount > 0)
+                    {
+                        var messageQuery = @"
+                INSERT INTO GroupChatMessages (GroupId, SenderId, MessageText, SentAt, IsRead, IsSystemMessage)
+                VALUES (@GroupId, 0, @MessageText, GETDATE(), 0, 1)";
 
-                            if (result > 0)
-                            {
-                                addedCount++;
-                                Console.WriteLine($"✅ Студент {student.Username} УСПЕШНО добавлен в группу {groupId}");
-                            }
-                            else
-                            {
-                                errorCount++;
-                                Console.WriteLine($"❌ Студент {student.Username} НЕ добавлен в группу {groupId}");
-                            }
-                        }
-                        else
-                        {
-                            alreadyExistsCount++;
-                            Console.WriteLine($"ℹ️ Студент {student.Username} УЖЕ в группе {groupId}");
-                        }
+                        using var msgCmd = new SqlCommand(messageQuery, connection, transaction);
+                        msgCmd.Parameters.AddWithValue("@GroupId", groupId);
+                        msgCmd.Parameters.AddWithValue("@MessageText", $"🎉 В группу добавлено {addedCount} новых студентов!");
+                        await msgCmd.ExecuteNonQueryAsync();
+                        Console.WriteLine($"📢 Системное сообщение добавлено");
                     }
 
                     transaction.Commit();
-
-                    Console.WriteLine($"📊 ИТОГ: добавлено {addedCount}, уже было {alreadyExistsCount}, ошибок {errorCount}");
-                    return addedCount > 0 || alreadyExistsCount > 0;
+                    Console.WriteLine($"✅ Транзакция завершена успешно. Добавлено: {addedCount} студентов");
+                    return addedCount > 0;
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    Console.WriteLine($"❌ ОШИБКА в транзакции: {ex.Message}");
+                    Console.WriteLine($"❌ ОШИБКА ТРАНЗАКЦИИ: {ex.Message}");
                     throw;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ КРИТИЧЕСКАЯ ошибка: {ex.Message}");
+                Console.WriteLine($"💥 КРИТИЧЕСКАЯ ОШИБКА: {ex.Message}");
+                Console.WriteLine($"🔍 StackTrace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -4321,7 +4678,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 await connection.OpenAsync();
 
                 var query = @"
-            UPDATE GroupChats 
+            UPDATE GroupChatMessages 
             SET IsRead = 1 
             WHERE GroupId = @GroupId 
             AND SenderId != @UserId 
@@ -4351,7 +4708,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
 
                 var query = @"
             SELECT COUNT(*) 
-            FROM GroupChats 
+            FROM GroupChatMessages 
             WHERE GroupId = @GroupId 
             AND SenderId != @UserId 
             AND IsRead = 0";
@@ -4383,29 +4740,29 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 await connection.OpenAsync();
 
                 var query = @"
-    SELECT 
+    SELECT DISTINCT
         sg.GroupId,
         sg.GroupName,
         c.CourseName,
         u.FirstName + ' ' + u.LastName as TeacherName,
-        (SELECT COUNT(*) FROM GroupChatMembers WHERE GroupId = sg.GroupId) as ParticipantCount,
+        (SELECT COUNT(DISTINCT UserId) FROM GroupChatMembers WHERE GroupId = sg.GroupId) as ParticipantCount,
         
         -- Последнее сообщение
-        (SELECT TOP 1 MessageText FROM GroupChats WHERE GroupId = sg.GroupId ORDER BY SentDate DESC) as LastMessage,
-        (SELECT TOP 1 SentDate FROM GroupChats WHERE GroupId = sg.GroupId ORDER BY SentDate DESC) as LastMessageDate,
+        (SELECT TOP 1 MessageText FROM GroupChatMessages WHERE GroupId = sg.GroupId ORDER BY SentAt DESC) as LastMessage,
+        (SELECT TOP 1 SentAt FROM GroupChatMessages WHERE GroupId = sg.GroupId ORDER BY SentAt DESC) as LastMessageDate,
         
-        -- Непрочитанные сообщения
-        (SELECT COUNT(*) FROM GroupChats 
+        -- Непрочитанные сообщения (только для текущего пользователя)
+        (SELECT COUNT(*) FROM GroupChatMessages 
          WHERE GroupId = sg.GroupId 
          AND SenderId != @StudentId 
          AND IsRead = 0) as UnreadCount
 
     FROM StudyGroups sg
-    INNER JOIN GroupChatMembers gcm ON sg.GroupId = gcm.GroupId  -- ИЗМЕНИТЕ ЭТУ СТРОКУ
+    INNER JOIN GroupChatMembers gcm ON sg.GroupId = gcm.GroupId
     INNER JOIN Courses c ON sg.CourseId = c.CourseId
     INNER JOIN Users u ON sg.TeacherId = u.UserId
     
-    WHERE gcm.UserId = @StudentId  -- И ИЗМЕНИТЕ ЭТУ
+    WHERE gcm.UserId = @StudentId
         AND sg.IsActive = 1
         
     ORDER BY LastMessageDate DESC";
@@ -4476,7 +4833,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 Console.WriteLine($"👥 Участников в чате: {membersCount}");
 
                 // 3. Проверяем сообщения в чате
-                var messagesQuery = "SELECT COUNT(*) FROM GroupChats WHERE GroupId = @GroupId";
+                var messagesQuery = "SELECT COUNT(*) FROM GroupChatMessages WHERE GroupId = @GroupId";
                 using var messagesCmd = new SqlCommand(messagesQuery, connection);
                 messagesCmd.Parameters.AddWithValue("@GroupId", groupId);
                 var messagesCount = Convert.ToInt32(await messagesCmd.ExecuteScalarAsync());
@@ -4497,41 +4854,201 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
             }
         }
 
-        public async Task<bool> SimpleAddToGroupChat(int groupId, int userId)
+        // Для учителя: получение количества непрочитанных сообщений в группах
+        public async Task<Dictionary<int, int>> GetTeacherUnreadMessagesCountAsync(int teacherId)
         {
+            var unreadCounts = new Dictionary<int, int>();
             try
             {
-                Console.WriteLine($"🔧 ПРОСТОЕ добавление пользователя {userId} в чат группы {groupId}");
-
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // Самый простой INSERT
                 var query = @"
-            IF NOT EXISTS (SELECT 1 FROM GroupChatMembers WHERE GroupId = @GroupId AND UserId = @UserId)
-            BEGIN
-                INSERT INTO GroupChatMembers (GroupId, UserId) 
-                VALUES (@GroupId, @UserId)
-                PRINT '✅ Добавлен в чат'
-            END
-            ELSE
-            BEGIN
-                PRINT 'ℹ️ Уже в чате'
-            END";
+            SELECT sg.GroupId, COUNT(gcm.MessageId) as UnreadCount
+            FROM StudyGroups sg
+            LEFT JOIN GroupChatMessages gcm ON sg.GroupId = gcm.GroupId 
+                AND gcm.SenderId != @TeacherId 
+                AND gcm.IsRead = 0
+            WHERE sg.TeacherId = @TeacherId AND sg.IsActive = 1
+            GROUP BY sg.GroupId";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var groupId = reader.GetInt32("GroupId");
+                    var unreadCount = reader.GetInt32("UnreadCount");
+                    unreadCounts[groupId] = unreadCount;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка получения непрочитанных сообщений учителя: {ex.Message}");
+            }
+            return unreadCounts;
+        }
+
+        // Для студента: получение количества непрочитанных сообщений во всех чатах
+        public async Task<Dictionary<(int ChatId, string ChatType), int>> GetStudentUnreadMessagesCountAsync(int studentId)
+        {
+            var unreadCounts = new Dictionary<(int, string), int>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Групповые чаты
+                var groupQuery = @"
+            SELECT sg.GroupId, COUNT(gcm.MessageId) as UnreadCount
+            FROM StudyGroups sg
+            INNER JOIN GroupChatMembers gcmem ON sg.GroupId = gcmem.GroupId
+            LEFT JOIN GroupChatMessages gcm ON sg.GroupId = gcm.GroupId 
+                AND gcm.SenderId != @StudentId 
+                AND gcm.IsRead = 0
+            WHERE gcmem.UserId = @StudentId AND sg.IsActive = 1
+            GROUP BY sg.GroupId";
+
+                using var groupCommand = new SqlCommand(groupQuery, connection);
+                groupCommand.Parameters.AddWithValue("@StudentId", studentId);
+
+                using var groupReader = await groupCommand.ExecuteReaderAsync();
+                while (await groupReader.ReadAsync())
+                {
+                    var groupId = groupReader.GetInt32("GroupId");
+                    var unreadCount = groupReader.GetInt32("UnreadCount");
+                    unreadCounts[(groupId, "group")] = unreadCount;
+                }
+                await groupReader.CloseAsync();
+
+                // Приватные чаты с учителями
+                var privateQuery = @"
+            SELECT DISTINCT pc.SenderId as TeacherId, COUNT(pc.MessageId) as UnreadCount
+            FROM PrivateChats pc
+            WHERE pc.ReceiverId = @StudentId 
+                AND pc.IsRead = 0
+            GROUP BY pc.SenderId";
+
+                using var privateCommand = new SqlCommand(privateQuery, connection);
+                privateCommand.Parameters.AddWithValue("@StudentId", studentId);
+
+                using var privateReader = await privateCommand.ExecuteReaderAsync();
+                while (await privateReader.ReadAsync())
+                {
+                    var teacherId = privateReader.GetInt32("TeacherId");
+                    var unreadCount = privateReader.GetInt32("UnreadCount");
+                    unreadCounts[(teacherId, "teacher")] = unreadCount;
+                }
+                await privateReader.CloseAsync();
+
+                // Чат поддержки
+                var supportQuery = @"
+            SELECT COUNT(*) as UnreadCount
+            FROM SupportChats 
+            WHERE UserId = @StudentId 
+                AND SenderId != @StudentId 
+                AND IsRead = 0";
+
+                using var supportCommand = new SqlCommand(supportQuery, connection);
+                supportCommand.Parameters.AddWithValue("@StudentId", studentId);
+
+                var supportUnread = Convert.ToInt32(await supportCommand.ExecuteScalarAsync());
+                unreadCounts[(1, "support")] = supportUnread; // ID 1 для поддержки
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка получения непрочитанных сообщений студента: {ex.Message}");
+            }
+            return unreadCounts;
+        }
+
+        // Метод для отметки сообщений как прочитанных в групповом чате
+        public async Task<bool> MarkGroupMessagesAsReadAsync(int groupId, int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE GroupChatMessages 
+            SET IsRead = 1 
+            WHERE GroupId = @GroupId 
+            AND SenderId != @UserId 
+            AND IsRead = 0";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@GroupId", groupId);
                 command.Parameters.AddWithValue("@UserId", userId);
 
                 var result = await command.ExecuteNonQueryAsync();
-                Console.WriteLine($"📝 Результат: {result} строк изменено");
-
-                return result > 0;
+                Console.WriteLine($"✅ Отмечено {result} сообщений как прочитанных в группе {groupId}");
+                return result >= 0;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"💥 КРИТИЧЕСКАЯ ОШИБКА: {ex.Message}");
-                Console.WriteLine($"🔍 StackTrace: {ex.StackTrace}");
+                Console.WriteLine($"❌ Ошибка отметки групповых сообщений: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Метод для отметки приватных сообщений как прочитанных
+        public async Task<bool> MarkPrivateMessagesAsReadAsync(int userId, int teacherId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE PrivateChats 
+            SET IsRead = 1 
+            WHERE SenderId = @TeacherId 
+            AND ReceiverId = @UserId 
+            AND IsRead = 0";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@TeacherId", teacherId);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                Console.WriteLine($"✅ Отмечено {result} приватных сообщений как прочитанных");
+                return result >= 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка отметки приватных сообщений: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Метод для отметки сообщений поддержки как прочитанных
+        public async Task<bool> MarkSupportMessagesAsReadAsync(int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            UPDATE SupportChats 
+            SET IsRead = 1 
+            WHERE UserId = @UserId 
+            AND SenderId != @UserId 
+            AND IsRead = 0";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                Console.WriteLine($"✅ Отмечено {result} сообщений поддержки как прочитанных");
+                return result >= 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка отметки сообщений поддержки: {ex.Message}");
                 return false;
             }
         }
@@ -4648,7 +5165,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
 
                     var messagesQuery = @"
                 SELECT COUNT(*) as MessageCount
-                FROM GroupChats 
+                FROM GroupChatMessages 
                 WHERE GroupId = @GroupId";
 
                     using var messagesCommand = new SqlCommand(messagesQuery, connection);
@@ -4667,87 +5184,6 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
             }
         }
 
-
-        public async Task<bool> MarkGroupMessagesAsReadAsync(int groupId, int userId)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-            UPDATE GroupChats 
-            SET IsRead = 1 
-            WHERE GroupId = @GroupId 
-            AND SenderId != @UserId 
-            AND IsRead = 0";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@GroupId", groupId);
-                command.Parameters.AddWithValue("@UserId", userId);
-
-                return await command.ExecuteNonQueryAsync() > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка отметки групповых сообщений: {ex.Message}");
-                return false;
-            }
-        }
-
-        public async Task<bool> MarkPrivateMessagesAsReadAsync(int userId, int teacherId)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-            UPDATE PrivateChats 
-            SET IsRead = 1 
-            WHERE SenderId = @TeacherId 
-            AND ReceiverId = @UserId 
-            AND IsRead = 0";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@TeacherId", teacherId);
-                command.Parameters.AddWithValue("@UserId", userId);
-
-                return await command.ExecuteNonQueryAsync() > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка отметки приватных сообщений: {ex.Message}");
-                return false;
-            }
-        }
-
-        public async Task<bool> MarkSupportMessagesAsReadAsync(int userId)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-            UPDATE SupportChats 
-            SET IsRead = 1 
-            WHERE UserId = @UserId 
-            AND SenderId != @UserId 
-            AND IsRead = 0";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@UserId", userId);
-
-                return await command.ExecuteNonQueryAsync() > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка отметки сообщений поддержки: {ex.Message}");
-                return false;
-            }
-        }
-
         public async Task<bool> SendSupportMessageAsync(int userId, string message)
         {
             try
@@ -4756,7 +5192,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 await connection.OpenAsync();
 
                 var query = @"
-            INSERT INTO SupportChats (UserId, SenderId, MessageText, SentDate, IsRead)
+            INSERT INTO SupportChats (UserId, SenderId, MessageText, SentAt, IsRead)
             VALUES (@UserId, @UserId, @MessageText, GETDATE(), 1)";
 
                 using var command = new SqlCommand(query, connection);
@@ -4770,6 +5206,51 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 Console.WriteLine($"Ошибка отправки сообщения в поддержку: {ex.Message}");
                 return false;
             }
+        }
+
+        public async Task<List<ChatMessage>> GetSupportChatMessagesAsync(int userId)
+        {
+            var messages = new List<ChatMessage>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT MessageId, UserId, SenderId, MessageText, SentAt, IsRead,
+                   CASE 
+                       WHEN SenderId = @UserId THEN u.FirstName + ' ' + u.LastName
+                       ELSE 'Поддержка'
+                   END as SenderName,
+                   ISNULL(u.AvatarUrl, 'default_avatar.png') as SenderAvatar
+            FROM SupportChats sc
+            LEFT JOIN Users u ON sc.SenderId = u.UserId
+            WHERE sc.UserId = @UserId
+            ORDER BY SentAt ASC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    messages.Add(new ChatMessage
+                    {
+                        MessageId = reader.GetInt32("MessageId"),
+                        SenderId = reader.GetInt32("SenderId"),
+                        MessageText = reader.GetString("MessageText"),
+                        SentAt = reader.GetDateTime("SentAt"),
+                        IsRead = reader.GetBoolean("IsRead"),
+                        SenderName = reader.GetString("SenderName"),
+                        SenderAvatar = reader.GetString("SenderAvatar")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки сообщений поддержки: {ex.Message}");
+            }
+            return messages;
         }
 
         public async Task<List<User>> GetAvailableStudentsForGroupAsync(int courseId)
@@ -4880,7 +5361,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                     var welcomeMessage = $"🎉 В группу добавлено {students.Count} новых студентов! Добро пожаловать в общий чат!";
 
                     var messageQuery = @"
-                INSERT INTO GroupChats (GroupId, SenderId, MessageText, SentDate, IsRead, IsSystemMessage)
+                INSERT INTO GroupChatMessages (GroupId, SenderId, MessageText, SentAt, IsRead, IsSystemMessage)
                 VALUES (@GroupId, 0, @MessageText, GETDATE(), 0, 1)";
 
                     using var messageCommand = new SqlCommand(messageQuery, connection);
@@ -5009,34 +5490,6 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
         }
 
 
-        public async Task<bool> IsStudentInGroupAsync(int studentId, int groupId)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-        SELECT COUNT(*) 
-        FROM GroupEnrollments 
-        WHERE StudentId = @StudentId 
-        AND GroupId = @GroupId 
-        AND Status = 'active'";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@StudentId", studentId);
-                command.Parameters.AddWithValue("@GroupId", groupId);
-
-                var result = await command.ExecuteScalarAsync();
-                return Convert.ToInt32(result) > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка проверки членства студента: {ex.Message}");
-                return false;
-            }
-        }
-
         public async Task<bool> CheckStudentGroupMembership(int studentId)
         {
             try
@@ -5112,7 +5565,8 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
         {
             try
             {
-
+                // Сначала создаем таблицу участников чата
+                await InitializeChatMembersTable();
               
                 Console.WriteLine("🛠️ Создаем недостающие таблицы для чатов...");
 
@@ -5121,24 +5575,24 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
 
                 // Таблица для групповых чатов
                 var createGroupChatsTable = @"
-    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'GroupChats')
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'GroupChatMessages')
     BEGIN
-        CREATE TABLE GroupChats (
+        CREATE TABLE GroupChatMessages (
             MessageId INT PRIMARY KEY IDENTITY(1,1),
             GroupId INT NOT NULL FOREIGN KEY REFERENCES StudyGroups(GroupId),
             SenderId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
             MessageText NVARCHAR(MAX) NOT NULL,
-            SentDate DATETIME2 DEFAULT GETDATE(),
+            SentAt DATETIME2 DEFAULT GETDATE(),
             IsRead BIT DEFAULT 0,
             IsSystemMessage BIT DEFAULT 0
         );
-        CREATE INDEX IX_GroupChats_GroupId ON GroupChats(GroupId);
-        CREATE INDEX IX_GroupChats_SentDate ON GroupChats(SentDate);
-        PRINT '✅ Таблица GroupChats создана';
+        CREATE INDEX IX_GroupChatMessages_GroupId ON GroupChatMessages(GroupId);
+        CREATE INDEX IX_GroupChatMessages_SentAt ON GroupChatMessages(SentAt);
+        PRINT '✅ Таблица GroupChatMessages создана';
     END
     ELSE
     BEGIN
-        PRINT '✅ Таблица GroupChats уже существует';
+        PRINT '✅ Таблица GroupChatMessages уже существует';
     END";
                 // Таблица для приватных чатов
                 var createPrivateChatsTable = @"
@@ -5149,7 +5603,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 SenderId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
                 ReceiverId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
                 MessageText NVARCHAR(MAX) NOT NULL,
-                SentDate DATETIME2 DEFAULT GETDATE(),
+                SentAt DATETIME2 DEFAULT GETDATE(),
                 IsRead BIT DEFAULT 0
             );
             PRINT '✅ Таблица PrivateChats создана';
@@ -5164,7 +5618,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 UserId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
                 SenderId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
                 MessageText NVARCHAR(MAX) NOT NULL,
-                SentDate DATETIME2 DEFAULT GETDATE(),
+                SentAt DATETIME2 DEFAULT GETDATE(),
                 IsRead BIT DEFAULT 0
             );
             PRINT '✅ Таблица SupportChats создана';
@@ -5345,6 +5799,100 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
             }
         }
 
+
+        // Проверка состоит ли студент в группе
+        public async Task<bool> IsStudentInGroupAsync(int studentId, int groupId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT COUNT(*) 
+            FROM GroupEnrollments 
+            WHERE StudentId = @StudentId 
+            AND GroupId = @GroupId 
+            AND Status = 'active'";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@StudentId", studentId);
+                command.Parameters.AddWithValue("@GroupId", groupId);
+
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result) > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка проверки членства студента: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Простое добавление в группу
+        public async Task<bool> EnrollStudentToGroupAsync(int groupId, int studentId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            IF NOT EXISTS (SELECT 1 FROM GroupEnrollments WHERE GroupId=@GroupId AND StudentId=@StudentId AND Status='active')
+            BEGIN
+                INSERT INTO GroupEnrollments (GroupId, StudentId, EnrollmentDate, Status) 
+                VALUES (@GroupId, @StudentId, GETDATE(), 'active')
+            END";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@GroupId", groupId);
+                command.Parameters.AddWithValue("@StudentId", studentId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                Console.WriteLine($"📝 Добавление в группу: {result} строк изменено");
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка добавления студента в группу: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Простое добавление в чат
+        public async Task<bool> SimpleAddToGroupChat(int groupId, int userId)
+        {
+            try
+            {
+                Console.WriteLine($"🔧 Добавляем пользователя {userId} в чат группы {groupId}");
+
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Сначала убедимся, что таблица существует
+                await InitializeChatMembersTable();
+
+                var query = @"
+            IF NOT EXISTS (SELECT 1 FROM GroupChatMembers WHERE GroupId = @GroupId AND UserId = @UserId)
+            BEGIN
+                INSERT INTO GroupChatMembers (GroupId, UserId) 
+                VALUES (@GroupId, @UserId)
+            END";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@GroupId", groupId);
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                Console.WriteLine($"💬 Добавление в чат: {result} строк изменено");
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 Ошибка добавления в чат: {ex.Message}");
+                return false;
+            }
+        }
         public async Task<List<GroupChatMember>> GetGroupChatMembersAsync(int groupId)
         {
             var members = new List<GroupChatMember>();

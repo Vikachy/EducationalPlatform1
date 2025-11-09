@@ -45,7 +45,33 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button btn && btn.CommandParameter is string url)
             {
-                await Launcher.OpenAsync(new Uri(url));
+                try
+                {
+                    if (string.IsNullOrEmpty(url))
+                    {
+                        await DisplayAlert("Ошибка", "Файл не найден", "OK");
+                        return;
+                    }
+
+                    // Если это локальный путь, открываем файл напрямую
+                    if (System.IO.File.Exists(url))
+                    {
+                        await Launcher.OpenAsync(new Uri(url));
+                    }
+                    else if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                    {
+                        // Если это URL, открываем через браузер
+                        await Launcher.OpenAsync(uri);
+                    }
+                    else
+                    {
+                        await DisplayAlert("Ошибка", "Неверный путь к файлу", "OK");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось открыть файл: {ex.Message}", "OK");
+                }
             }
         }
 
@@ -59,9 +85,10 @@ namespace EducationalPlatform.Views
                     return;
                 }
                 string scoreStr = await DisplayPromptAsync("Оценка", "Введите балл (0-100)", initialValue: sub.TeacherScore?.ToString() ?? "0");
-                if (int.TryParse(scoreStr, out int score))
+                if (int.TryParse(scoreStr, out int score) && score >= 0 && score <= 100)
                 {
-                    string? comment = await DisplayPromptAsync("Комментарий", "Замечания преподавателя", initialValue: sub.TeacherComment);
+                    string? comment = await DisplayPromptAsync("Комментарий", "Замечания преподавателя", initialValue: sub.TeacherComment ?? "");
+                    // Используем версию с teacherId для отслеживания, кто оценил
                     bool ok = await _dbService.GradeContestSubmissionAsync(sub.SubmissionId, _currentUser.UserId, score, comment ?? "");
                     if (ok)
                     {
@@ -72,6 +99,10 @@ namespace EducationalPlatform.Views
                     {
                         await DisplayAlert("Ошибка", "Не удалось сохранить оценку", "OK");
                     }
+                }
+                else if (!string.IsNullOrEmpty(scoreStr))
+                {
+                    await DisplayAlert("Ошибка", "Оценка должна быть числом от 0 до 100", "OK");
                 }
             }
         }

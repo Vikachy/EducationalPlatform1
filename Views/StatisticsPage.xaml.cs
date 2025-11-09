@@ -11,7 +11,7 @@ namespace EducationalPlatform.Views
         private DatabaseService _dbService;
         private SettingsService _settingsService;
 
-        // �������������� ������
+        // Приватные поля для свойств
         private int _totalCourses;
         public int TotalCourses
         {
@@ -53,8 +53,11 @@ namespace EducationalPlatform.Views
             {
                 _averageScore = value;
                 OnPropertyChanged(nameof(AverageScore));
+                OnPropertyChanged(nameof(AverageScoreFormatted));
             }
         }
+
+        public string AverageScoreFormatted => $"{_averageScore:F1}";
 
         private double _completionRate;
         public double CompletionRate
@@ -119,7 +122,9 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // ��������� ���������� �� ���� ������
+                IsBusy = true;
+
+                // Загружаем статистику из базы данных
                 var stats = await _dbService.GetUserStatisticsAsync(_currentUser.UserId);
 
                 if (stats != null)
@@ -129,22 +134,42 @@ namespace EducationalPlatform.Views
                     TotalTimeSpent = stats.TotalTimeSpent ?? 0;
                     AverageScore = stats.AverageScore ?? 0.0;
                     CompletionRate = stats.CompletionRate ?? 0.0;
-                    CurrentStreak = stats.CurrentStreak ?? 0; // ����������
+                    CurrentStreak = stats.CurrentStreak ?? 0;
                     LongestStreak = stats.LongestStreak ?? 0;
-                    TotalDays = stats.TotalDays ?? 0; // ����������
+                    TotalDays = stats.TotalDays ?? 0;
+                }
+                else
+                {
+                    // Если статистика не найдена, устанавливаем значения по умолчанию
+                    TotalCourses = 0;
+                    CompletedCourses = 0;
+                    TotalTimeSpent = 0;
+                    AverageScore = 0.0;
+                    CompletionRate = 0.0;
+                    CurrentStreak = 0;
+                    LongestStreak = 0;
+                    TotalDays = 0;
                 }
 
-                // ��������� ��������� ����������
+                // Загружаем последние достижения
                 var achievements = await _dbService.GetRecentAchievementsAsync(_currentUser.UserId, 5);
                 RecentAchievements.Clear();
-                foreach (var achievement in achievements)
+                if (achievements != null)
                 {
-                    RecentAchievements.Add(achievement);
+                    foreach (var achievement in achievements)
+                    {
+                        RecentAchievements.Add(achievement);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("������", $"�� ������� ��������� ����������: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка", $"Не удалось загрузить статистику: {ex.Message}", "OK");
+                Console.WriteLine($"Ошибка загрузки статистики: {ex}");
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 

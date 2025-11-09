@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
              x:Class="EducationalPlatform.Views.ContestResultsPage"
              x:Name="Page"
              Title="Работы конкурса">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
@@ -19,7 +26,17 @@
                     <Border Margin="10" Padding="12" BackgroundColor="#F8F9FA" Stroke="#DDD" StrokeThickness="1" StrokeShape="RoundRectangle 10">
                         <VerticalStackLayout Spacing="6">
                             <Label Text="{Binding ProjectName}" FontAttributes="Bold" />
-                            <Label Text="{Binding Student.FirstName}" FontSize="12" TextColor="#666" />
+                            <Label FontSize="12" TextColor="#666">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="Студент: {0} {1}">
+                                        <Binding Path="Student.FirstName" />
+                                        <Binding Path="Student.LastName" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                            <Label Text="{Binding Description}" FontSize="11" TextColor="#888" LineBreakMode="WordWrap" IsVisible="{Binding Description, Converter={StaticResource NotNullConverter}}" />
+                            <Label Text="{Binding TeacherScore, StringFormat='Оценка: {0}'}" FontSize="12" FontAttributes="Bold" TextColor="{DynamicResource PrimaryColor}" IsVisible="{Binding TeacherScore, Converter={StaticResource GreaterThanZeroConverter}}" />
+                            <Label Text="{Binding TeacherComment}" FontSize="11" TextColor="#666" LineBreakMode="WordWrap" IsVisible="{Binding TeacherComment, Converter={StaticResource NotNullConverter}}" />
                             <Label Text="{Binding SubmissionDate, StringFormat='📅 {0:dd.MM.yyyy HH:mm}'}" FontSize="11" TextColor="#666" />
                             <HorizontalStackLayout Spacing="8">
                                 <Button Text="Скачать" Clicked="OnDownloadClicked" CommandParameter="{Binding ProjectFileUrl}" />

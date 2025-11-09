@@ -23,5 +23,9 @@ namespace EducationalPlatform.Models
         // Для отображения времени
         public string SentDate => SentAt.ToString("HH:mm");
         public string SentDateFull => SentAt.ToString("dd.MM.yyyy HH:mm");
+         public string? FilePath { get; set; }
+       
     }
+   
 }
+

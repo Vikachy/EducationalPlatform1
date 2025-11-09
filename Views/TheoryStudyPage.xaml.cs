@@ -12,7 +12,7 @@ namespace EducationalPlatform.Views
         private readonly FileService _fileService;
         private readonly int _lessonId;
         private int _courseId;
-        private List<CourseLesson> _allLessons;
+        private List<CourseLesson> _allLessons = new();
         private int _currentLessonIndex;
 
         public ObservableCollection<AttachmentViewModel> Attachments { get; set; } = new();
@@ -34,16 +34,16 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Показываем индикатор загрузки
-                ContentLabel.Text = "Загрузка...";
+                // Р—Р°РіСЂСѓР¶Р°РµРј СЃРѕРґРµСЂР¶РёРјРѕРµ СѓСЂРѕРєР°
+                ContentLabel.Text = "Р—Р°РіСЂСѓР·РєР°...";
 
-                // Получаем курс урока
+                // РџРѕР»СѓС‡Р°РµРј ID РєСѓСЂСЃР°
                 var courseId = await _dbService.GetCourseIdByLessonAsync(_lessonId);
                 if (courseId.HasValue)
                 {
                     _courseId = courseId.Value;
 
-                    // Загружаем все уроки курса
+                    // Р—Р°РіСЂСѓР¶Р°РµРј РІСЃРµ СѓСЂРѕРєРё РєСѓСЂСЃР°
                     _allLessons = await _dbService.GetCourseLessonsAsync(_courseId);
                     var currentLesson = _allLessons.FirstOrDefault(l => l.LessonId == _lessonId);
 
@@ -51,11 +51,11 @@ namespace EducationalPlatform.Views
                     {
                         TitleLabel.Text = currentLesson.Title;
 
-                        // Получаем полное содержание урока
+                        // Р—Р°РіСЂСѓР¶Р°РµРј С‚РµРєСЃС‚РѕРІРѕРµ СЃРѕРґРµСЂР¶РёРјРѕРµ СѓСЂРѕРєР°
                         var lessonContent = await _dbService.GetLessonContentAsync(_lessonId);
-                        ContentLabel.Text = lessonContent ?? "Содержание урока пока не добавлено.";
+                        ContentLabel.Text = lessonContent ?? "РЎРѕРґРµСЂР¶РёРјРѕРµ СѓСЂРѕРєР° РЅРµ РЅР°Р№РґРµРЅРѕ.";
 
-                        // Загружаем прикрепленные файлы
+                        // Р—Р°РіСЂСѓР¶Р°РµРј РїСЂРёРєСЂРµРїР»РµРЅРЅС‹Рµ С„Р°Р№Р»С‹
                         await LoadAttachments();
 
                         _currentLessonIndex = _allLessons.FindIndex(l => l.LessonId == _lessonId);
@@ -63,18 +63,18 @@ namespace EducationalPlatform.Views
                     }
                     else
                     {
-                        ContentLabel.Text = "Урок не найден.";
+                        ContentLabel.Text = "РЈСЂРѕРє РЅРµ РЅР°Р№РґРµРЅ.";
                     }
                 }
                 else
                 {
-                    ContentLabel.Text = "Курс не найден.";
+                    ContentLabel.Text = "РЈСЂРѕРє РЅРµ РЅР°Р№РґРµРЅ.";
                 }
             }
             catch (Exception ex)
             {
-                ContentLabel.Text = $"Ошибка загрузки: {ex.Message}";
-                await DisplayAlert("Ошибка", $"Не удалось загрузить теорию: {ex.Message}", "OK");
+                ContentLabel.Text = $"РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё: {ex.Message}";
+                await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ СѓСЂРѕРє: {ex.Message}", "OK");
             }
         }
 
@@ -107,41 +107,21 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки вложений: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РІР»РѕР¶РµРЅРёР№: {ex.Message}");
                 AttachmentsSection.IsVisible = false;
             }
         }
 
-        // Временная реализация до добавления метода в DatabaseService
+        // РџРѕР»СѓС‡Р°РµРј РІР»РѕР¶РµРЅРёСЏ РёР· Р±Р°Р·С‹ РґР°РЅРЅС‹С…
         private async Task<List<LessonAttachment>> GetLessonAttachmentsAsync(int lessonId)
         {
             try
             {
-                // TODO: Замените на реальный вызов к БД когда будет готов метод
-                // return await _dbService.GetLessonAttachmentsAsync(lessonId);
-
-                // Временная заглушка с тестовыми данными
-                return new List<LessonAttachment>
-                {
-                    new LessonAttachment
-                    {
-                        FileName = "lecture_notes.pdf",
-                        FileSize = "3.2 MB",
-                        FilePath = "https://example.com/files/lecture_notes.pdf", // Используйте реальные URL
-                        FileType = ".pdf"
-                    },
-                    new LessonAttachment
-                    {
-                        FileName = "presentation.pptx",
-                        FileSize = "5.1 MB",
-                        FilePath = "https://example.com/files/presentation.pptx",
-                        FileType = ".pptx"
-                    }
-                };
+                return await _dbService.GetLessonAttachmentsAsync(lessonId);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки вложений урока: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РІР»РѕР¶РµРЅРёР№ СѓСЂРѕРєР°: {ex.Message}");
                 return new List<LessonAttachment>();
             }
         }
@@ -160,28 +140,48 @@ namespace EducationalPlatform.Views
                 {
                     if (string.IsNullOrEmpty(attachment.FilePath))
                     {
-                        await DisplayAlert("Ошибка", "Файл не найден", "OK");
+                        await DisplayAlert("РћС€РёР±РєР°", "Р¤Р°Р№Р» РЅРµ РЅР°Р№РґРµРЅ", "OK");
                         return;
                     }
 
-                    // Показываем индикатор загрузки
-                    await DisplayAlert("Информация", $"Начинаем загрузку: {attachment.FileName}", "OK");
+                    // РџРѕРєР°Р·С‹РІР°РµРј РѕРїС†РёРё: СЃРєР°С‡Р°С‚СЊ РёР»Рё РѕС‚РєСЂС‹С‚СЊ
+                    var action = await DisplayActionSheet(
+                        $"Р¤Р°Р№Р»: {attachment.FileName}",
+                        "РћС‚РјРµРЅР°",
+                        null,
+                        "рџ“Ґ РЎРєР°С‡Р°С‚СЊ",
+                        "рџ“Ѓ РћС‚РєСЂС‹С‚СЊ");
 
-                    // Используем FileService для скачивания файла
-                    var success = await _fileService.DownloadAndOpenFileAsync(attachment.FilePath, attachment.FileName);
-
-                    if (success)
+                    if (action == "рџ“Ґ РЎРєР°С‡Р°С‚СЊ")
                     {
-                        await DisplayAlert("Успех", $"Файл {attachment.FileName} успешно скачан и открыт", "OK");
+                        // РЎРєР°С‡РёРІР°РµРј С„Р°Р№Р»
+                        var success = await _fileService.DownloadFileFromUrlAsync(attachment.FilePath, attachment.FileName);
+                        if (success)
+                        {
+                            await DisplayAlert("РЈСЃРїРµС…", $"Р¤Р°Р№Р» {attachment.FileName} СЃРєР°С‡Р°РЅ", "OK");
+                        }
+                        else
+                        {
+                            await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ СЃРєР°С‡Р°С‚СЊ С„Р°Р№Р» {attachment.FileName}", "OK");
+                        }
                     }
-                    else
+                    else if (action == "рџ“Ѓ РћС‚РєСЂС‹С‚СЊ")
                     {
-                        await DisplayAlert("Ошибка", $"Не удалось скачать файл {attachment.FileName}", "OK");
+                        // РћС‚РєСЂС‹РІР°РµРј С„Р°Р№Р»
+                        var success = await _fileService.DownloadAndOpenFileAsync(attachment.FilePath, attachment.FileName);
+                        if (success)
+                        {
+                            await DisplayAlert("РЈСЃРїРµС…", $"Р¤Р°Р№Р» {attachment.FileName} РѕС‚РєСЂС‹С‚", "OK");
+                        }
+                        else
+                        {
+                            await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р» {attachment.FileName}", "OK");
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Ошибка", $"Не удалось открыть файл: {ex.Message}", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РѕР±СЂР°Р±РѕС‚Р°С‚СЊ С„Р°Р№Р»: {ex.Message}", "OK");
                 }
             }
         }
@@ -202,7 +202,7 @@ namespace EducationalPlatform.Views
             {
                 var nextLesson = _allLessons[_currentLessonIndex + 1];
 
-                // В зависимости от типа следующего урока переходим на соответствующую страницу
+                // Р’ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° СЃР»РµРґСѓСЋС‰РµРіРѕ СѓСЂРѕРєР° РїРµСЂРµС…РѕРґРёРј РЅР° СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰СѓСЋ СЃС‚СЂР°РЅРёС†Сѓ
                 if (nextLesson.LessonType == "theory")
                 {
                     await Navigation.PushAsync(new TheoryStudyPage(_currentUser, _dbService, _settingsService, nextLesson.LessonId));
@@ -220,9 +220,9 @@ namespace EducationalPlatform.Views
             }
             else
             {
-                // Курс завершен
+                // РљСѓСЂСЃ Р·Р°РІРµСЂС€РµРЅ
                 await _dbService.UpdateProgressAsync(_currentUser.UserId, _courseId, "completed");
-                await DisplayAlert("Поздравляем!", "Вы завершили изучение этого раздела!", "OK");
+                await DisplayAlert("РџРѕР·РґСЂР°РІР»СЏРµРј!", "Р’С‹ Р·Р°РІРµСЂС€РёР»Рё РёР·СѓС‡РµРЅРёРµ РєСѓСЂСЃР°!", "OK");
                 await Navigation.PopAsync();
             }
         }
@@ -235,7 +235,7 @@ namespace EducationalPlatform.Views
         protected override async void OnDisappearing()
         {
             base.OnDisappearing();
-            // Обновляем прогресс при выходе
+            // РћР±РЅРѕРІР»СЏРµРј РїСЂРѕРіСЂРµСЃСЃ РґР»СЏ РєСѓСЂСЃР°
             if (_courseId > 0)
             {
                 await _dbService.UpdateProgressAsync(_currentUser.UserId, _courseId, "in_progress");

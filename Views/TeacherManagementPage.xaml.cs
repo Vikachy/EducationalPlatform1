@@ -303,12 +303,12 @@ namespace EducationalPlatform.Views
     // Конвертеры (только уникальные для этой страницы)
     public class PublishedToTextConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            return (bool)value ? "Опубликован" : "Черновик";
+            return value is bool published && published ? "Опубликован" : "Черновик";
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }
@@ -316,12 +316,12 @@ namespace EducationalPlatform.Views
 
     public class PublishButtonTextConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            return (bool)value ? "Снять" : "Опубликовать";
+            return value is bool published && published ? "Снять" : "Опубликовать";
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }
@@ -329,12 +329,12 @@ namespace EducationalPlatform.Views
 
     public class PublishButtonColorConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            return (bool)value ? Color.FromArgb("#FF9800") : Color.FromArgb("#4CAF50");
+            return value is bool published && published ? Color.FromArgb("#FF9800") : Color.FromArgb("#4CAF50");
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

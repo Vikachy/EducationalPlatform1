@@ -35,23 +35,35 @@ namespace EducationalPlatform.Views
 
         private void UpdateCurrentSettingsDisplay()
         {
-            CurrentLanguageLabel.Text = $"Текущий: {(_settingsService.CurrentLanguage == "ru" ? "Русский" : "English")}";
-            CurrentThemeLabel.Text = $"Текущая: {(_settingsService.CurrentTheme == "standard" ? "Стандартная" : "Для подростков")}";
+            var localizationService = new LocalizationService();
+            localizationService.SetLanguage(_settingsService.CurrentLanguage);
+            localizationService.SetTeenStyle(_settingsService.CurrentTheme == "teen");
+            
+            CurrentLanguageLabel.Text = $"{localizationService.GetText("language")}: {(_settingsService.CurrentLanguage == "ru" ? "Русский" : "English")}";
+            CurrentThemeLabel.Text = $"{localizationService.GetText("theme")}: {(_settingsService.CurrentTheme == "standard" ? localizationService.GetText("standard") : localizationService.GetText("teen"))}";
 
             // Подсвечиваем активную тему
             StandardThemePreview.StrokeThickness = _settingsService.CurrentTheme == "standard" ? 3 : 1;
             TeenThemePreview.StrokeThickness = _settingsService.CurrentTheme == "teen" ? 3 : 1;
         }
 
-        private void OnLanguageChanged(object sender, EventArgs e)
+        private async void OnLanguageChanged(object sender, EventArgs e)
         {
             if (LanguagePicker.SelectedIndex != -1)
             {
                 string language = LanguagePicker.SelectedIndex == 0 ? "ru" : "en";
                 _settingsService.ApplyLanguage(language);
+                
+                // Сохраняем язык в БД для синхронизации между устройствами
+                await _dbService.SaveUserSettingsAsync(_currentUser.UserId, language, _settingsService.CurrentTheme);
+                
                 UpdateCurrentSettingsDisplay();
 
-                DisplayAlert("Успех", "Язык изменен! ✨", "OK");
+                // Используем локализованное сообщение
+                var localizationService = new LocalizationService();
+                localizationService.SetLanguage(language);
+                var successMsg = localizationService.GetText("operation_success");
+                await DisplayAlert(successMsg, localizationService.GetText("language") + " " + localizationService.GetText("data_updated"), "OK");
             }
         }
 

@@ -13,8 +13,8 @@ namespace EducationalPlatform.Views
         public ObservableCollection<ExtendedAnswerOptionModel> AnswerOptions { get; set; } = new();
 
         public CreateQuestionPage(ObservableCollection<ExtendedQuestionCreationModel> questions,
-                                ExtendedQuestionCreationModel question = null,
-                                Action<ExtendedQuestionCreationModel> onQuestionSaved = null)
+                                ExtendedQuestionCreationModel? question = null,
+                                Action<ExtendedQuestionCreationModel>? onQuestionSaved = null)
         {
             InitializeComponent();
             _questions = questions;
@@ -79,7 +79,7 @@ namespace EducationalPlatform.Views
             {
                 if (string.IsNullOrWhiteSpace(QuestionEditor.Text))
                 {
-                    await DisplayAlert("Ошибка", "Введите текст вопроса", "OK");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ", "OK");
                     return;
                 }
 
@@ -87,13 +87,13 @@ namespace EducationalPlatform.Views
 
                 if ((questionType == "single" || questionType == "multiple") && !AnswerOptions.Any())
                 {
-                    await DisplayAlert("Ошибка", "Добавьте варианты ответов", "OK");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ", "OK");
                     return;
                 }
 
                 if ((questionType == "single" || questionType == "multiple") && !AnswerOptions.Any(a => a.IsCorrect))
                 {
-                    await DisplayAlert("Ошибка", "Отметьте хотя бы один правильный ответ", "OK");
+                    await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ", "OK");
                     return;
                 }
 
@@ -129,14 +129,14 @@ namespace EducationalPlatform.Views
                     _questions.Add(question);
                 }
 
-                // Вызываем callback если он есть
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ callback пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ
                 _onQuestionSaved?.Invoke(question);
 
                 await Navigation.PopModalAsync();
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка сохранения: {ex.Message}", "OK");
+                await DisplayAlert("пїЅпїЅпїЅпїЅпїЅпїЅ", $"пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {ex.Message}", "OK");
             }
         }
 

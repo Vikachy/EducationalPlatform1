@@ -62,53 +62,75 @@ namespace EducationalPlatform.Views
 
                 IsBusy = true;
 
+                // ДИАГНОСТИКА: Проверим состояние до добавления
+                Console.WriteLine($"🔍 ДИАГНОСТИКА ПЕРЕД ДОБАВЛЕНИЕМ:");
+                await _dbService.DebugGroupState(_groupId);
 
-                // 1. Сохраняем студентов в группу
-                Console.WriteLine($"🔄 Сохраняем студентов в группу {_groupId}...");
-                bool success = await _dbService.AddStudentsToGroupAsync(_groupId, selectedStudents);
-
-                Console.WriteLine($"📝 Результат сохранения в группу: {success}");
-
-                if (success)
+                // ПРОСТОЙ МЕТОД - добавляем каждого студента отдельно
+                int successCount = 0;
+                foreach (var student in selectedStudents)
                 {
-                    // 2. Добавляем студентов в таблицу участников чата
-                    Console.WriteLine($"🔄 Добавляем студентов в участники чата группы {_groupId}...");
-                    bool chatSuccess = await _dbService.AddStudentsToGroupChatAsync(_groupId, selectedStudents);
-                    Console.WriteLine($"📝 Результат добавления в чат: {chatSuccess}");
+                    Console.WriteLine($"\n🔄 Добавляем студента {student.Username} (ID: {student.UserId})...");
 
-                    // 3. Отправляем системное сообщение
+                    // Проверяем, состоит ли студент уже в группе
+                    bool isInGroup = await _dbService.IsStudentInGroupAsync(student.UserId, _groupId);
+                    Console.WriteLine($"📊 Студент уже в группе: {isInGroup}");
+
+                    if (!isInGroup)
+                    {
+                        // Добавляем в группу
+                        bool enrollResult = await _dbService.EnrollStudentToGroupAsync(_groupId, student.UserId);
+                        Console.WriteLine($"📝 Результат добавления в группу: {enrollResult}");
+
+                        if (enrollResult)
+                        {
+                            // Добавляем в чат
+                            bool chatResult = await _dbService.SimpleAddToGroupChat(_groupId, student.UserId);
+                            Console.WriteLine($"💬 Результат добавления в чат: {chatResult}");
+
+                            if (chatResult)
+                            {
+                                successCount++;
+                                Console.WriteLine($"✅ Студент {student.Username} успешно добавлен");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"ℹ️ Студент {student.Username} уже в группе, пропускаем");
+                        successCount++;
+                    }
+                }
+
+                // Отправляем системное сообщение если кто-то добавлен
+                if (successCount > 0)
+                {
                     await _dbService.AddSystemMessageToGroupAsync(_groupId,
-                        $"В группу добавлено {selectedStudents.Count} новых студентов");
+                        $"🎉 В группу добавлено {successCount} новых студентов!");
+                }
 
-                    // 4. Обновляем UI через MainThread
-                    MainThread.BeginInvokeOnMainThread(async () =>
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    if (successCount > 0)
                     {
                         StudentsSelected?.Invoke(this, selectedStudents);
-
-                        string message = chatSuccess ?
-                            $"✅ Успешно добавлено {selectedStudents.Count} студентов в группу и чат!" :
-                            $"⚠️ Добавлено {selectedStudents.Count} студентов в группу (возможны проблемы с чатом)";
-
-                        await DisplayAlert("Успех", message, "OK");
-
-                        // Закрываем страницу
+                        await DisplayAlert("Успех",
+                            $"✅ Добавлено {successCount} студентов в группу и чат!", "OK");
                         await Navigation.PopAsync();
-                    });
-                }
-                else
-                {
-                    MainThread.BeginInvokeOnMainThread(async () =>
+                    }
+                    else
                     {
-                        await DisplayAlert("Ошибка", "Не удалось добавить студентов в группу", "OK");
-                    });
-                }
+                        await DisplayAlert("Ошибка",
+                            "Не удалось добавить студентов. Проверьте консоль для деталей.", "OK");
+                    }
+                });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"💥 КРИТИЧЕСКАЯ ОШИБКА: {ex.Message}");
+                Console.WriteLine($"💥 ОШИБКА В UI: {ex.Message}");
                 Console.WriteLine($"🔍 StackTrace: {ex.StackTrace}");
 
-                MainThread.BeginInvokeOnMainThread(async () =>
+                await MainThread.InvokeOnMainThreadAsync(async () =>
                 {
                     await DisplayAlert("Ошибка", $"Ошибка при сохранении: {ex.Message}", "OK");
                 });
@@ -168,7 +190,7 @@ namespace EducationalPlatform.Views
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
         {

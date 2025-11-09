@@ -35,10 +35,39 @@ namespace EducationalPlatform.Models
             }
         }
 
-        // Визуальные свойства
-        public string ButtonText { get; set; } = "Купить";
-        public Color ButtonColor { get; set; } = Color.FromArgb("#FF9800");
-        public Color BorderColor { get; set; } = Color.FromArgb("#DDD");
+        // Визуальные свойства с уведомлениями
+        private string _buttonText = "Buy";
+        public string ButtonText 
+        { 
+            get => _buttonText;
+            set
+            {
+                _buttonText = value;
+                OnPropertyChanged(nameof(ButtonText));
+            }
+        }
+
+        private Color _buttonColor = Color.FromArgb("#FF9800");
+        public Color ButtonColor 
+        { 
+            get => _buttonColor;
+            set
+            {
+                _buttonColor = value;
+                OnPropertyChanged(nameof(ButtonColor));
+            }
+        }
+
+        private Color _borderColor = Color.FromArgb("#DDD");
+        public Color BorderColor 
+        { 
+            get => _borderColor;
+            set
+            {
+                _borderColor = value;
+                OnPropertyChanged(nameof(BorderColor));
+            }
+        }
         public Color PreviewColor { get; set; } = Color.FromArgb("#669BBC");
         public Color PreviewPrimaryColor { get; set; } = Color.FromArgb("#669BBC");
         public Color PreviewSecondaryColor { get; set; } = Color.FromArgb("#003049");

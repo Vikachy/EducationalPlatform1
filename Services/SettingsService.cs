@@ -96,6 +96,11 @@ namespace EducationalPlatform.Services
         {
             // Обновляем тексты на всех страницах через события
             UpdateAllPagesText(language);
+            
+            // Обновляем LocalizationService
+            var localizationService = new LocalizationService();
+            localizationService.SetLanguage(language);
+            localizationService.SetTeenStyle(CurrentTheme == "teen");
         }
 
         private void UpdateNavigationBar(string theme)
@@ -105,7 +110,13 @@ namespace EducationalPlatform.Services
 
         private void UpdateAllPagesText(string language)
         {
-            // Логика обновления текстов будет в отдельных страницах
+            // Обновляем LocalizationService для всех страниц
+            var localizationService = new LocalizationService();
+            localizationService.SetLanguage(language);
+            localizationService.SetTeenStyle(CurrentTheme == "teen");
+            
+            // Генерируем событие для обновления всех страниц
+            GlobalLanguageChanged?.Invoke(this, language);
         }
 
         // Методы для получения локализованных строк

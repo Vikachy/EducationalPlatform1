@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Storage;
+using System.Net.Http;
 
 namespace EducationalPlatform.Services
 {
@@ -132,7 +133,7 @@ namespace EducationalPlatform.Services
             };
         }
 
-        // Добавьте этот метод в ваш FileService класс
+        // Скачивание и открытие файла
         public async Task<bool> DownloadAndOpenFileAsync(string fileUrl, string fileName)
         {
             try
@@ -140,17 +141,24 @@ namespace EducationalPlatform.Services
                 if (string.IsNullOrEmpty(fileUrl))
                     return false;
 
-                // Для веб-URL пытаемся открыть в браузере
+                // Для веб-URL скачиваем файл
                 if (fileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    await Launcher.OpenAsync(new Uri(fileUrl));
-                    return true;
+                    return await DownloadFileFromUrlAsync(fileUrl, fileName);
                 }
 
                 // Для локальных файлов
                 if (File.Exists(fileUrl))
                 {
-                    await Launcher.OpenAsync(new Uri(fileUrl));
+                    // Копируем файл в папку загрузок
+                    var downloadPath = Path.Combine(FileSystem.CacheDirectory, fileName);
+                    File.Copy(fileUrl, downloadPath, true);
+                    
+                    // Открываем файл
+                    await Launcher.OpenAsync(new OpenFileRequest
+                    {
+                        File = new ReadOnlyFile(downloadPath)
+                    });
                     return true;
                 }
 
@@ -159,6 +167,39 @@ namespace EducationalPlatform.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка открытия файла: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Скачивание файла из URL
+        public async Task<bool> DownloadFileFromUrlAsync(string fileUrl, string fileName)
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                var response = await httpClient.GetAsync(fileUrl);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                    var downloadPath = Path.Combine(_documentsFolder, fileName);
+                    
+                    await File.WriteAllBytesAsync(downloadPath, fileBytes);
+                    
+                    // Открываем файл
+                    await Launcher.OpenAsync(new OpenFileRequest
+                    {
+                        File = new ReadOnlyFile(downloadPath)
+                    });
+                    
+                    return true;
+                }
+                
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка скачивания файла: {ex.Message}");
                 return false;
             }
         }

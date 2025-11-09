@@ -11,10 +11,10 @@ namespace EducationalPlatform.Views
         private readonly DatabaseService _dbService;
         private readonly SettingsService _settingsService;
         private readonly FileService _fileService;
-        private System.Timers.Timer _refreshTimer;
+        private System.Timers.Timer? _refreshTimer;
 
         public ObservableCollection<GroupChatMessage> Messages { get; } = new ObservableCollection<GroupChatMessage>();
-        public string Title => $"Чат: {_group.GroupName}";
+        public new string Title => $"Chat: {_group.GroupName}";
 
         // Поддерживаемые форматы файлов
         private readonly FilePickerFileType _supportedFileTypes = new(
@@ -105,7 +105,9 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить сообщения: {ex.Message}", "OK");
+                var localizationService = new LocalizationService();
+                localizationService.SetLanguage(_settingsService?.CurrentLanguage ?? "en");
+                await DisplayAlert(localizationService.GetText("error"), $"Failed to load messages: {ex.Message}", "OK");
             }
         }
 
@@ -190,6 +192,7 @@ namespace EducationalPlatform.Views
             try
             {
                 bool success = await _dbService.SendGroupChatMessageAsync(_group.GroupId, _user.UserId, messageText);
+                
                 if (success)
                 {
                     MessageEntry.Text = string.Empty;
@@ -197,12 +200,16 @@ namespace EducationalPlatform.Views
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось отправить сообщение", "OK");
+                    var localizationService = new LocalizationService();
+                    localizationService.SetLanguage(_settingsService?.CurrentLanguage ?? "en");
+                    await DisplayAlert(localizationService.GetText("error"), localizationService.GetText("message_send_failed") ?? "Failed to send message", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка отправки: {ex.Message}", "OK");
+                var localizationService = new LocalizationService();
+                localizationService.SetLanguage(_settingsService?.CurrentLanguage ?? "en");
+                await DisplayAlert(localizationService.GetText("error"), $"{localizationService.GetText("error")}: {ex.Message}", "OK");
             }
         }
 
@@ -293,27 +300,45 @@ namespace EducationalPlatform.Views
             {
                 try
                 {
+                    Console.WriteLine($"🎯 Тап по файловому сообщению: {message.FileName}");
+
                     var fileData = ParseFileMessage(message.MessageText);
+                    Console.WriteLine($"📁 Данные файла: {fileData.FileName}, путь: {fileData.FilePath}");
+
+                    // Проверяем существование файла
+                    bool fileExists = File.Exists(fileData.FilePath);
+                    Console.WriteLine($"📂 Файл существует: {fileExists}");
 
                     var action = await DisplayActionSheet(
-                        $"Файл: {fileData.FileName}",
-                        "Отмена",
+                        $"File: {fileData.FileName} ({fileData.FileSize})",
+                        "Cancel",
                         null,
-                        "📥 Скачать",
-                        "📁 Открыть");
+                        "📥 Download file",
+                        "📁 Open file",
+                        "🔍 Show file info");
 
-                    if (action == "📥 Скачать")
+                    if (action == "📥 Download file")
                     {
                         await DownloadFile(fileData.FilePath, fileData.FileName);
                     }
-                    else if (action == "📁 Открыть")
+                    else if (action == "📁 Open file")
                     {
                         await OpenFile(fileData.FilePath);
+                    }
+                    else if (action == "🔍 Show file info")
+                    {
+                        await DisplayAlert("File Info",
+                            $"Name: {fileData.FileName}\n" +
+                            $"Type: {fileData.FileType}\n" +
+                            $"Size: {fileData.FileSize}\n" +
+                            $"Path: {fileData.FilePath}\n" +
+                            $"Exists: {fileExists}", "OK");
                     }
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Ошибка", $"Не удалось обработать файл: {ex.Message}", "OK");
+                    Console.WriteLine($"❌ Ошибка обработки файла: {ex.Message}");
+                    await DisplayAlert("Error", $"Failed to process file: {ex.Message}", "OK");
                 }
             }
         }

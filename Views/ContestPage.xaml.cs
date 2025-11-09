@@ -144,6 +144,12 @@ namespace EducationalPlatform.Views
             base.OnAppearing();
             LoadContests();
         }
+
+        // Принудительное обновление UI после изменений
+        public void RefreshContests()
+        {
+            LoadContests();
+        }
     }
 }
 

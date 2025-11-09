@@ -9,7 +9,7 @@ namespace EducationalPlatform.Converters
 {
     public class ChatTypeToColorConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is string chatType)
             {
@@ -24,7 +24,7 @@ namespace EducationalPlatform.Converters
             return Color.FromArgb("#9E9E9E");
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }
@@ -32,7 +32,7 @@ namespace EducationalPlatform.Converters
 
     public class ChatTypeToIconConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is string chatType)
             {
@@ -47,7 +47,7 @@ namespace EducationalPlatform.Converters
             return "💬";
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

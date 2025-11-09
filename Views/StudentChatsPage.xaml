@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.StudentChatsPage"
-             Title="Мои чаты"
+             Title="My Chats"
              xmlns:converters="clr-namespace:EducationalPlatform.Converters"
              xmlns:models="clr-namespace:EducationalPlatform.Models"
              BackgroundColor="{DynamicResource BackgroundColor}">
@@ -75,7 +75,7 @@
                     <VerticalStackLayout>
                         <Label x:Name="ChatTitleLabel" Text="Выберите чат" FontSize="18"
                                FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
-                        <Label x:Name="ChatSubtitleLabel" Text="Начните общение" FontSize="12" TextColor="White" HorizontalOptions="Center" />
+                        <Label x:Name="ChatSubtitleLabel" Text="Start conversation" FontSize="12" TextColor="White" HorizontalOptions="Center" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -83,7 +83,7 @@
                                 x:Name="MessagesCollectionView"
                                 ItemsSource="{Binding Messages}"
                                 SelectionMode="None"
-                                EmptyView="Сообщений пока нет">
+                                EmptyView="Нет еще сообщение">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:ChatMessage">
                             <Grid Padding="10,5" ColumnDefinitions="*,*">
@@ -114,6 +114,9 @@
                                                     <Label Text="{Binding FileName}" FontSize="13" FontAttributes="Bold" LineBreakMode="TailTruncation" />
                                                     <Label Text="{Binding FileSize}" FontSize="11" TextColor="Gray" />
                                                 </VerticalStackLayout>
+                                                <Grid.GestureRecognizers>
+                                                    <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
+                                                </Grid.GestureRecognizers>
                                             </Grid>
                                         </VerticalStackLayout>
                                         <Label Grid.Row="1" Grid.Column="1" Text="{Binding SentAt, StringFormat='{0:HH:mm}'}" FontSize="10" TextColor="Gray" HorizontalOptions="End" VerticalOptions="End" />
@@ -137,6 +140,9 @@
                                                     <Label Text="{Binding FileName}" FontSize="13" FontAttributes="Bold" LineBreakMode="TailTruncation" />
                                                     <Label Text="{Binding FileSize}" FontSize="11" TextColor="#666666" />
                                                 </VerticalStackLayout>
+                                                <Grid.GestureRecognizers>
+                                                    <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
+                                                </Grid.GestureRecognizers>
                                             </Grid>
                                         </VerticalStackLayout>
                                         <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" HorizontalOptions="End" Spacing="4" VerticalOptions="End">
@@ -164,7 +170,7 @@
             <!-- Заглушка при отсутствии выбранного чата -->
             <VerticalStackLayout Grid.Column="1" IsVisible="{Binding HasActiveChat, Converter={StaticResource InverseBoolConverter}}" HorizontalOptions="Center" VerticalOptions="Center" Spacing="20">
                 <Label Text="💬" FontSize="80" HorizontalOptions="Center" />
-                <Label Text="Выберите чат для общения" FontSize="18" HorizontalOptions="Center" TextColor="Gray" />
+                <Label Text="Выберите чат, чтобы начать разговор" FontSize="18" HorizontalOptions="Center" TextColor="Gray" />
             </VerticalStackLayout>
         </Grid>
     </Grid>

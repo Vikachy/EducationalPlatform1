@@ -16,12 +16,13 @@ namespace EducationalPlatform.Views
 
         public ObservableCollection<TeacherGroupChat> Groups { get; set; }
 
-        public ObservableCollection<GroupChatMessage> Messages { get; set; }
-
         // Правая панель чата (встроенная)
         private StudyGroup? _activeGroup;
         private readonly ObservableCollection<GroupChatMessage> _messages = new();
         private Timer? _refreshTimer;
+
+        // Словарь для хранения непрочитанных сообщений
+        private Dictionary<int, int> _unreadMessagesCount = new();
 
         // Поддерживаемые форматы файлов
         private readonly FilePickerFileType _supportedFileTypes = new(
@@ -45,11 +46,7 @@ namespace EducationalPlatform.Views
             LoadTeacherGroups();
 
             // Привязываем сообщения к CollectionView
-            var messagesCollection = this.FindByName<CollectionView>("MessagesCollectionView");
-            if (messagesCollection != null)
-            {
-                messagesCollection.ItemsSource = _messages;
-            }
+            MessagesCollectionView.ItemsSource = _messages;
         }
 
         protected override void OnAppearing()
@@ -72,7 +69,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось открыть управление группами: {ex.Message}", "OK");
+                await DisplayAlert("Error", $"Failed to open group management: {ex.Message}", "OK");
             }
         }
 
@@ -80,25 +77,32 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                // Загружаем группы и непрочитанные сообщения
                 var groups = await _dbService.GetTeacherStudyGroupsAsync(_currentUser.UserId);
+                _unreadMessagesCount = await _dbService.GetTeacherUnreadMessagesCountAsync(_currentUser.UserId);
+
                 Groups.Clear();
                 foreach (var group in groups)
                 {
                     var courseName = await GetCourseNameForGroup(group.GroupId);
+                    var unreadCount = _unreadMessagesCount.ContainsKey(group.GroupId) ? _unreadMessagesCount[group.GroupId] : 0;
 
                     Groups.Add(new TeacherGroupChat
                     {
                         GroupId = group.GroupId,
                         GroupName = group.GroupName,
-                        CourseName = courseName ?? "Без курса",
+                        CourseName = courseName ?? "No Course",
                         StudentCount = group.StudentCount,
-                        IsActive = group.IsActive
+                        IsActive = group.IsActive,
+                        UnreadMessages = unreadCount
                     });
                 }
+
+                Console.WriteLine($"📊 Загружено {Groups.Count} групп с непрочитанными сообщениями");
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить группы: {ex.Message}", "OK");
+                await DisplayAlert("Error", $"Failed to load groups: {ex.Message}", "OK");
             }
         }
 
@@ -141,23 +145,97 @@ namespace EducationalPlatform.Views
                         IsActive = group.IsActive
                     };
 
-                    var header = this.FindByName<Label>("ChatGroupNameLabel");
-                    var online = this.FindByName<Label>("ChatOnlineLabel");
-                    if (header != null) header.Text = group.GroupName;
-                    if (online != null) online.Text = $"Онлайн: {group.StudentCount}";
+                    ChatGroupNameLabel.Text = group.GroupName;
+                    ChatOnlineLabel.Text = $"Online: {group.StudentCount}";
 
                     _messages.Clear();
                     await LoadMessages();
+
+                    // Отмечаем сообщения как прочитанные при открытии чата
+                    await MarkMessagesAsRead();
+
+                    // Обновляем счетчик непрочитанных в UI
+                    await UpdateUnreadCount(group.GroupId);
 
                     _refreshTimer?.Dispose();
                     _refreshTimer = new Timer(async _ => await RefreshMessages(), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Ошибка", $"Не удалось открыть чат: {ex.Message}", "OK");
+                    await DisplayAlert("Error", $"Failed to open chat: {ex.Message}", "OK");
                 }
             }
             ((CollectionView)sender).SelectedItem = null;
+        }
+
+        private async Task UpdateUnreadCount(int groupId)
+        {
+            try
+            {
+                // Обновляем счетчик в локальном словаре
+                if (_unreadMessagesCount.ContainsKey(groupId))
+                {
+                    _unreadMessagesCount[groupId] = 0;
+                }
+
+                // Обновляем отображение в списке групп
+                var group = Groups.FirstOrDefault(g => g.GroupId == groupId);
+                if (group != null)
+                {
+                    group.UnreadMessages = 0;
+
+                    // Принудительно обновляем отображение
+                    GroupsCollectionView.ItemsSource = null;
+                    GroupsCollectionView.ItemsSource = Groups;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка обновления счетчика: {ex.Message}");
+            }
+        }
+
+        private async Task<string?> GetUserAvatarAsync(int userId)
+        {
+            try
+            {
+                if (_dbService != null)
+                {
+                    var avatarPath = await _dbService.GetUserAvatarAsync(userId);
+
+                    if (!string.IsNullOrEmpty(avatarPath))
+                    {
+                        if (File.Exists(avatarPath))
+                        {
+                            Console.WriteLine($"✅ Аватар найден для пользователя {userId}: {avatarPath}");
+                            return avatarPath;
+                        }
+                        else
+                        {
+                            var localPath = Path.Combine(FileSystem.AppDataDirectory, avatarPath);
+                            if (File.Exists(localPath))
+                            {
+                                Console.WriteLine($"✅ Аватар найден по локальному пути: {localPath}");
+                                return localPath;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"❌ Аватар не найден по пути: {avatarPath}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"ℹ️ Аватар не установлен для пользователя {userId}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка загрузки аватара пользователя {userId}: {ex.Message}");
+            }
+
+            return "default_avatar.png";
         }
 
         private async Task LoadMessages()
@@ -167,42 +245,48 @@ namespace EducationalPlatform.Views
             {
                 var list = await _dbService.GetGroupChatMessagesAsync(_activeGroup.GroupId);
                 _messages.Clear();
+
                 foreach (var m in list)
                 {
                     m.IsMyMessage = m.SenderId == _currentUser.UserId;
 
-                    // Загружаем аватар
-                    if (m.IsMyMessage)
+                    // Загружаем аватар для ВСЕХ сообщений
+                    if (string.IsNullOrEmpty(m.SenderAvatar) || m.SenderAvatar == "default_avatar.png")
                     {
-                        m.SenderAvatar = _currentUser.AvatarUrl ?? "default_avatar.png";
-                    }
-                    else if (string.IsNullOrEmpty(m.SenderAvatar))
-                    {
-                        m.SenderAvatar = "default_avatar.png";
+                        m.SenderAvatar = await GetUserAvatarAsync(m.SenderId);
                     }
 
                     // Парсим файловые сообщения
                     if (m.MessageText?.StartsWith("[FILE]") == true)
                     {
+                        Console.WriteLine($"📨 Найдено файловое сообщение: {m.MessageText}");
                         m.IsFileMessage = true;
                         var fileData = ParseFileMessage(m.MessageText);
                         m.FileName = fileData.FileName;
-                        m.FileType = fileData.FileType;
+                        m.FileType = fileData.FileType?.ToLower();
                         m.FileSize = fileData.FileSize;
+                        m.FilePath = fileData.FilePath;
+
+                        Console.WriteLine($"📄 Файл: {m.FileName}, тип: {m.FileType}, путь: {m.FilePath}");
+                    }
+                    else
+                    {
+                        m.IsFileMessage = false;
                     }
 
                     _messages.Add(m);
                 }
 
-                var messagesCollection = this.FindByName<CollectionView>("MessagesCollectionView");
-                if (messagesCollection != null && _messages.Count > 0)
+                if (_messages.Count > 0)
                 {
-                    messagesCollection.ScrollTo(_messages[^1], position: ScrollToPosition.End, animate: true);
+                    MessagesCollectionView.ScrollTo(_messages[^1], position: ScrollToPosition.End, animate: true);
                 }
+
+                Console.WriteLine($"✅ Загружено {_messages.Count} сообщений, файловых: {_messages.Count(m => m.IsFileMessage)}");
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка загрузки сообщений: {ex.Message}", "OK");
+                Console.WriteLine($"❌ Ошибка загрузки сообщений: {ex.Message}");
             }
         }
 
@@ -219,14 +303,10 @@ namespace EducationalPlatform.Views
                 {
                     m.IsMyMessage = m.SenderId == _currentUser.UserId;
 
-                    // Загружаем аватар
-                    if (m.IsMyMessage)
+                    // Загружаем аватар для новых сообщений
+                    if (string.IsNullOrEmpty(m.SenderAvatar) || m.SenderAvatar == "default_avatar.png")
                     {
-                        m.SenderAvatar = _currentUser.AvatarUrl ?? "default_avatar.png";
-                    }
-                    else if (string.IsNullOrEmpty(m.SenderAvatar))
-                    {
-                        m.SenderAvatar = "default_avatar.png";
+                        m.SenderAvatar = await GetUserAvatarAsync(m.SenderId);
                     }
 
                     // Парсим файловые сообщения
@@ -235,8 +315,9 @@ namespace EducationalPlatform.Views
                         m.IsFileMessage = true;
                         var fileData = ParseFileMessage(m.MessageText);
                         m.FileName = fileData.FileName;
-                        m.FileType = fileData.FileType;
+                        m.FileType = fileData.FileType?.ToLower();
                         m.FileSize = fileData.FileSize;
+                        m.FilePath = fileData.FilePath;
                     }
 
                     _messages.Add(m);
@@ -244,16 +325,45 @@ namespace EducationalPlatform.Views
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    var messagesCollection = this.FindByName<CollectionView>("MessagesCollectionView");
-                    if (messagesCollection != null && _messages.Count > 0)
-                        messagesCollection.ScrollTo(_messages[^1], position: ScrollToPosition.End, animate: true);
+                    if (_messages.Count > 0)
+                        MessagesCollectionView.ScrollTo(_messages[^1], position: ScrollToPosition.End, animate: true);
                 });
 
-                await MarkMessagesAsRead();
+                // Обновляем счетчик непрочитанных при получении новых сообщений
+                await RefreshUnreadCounts();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка обновления сообщений: {ex.Message}");
+            }
+        }
+
+        private async Task RefreshUnreadCounts()
+        {
+            try
+            {
+                _unreadMessagesCount = await _dbService.GetTeacherUnreadMessagesCountAsync(_currentUser.UserId);
+
+                // Обновляем все группы
+                foreach (var group in Groups)
+                {
+                    if (_unreadMessagesCount.ContainsKey(group.GroupId))
+                    {
+                        group.UnreadMessages = _unreadMessagesCount[group.GroupId];
+                    }
+                    else
+                    {
+                        group.UnreadMessages = 0;
+                    }
+                }
+
+                // Принудительно обновляем отображение
+                GroupsCollectionView.ItemsSource = null;
+                GroupsCollectionView.ItemsSource = Groups;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка обновления счетчиков: {ex.Message}");
             }
         }
 
@@ -263,7 +373,11 @@ namespace EducationalPlatform.Views
 
             try
             {
-                await _dbService.MarkMessagesAsReadAsync(_activeGroup.GroupId, _currentUser.UserId);
+                var success = await _dbService.MarkGroupMessagesAsReadAsync(_activeGroup.GroupId, _currentUser.UserId);
+                if (success)
+                {
+                    Console.WriteLine($"✅ Все сообщения в группе {_activeGroup.GroupId} отмечены как прочитанные");
+                }
             }
             catch (Exception ex)
             {
@@ -284,8 +398,7 @@ namespace EducationalPlatform.Views
         private async Task SendMessage()
         {
             if (_activeGroup == null) return;
-            var entry = this.FindByName<Entry>("MessageEntry");
-            var text = entry?.Text?.Trim();
+            var text = MessageEntry.Text?.Trim();
             if (string.IsNullOrEmpty(text)) return;
 
             try
@@ -293,17 +406,17 @@ namespace EducationalPlatform.Views
                 var ok = await _dbService.SendGroupChatMessageAsync(_activeGroup.GroupId, _currentUser.UserId, text);
                 if (ok)
                 {
-                    if (entry != null) entry.Text = string.Empty;
+                    MessageEntry.Text = string.Empty;
                     await LoadMessages();
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось отправить сообщение", "OK");
+                    await DisplayAlert("Error", "Failed to send message", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка отправки: {ex.Message}", "OK");
+                await DisplayAlert("Error", $"Error sending: {ex.Message}", "OK");
             }
         }
 
@@ -314,7 +427,7 @@ namespace EducationalPlatform.Views
             {
                 var result = await FilePicker.Default.PickAsync(new PickOptions
                 {
-                    PickerTitle = "Выберите файл для отправки",
+                    PickerTitle = "Select file to send",
                     FileTypes = _supportedFileTypes
                 });
 
@@ -325,7 +438,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось прикрепить файл: {ex.Message}", "OK");
+                await DisplayAlert("Error", $"Failed to attach file: {ex.Message}", "OK");
             }
         }
 
@@ -347,18 +460,18 @@ namespace EducationalPlatform.Views
                     var ok = await _dbService.SendGroupChatMessageAsync(_activeGroup.GroupId, _currentUser.UserId, message);
                     if (ok)
                     {
-                        await DisplayAlert("Успех", "Файл успешно отправлен", "OK");
+                        await DisplayAlert("Success", "File sent successfully", "OK");
                         await LoadMessages();
                     }
                     else
                     {
-                        await DisplayAlert("Ошибка", "Не удалось отправить файл", "OK");
+                        await DisplayAlert("Error", "Failed to send file", "OK");
                     }
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка отправки файла: {ex.Message}", "OK");
+                await DisplayAlert("Error", $"Error sending file: {ex.Message}", "OK");
             }
         }
 
@@ -366,18 +479,27 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                Console.WriteLine($"🔍 Парсим файловое сообщение: {messageText}");
+
                 var parts = messageText.Split('|');
                 if (parts.Length >= 5 && parts[0] == "[FILE]")
                 {
-                    return (parts[1], parts[2], parts[4], parts[3]);
+                    var filePath = parts[1];
+                    var fileName = parts[2];
+                    var fileSize = parts[3];
+                    var fileType = parts[4];
+
+                    Console.WriteLine($"📁 Распарсено: {fileName}, тип: {fileType}, размер: {fileSize}, путь: {filePath}");
+
+                    return (filePath, fileName, fileType, fileSize);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка парсинга файлового сообщения: {ex.Message}");
+                Console.WriteLine($"❌ Ошибка парсинга файлового сообщения: {ex.Message}");
             }
 
-            return (string.Empty, "Неизвестный файл", "", "");
+            return (string.Empty, "Unknown file", "", "");
         }
 
         private string FormatFileSize(long bytes)
@@ -395,26 +517,27 @@ namespace EducationalPlatform.Views
                 try
                 {
                     var fileData = ParseFileMessage(message.MessageText);
+                    Console.WriteLine($"🎯 Тап по файловому сообщению: {message.FileName}");
 
                     var action = await DisplayActionSheet(
-                        $"Файл: {fileData.FileName}",
-                        "Отмена",
+                        $"File: {fileData.FileName} ({fileData.FileSize})",
+                        "Cancel",
                         null,
-                        "📥 Скачать файл",
-                        "📁 Открыть файл");
+                        "📥 Download file",
+                        "📁 Open file");
 
-                    if (action == "📥 Скачать файл")
+                    if (action == "📥 Download file")
                     {
                         await DownloadFile(fileData.FilePath, fileData.FileName);
                     }
-                    else if (action == "📁 Открыть файл")
+                    else if (action == "📁 Open file")
                     {
                         await OpenFile(fileData.FilePath);
                     }
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Ошибка", $"Не удалось обработать файл: {ex.Message}", "OK");
+                    await DisplayAlert("Error", $"Failed to process file: {ex.Message}", "OK");
                 }
             }
         }
@@ -423,19 +546,29 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                Console.WriteLine($"📥 Начинаем скачивание: {fileName}");
+                Console.WriteLine($"📁 Исходный путь: {filePath}");
+
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                {
+                    await DisplayAlert("Error", "File not found or path is empty", "OK");
+                    return;
+                }
+
                 var success = await _fileService.DownloadFileAsync(filePath, fileName);
                 if (success)
                 {
-                    await DisplayAlert("Успех", $"Файл {fileName} скачан", "OK");
+                    await DisplayAlert("Success", $"File {fileName} downloaded", "OK");
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось скачать файл", "OK");
+                    await DisplayAlert("Error", "Failed to download file", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка при скачивании: {ex.Message}", "OK");
+                Console.WriteLine($"❌ Ошибка скачивания: {ex.Message}");
+                await DisplayAlert("Error", $"Download error: {ex.Message}", "OK");
             }
         }
 
@@ -443,6 +576,14 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                Console.WriteLine($"📂 Открываем файл: {filePath}");
+
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                {
+                    await DisplayAlert("Error", "File not found", "OK");
+                    return;
+                }
+
                 await Launcher.Default.OpenAsync(new OpenFileRequest
                 {
                     File = new ReadOnlyFile(filePath)
@@ -450,7 +591,8 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось открыть файл: {ex.Message}", "OK");
+                Console.WriteLine($"❌ Ошибка открытия файла: {ex.Message}");
+                await DisplayAlert("Error", $"Failed to open file: {ex.Message}", "OK");
             }
         }
 
@@ -467,13 +609,14 @@ namespace EducationalPlatform.Views
         public string CourseName { get; set; } = string.Empty;
         public int StudentCount { get; set; }
         public bool IsActive { get; set; }
+        public int UnreadMessages { get; set; }
     }
 
     public class StatusTextConverter : IValueConverter
     {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            return value is bool active && active ? "Активна" : "Неактивна";
+            return value is bool active && active ? "Active" : "Inactive";
         }
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -481,7 +624,4 @@ namespace EducationalPlatform.Views
             throw new NotImplementedException();
         }
     }
-
-    
-
 }

@@ -243,14 +243,6 @@ namespace EducationalPlatform.Views
         }
     }
 
-    // Модель для отображения вложений
-    public class AttachmentViewModel
-    {
-        public string FileName { get; set; } = string.Empty;
-        public string FileSize { get; set; } = string.Empty;
-        public string FilePath { get; set; } = string.Empty;
-        public string FileIcon { get; set; } = "📎";
-    }
 }
 
 

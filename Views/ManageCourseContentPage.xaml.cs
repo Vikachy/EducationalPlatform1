@@ -197,8 +197,8 @@ namespace EducationalPlatform.Views
             await Navigation.PopAsync();
         }
 
-        public new event PropertyChangedEventHandler PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName)
+        public new event PropertyChangedEventHandler? PropertyChanged;
+        protected new virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

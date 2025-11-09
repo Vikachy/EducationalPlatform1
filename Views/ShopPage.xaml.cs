@@ -96,24 +96,28 @@ namespace EducationalPlatform.Views
 
         private void SetItemVisualProperties(ShopItem item)
         {
+            // Используем локализацию
+            var localizationService = new LocalizationService();
+            localizationService.SetLanguage(_settingsService?.CurrentLanguage ?? "en");
+            
             if (item.IsPurchased)
             {
                 if (item.IsEquipped)
                 {
-                    item.ButtonText = "✅ Надето";
+                    item.ButtonText = localizationService.GetText("equipped") ?? "✅ Equipped";
                     item.ButtonColor = Color.FromArgb("#4CAF50");
                     item.BorderColor = Color.FromArgb("#4CAF50");
                 }
                 else
                 {
-                    item.ButtonText = "Надеть";
+                    item.ButtonText = localizationService.GetText("equip") ?? "Equip";
                     item.ButtonColor = Color.FromArgb("#2196F3");
                     item.BorderColor = Color.FromArgb("#2196F3");
                 }
             }
             else
             {
-                item.ButtonText = "Купить";
+                item.ButtonText = localizationService.GetText("buy") ?? "Buy";
                 item.ButtonColor = Color.FromArgb("#FF9800");
                 item.BorderColor = Color.FromArgb("#DDD");
             }
@@ -262,19 +266,43 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private void ApplyPurchasedTheme(ShopItem theme)
+        private async void ApplyPurchasedTheme(ShopItem theme)
         {
-            // Применяем купленную тему
-            string themeName = theme.Name.ToLower();
-            if (themeName.Contains("океан"))
+            try
             {
-                _settingsService.ApplyTheme("ocean");
+                // Применяем купленную тему
+                string themeName = theme.Name.ToLower();
+                string themeKey = "standard"; // По умолчанию стандартная тема
+                
+                if (themeName.Contains("океан") || themeName.Contains("ocean"))
+                {
+                    themeKey = "ocean";
+                }
+                else if (themeName.Contains("пурпур") || themeName.Contains("purple"))
+                {
+                    themeKey = "purple";
+                }
+                else if (themeName.Contains("подростков") || themeName.Contains("teen"))
+                {
+                    themeKey = "teen";
+                }
+                else if (themeName.Contains("стандарт") || themeName.Contains("standard"))
+                {
+                    themeKey = "standard";
+                }
+                
+                // Применяем тему через SettingsService
+                _settingsService.ApplyTheme(themeKey);
+                
+                // Сохраняем выбор темы в БД для синхронизации между устройствами
+                await _dbService.SaveUserThemeAsync(_currentUser.UserId, themeKey);
+                
+                Console.WriteLine($"✅ Тема '{themeKey}' применена и сохранена для пользователя {_currentUser.UserId}");
             }
-            else if (themeName.Contains("пурпур"))
+            catch (Exception ex)
             {
-                _settingsService.ApplyTheme("purple");
+                Console.WriteLine($"Ошибка применения темы: {ex.Message}");
             }
-            // Добавьте другие темы по необходимости
         }
 
         private async void OnInventoryClicked(object sender, EventArgs e)

@@ -70,10 +70,13 @@ namespace EducationalPlatform.Views
                 AcceptButton.IsEnabled = false;
                 DeclineButton.IsEnabled = false;
 
-                // Сохраняем в настройках приложения вместо БД
-                Preferences.Set($"PrivacyConsent_{_currentUser.UserId}", true);
-                Preferences.Set($"PrivacyConsentVersion_{_currentUser.UserId}", "1.0");
-                Preferences.Set($"PrivacyConsentDate_{_currentUser.UserId}", DateTime.Now.ToString());
+                // Сохраняем в SecureStorage для привязки к учетной записи (работает на всех устройствах)
+                await SecureStorage.SetAsync($"PrivacyConsent_{_currentUser.UserId}", "true");
+                await SecureStorage.SetAsync($"PrivacyConsentVersion_{_currentUser.UserId}", "1.0");
+                await SecureStorage.SetAsync($"PrivacyConsentDate_{_currentUser.UserId}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                
+                // Также сохраняем в БД для синхронизации
+                await _dbService.SavePrivacyConsentAsync(_currentUser.UserId, _consentText ?? "", "1.0");
 
                 // Начисляем бонус
                 await _dbService.AddGameCurrencyAsync(_currentUser.UserId, 50, "privacy_consent_bonus");
