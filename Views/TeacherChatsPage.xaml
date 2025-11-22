@@ -1,236 +1,255 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="EducationalPlatform.Views.TeacherChatsPage"
-             Title="Teacher Chats"
              xmlns:converters="clr-namespace:EducationalPlatform.Converters"
-             xmlns:models="clr-namespace:EducationalPlatform.Models">
+             x:Class="EducationalPlatform.Views.TeacherChatsPage"
+             Title="Чаты групп">
 
-    <ContentPage.Resources>
-        <ResourceDictionary>
-            <converters:StatusTextConverter x:Key="StatusConverter" />
-            <converters:StatusColorConverter x:Key="StatusColorConverter" />
-            <converters:FileTypeToIconConverter x:Key="FileTypeToIconConverter" />
-            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
-            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
-        </ResourceDictionary>
-    </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*">
-        <!-- Заголовок -->
-        <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
-            <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
-                <Label Grid.Column="0" Text="💬 Group Chat Management" FontSize="18" FontAttributes="Bold" TextColor="White" />
-                <Button Grid.Column="1" Text="👥 Groups" BackgroundColor="White" TextColor="#2E86AB" CornerRadius="8" Padding="10,6" Clicked="OnManageGroupsClicked" />
-            </Grid>
-        </Border>
+    <Grid ColumnDefinitions="300,*" ColumnSpacing="1">
 
-        <!-- Две колонки: слева список чатов, справа текущий чат -->
-        <Grid Grid.Row="1" ColumnDefinitions="300,*">
-            <!-- Список групп слева -->
-            <CollectionView Grid.Column="0" 
-                            x:Name="GroupsCollectionView"
-                            ItemsSource="{Binding Groups}"
+        <!-- Левая панель - список групп -->
+        <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto">
+
+            <!-- Заголовок -->
+            <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
+                <Label Text="Мои учебные группы" 
+                       FontSize="16" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center" />
+            </Border>
+
+            <!-- Список групп -->
+            <CollectionView Grid.Row="1" x:Name="GroupsCollectionView"
                             SelectionMode="Single"
                             SelectionChanged="OnGroupSelected">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Border Margin="10,5" 
-                                BackgroundColor="White" 
-                                Stroke="#E0E0E0" 
-                                StrokeThickness="1" 
-                                StrokeShape="RoundRectangle 10" 
-                                Padding="15">
-                            <Grid ColumnDefinitions="Auto,*,Auto" VerticalOptions="Center">
-                                <Label Grid.Column="0" Text="👥" FontSize="24" VerticalOptions="Center" Margin="0,0,10,0" />
-                                <VerticalStackLayout Grid.Column="1" Spacing="5">
-                                    <Label Text="{Binding GroupName}" FontSize="16" FontAttributes="Bold" />
-                                    <Label Text="{Binding CourseName}" FontSize="12" TextColor="#666" />
-                                    <Label Text="{Binding StudentCount, StringFormat='Students: {0}'}" FontSize="10" TextColor="#999" />
-                                    <Label Text="{Binding IsActive, Converter={StaticResource StatusConverter}}" FontSize="10" TextColor="{Binding IsActive, Converter={StaticResource StatusColorConverter}}" />
-                                </VerticalStackLayout>
-                                <Grid Grid.Column="2" HorizontalOptions="End">
-                                    <Button Text="💬" BackgroundColor="#2E86AB" TextColor="White" WidthRequest="40" HeightRequest="40" CornerRadius="20" />
+                        <Grid Padding="10" 
+                              BackgroundColor="White"
+                              Margin="5">
+
+                            <Frame BackgroundColor="#F8F9FA" 
+                                   BorderColor="#E9ECEF"
+                                   CornerRadius="10"
+                                   Padding="15"
+                                   HasShadow="True">
+
+                                <Grid ColumnDefinitions="Auto,*,Auto" 
+                                      RowDefinitions="Auto,Auto,Auto">
+
+                                    <!-- Иконка группы -->
+                                    <Label Grid.Row="0" Grid.Column="0" 
+                                           Grid.RowSpan="3"
+                                           Text="👥" 
+                                           FontSize="20" 
+                                           VerticalOptions="Center" 
+                                           Margin="0,0,10,0" />
+
+                                    <!-- Название группы и курса -->
+                                    <Label Grid.Row="0" Grid.Column="1"
+                                           Text="{Binding GroupName}" 
+                                           FontSize="14" 
+                                           FontAttributes="Bold" />
+
+                                    <Label Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding CourseName}" 
+                                           FontSize="12" 
+                                           TextColor="#666" />
+
+                                    <!-- Статус и студенты -->
+                                    <Label Grid.Row="2" Grid.Column="1"
+                                           Text="{Binding StudentCount, StringFormat='{0} студентов'}" 
+                                           FontSize="11" 
+                                           TextColor="#999" />
+
                                     <!-- Бейдж непрочитанных сообщений -->
-                                    <Frame IsVisible="{Binding UnreadMessages, Converter={StaticResource GreaterThanZeroConverter}}"
-                                           BackgroundColor="Red" 
-                                           CornerRadius="10" 
-                                           Padding="6,2" 
-                                           HorizontalOptions="Start" 
+                                    <Frame Grid.Row="0" Grid.Column="2"
+                                           Grid.RowSpan="3"
+                                           BackgroundColor="#FF3B30"
+                                           Padding="6,2"
+                                           HorizontalOptions="End"
                                            VerticalOptions="Start"
-                                           Margin="-5, -5, 0, 0">
+                                           CornerRadius="10"
+                                           IsVisible="{Binding UnreadMessages, Converter={x:StaticResource IntToBoolConverter}}">
                                         <Label Text="{Binding UnreadMessages}" 
                                                FontSize="10" 
+                                               FontAttributes="Bold" 
                                                TextColor="White" 
-                                               FontAttributes="Bold" />
+                                               HorizontalOptions="Center" 
+                                               VerticalOptions="Center"/>
                                     </Frame>
+
                                 </Grid>
-                            </Grid>
-                        </Border>
+                            </Frame>
+                        </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <!-- Правая панель: текущий чат как в Telegram -->
-            <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
+            <!-- Кнопка управления группами -->
+            <Button Grid.Row="2"
+                    Text="Управление группами" 
+                    Clicked="OnManageGroupsClicked"
+                    BackgroundColor="#2E86AB"
+                    TextColor="White"
+                    Margin="10"
+                    CornerRadius="10" />
+
+        </Grid>
+
+        <!-- Правая панель - чат -->
+        <Grid Grid.Column="1" 
+              BackgroundColor="#F5F5F5"
+              IsVisible="{Binding HasActiveChat}">
+
+            <Grid RowDefinitions="Auto,*,Auto" 
+                  ColumnDefinitions="*">
+
                 <!-- Заголовок чата -->
-                <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
-                    <VerticalStackLayout>
-                        <Label x:Name="ChatGroupNameLabel" Text="Select a chat" FontSize="18" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
-                        <Label x:Name="ChatOnlineLabel" Text="Online: 0" FontSize="12" TextColor="White" HorizontalOptions="Center" />
-                    </VerticalStackLayout>
+                <Border Grid.Row="0" 
+                        BackgroundColor="White" 
+                        Stroke="LightGray" 
+                        StrokeThickness="0,0,0,1"
+                        Padding="15">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label x:Name="ChatGroupNameLabel" 
+                                   Text="Название группы" 
+                                   FontSize="16" 
+                                   FontAttributes="Bold" />
+                            <Label x:Name="ChatOnlineLabel" 
+                                   Text="Online: 0" 
+                                   FontSize="12" 
+                                   TextColor="Gray" />
+                        </VerticalStackLayout>
+
+                        <Button Grid.Column="1"
+                                Text="Назад" 
+                                Clicked="OnBackClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="#2E86AB"
+                                BorderColor="#2E86AB"
+                                BorderWidth="1"
+                                CornerRadius="5"
+                                Padding="10,5" />
+                    </Grid>
                 </Border>
 
                 <!-- Сообщения -->
-                <CollectionView Grid.Row="1"
+                <CollectionView Grid.Row="1" 
                                 x:Name="MessagesCollectionView"
-                                SelectionMode="None">
+                                Margin="10">
                     <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="models:GroupChatMessage">
-                            <Grid Padding="10,5" ColumnDefinitions="*,*">
-                                <!-- Сообщение студента -->
-                                <Frame Grid.Column="0" Grid.ColumnSpan="2"
-                                       IsVisible="{Binding IsMyMessage, Converter={StaticResource InverseBoolConverter}}"
-                                       BackgroundColor="#FFFFFF"
-                                       Padding="12"
-                                       HorizontalOptions="Start"
-                                       MaximumWidthRequest="300"
-                                       CornerRadius="18"
-                                       BorderColor="#E0E0E0">
-                                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
-                                        <!-- Avatar -->
-                                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
-                                                BackgroundColor="LightGray"
-                                                Stroke="LightGray"
-                                                StrokeThickness="1"
-                                                StrokeShape="RoundRectangle 20"
-                                                WidthRequest="36"
-                                                HeightRequest="36"
-                                                VerticalOptions="Start">
-                                            <Image Source="{Binding SenderAvatar}"
-                                                   Aspect="AspectFill"
-                                                   HorizontalOptions="Center"
-                                                   VerticalOptions="Center"
-                                                   WidthRequest="32"
-                                                   HeightRequest="32" />
-                                        </Border>
+                        <DataTemplate>
+                            <Grid Padding="5">
 
-                                        <!-- Sender Name -->
+                                <!-- Системное сообщение -->
+                                <Frame BackgroundColor="#E3F2FD"
+                                        Padding="10"
+                                        HorizontalOptions="Center"
+                                        CornerRadius="15"
+                                        IsVisible="{Binding IsSystemMessage}">
+                                    <Label Text="{Binding MessageText}" 
+                                           FontSize="12"
+                                           TextColor="#1565C0"
+                                           HorizontalOptions="Center" />
+                                </Frame>
+
+                                <!-- Файловое сообщение -->
+                                <Frame BackgroundColor="{Binding IsMyMessage, Converter={x:StaticResource MyMessageColorConverter}}"
+                                        Padding="15"
+                                        HorizontalOptions="{Binding IsMyMessage, Converter={x:StaticResource MessageAlignmentConverter}}"
+                                        CornerRadius="15"
+                                        IsVisible="{Binding IsFileMessage}">
+                                    <Grid ColumnDefinitions="Auto,*" 
+                                          RowDefinitions="Auto,Auto">
+                                        <Label Grid.Row="0" Grid.Column="0"
+                                               Text="📎" 
+                                               FontSize="16"
+                                               VerticalOptions="Center"
+                                               Margin="0,0,10,0" />
                                         <Label Grid.Row="0" Grid.Column="1"
-                                               Text="{Binding SenderName}"
-                                               FontSize="12"
-                                               TextColor="#2E86AB"
-                                               FontAttributes="Bold"
-                                               VerticalOptions="End" />
-
-                                        <!-- Message Content -->
-                                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
-                                            <!-- Text Message -->
-                                            <Label Text="{Binding MessageText}"
-                                                   TextColor="#333333"
-                                                   FontSize="14"
-                                                   LineBreakMode="WordWrap"
-                                                   IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
-
-                                            <!-- File Message -->
-                                            <Grid ColumnDefinitions="Auto,*" 
-                                                  ColumnSpacing="8"
-                                                  IsVisible="{Binding IsFileMessage}">
-                                                <Label Grid.Column="0"
-                                                       Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
-                                                       FontSize="16"
-                                                       VerticalOptions="Center" />
-                                                <VerticalStackLayout Grid.Column="1">
-                                                    <Label Text="{Binding FileName}"
-                                                           FontSize="13"
-                                                           FontAttributes="Bold"
-                                                           LineBreakMode="TailTruncation" />
-                                                    <Label Text="{Binding FileSize}"
-                                                           FontSize="11"
-                                                           TextColor="Gray" />
-                                                </VerticalStackLayout>
-                                                <Grid.GestureRecognizers>
-                                                    <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
-                                                </Grid.GestureRecognizers>
-                                            </Grid>
-                                        </VerticalStackLayout>
-
-                                        <!-- Time -->
+                                               Text="{Binding FileName}" 
+                                               FontSize="14"
+                                               FontAttributes="Bold" />
                                         <Label Grid.Row="1" Grid.Column="1"
-                                               Text="{Binding SentAt, StringFormat='{0:HH:mm}'}"
-                                               FontSize="10"
-                                               TextColor="Gray"
-                                               HorizontalOptions="End"
-                                               VerticalOptions="End" />
+                                               Text="{Binding FileSize}" 
+                                               FontSize="12"
+                                               TextColor="#666" />
                                     </Grid>
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer 
+                                            Tapped="OnFileMessageTapped"
+                                            CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
                                 </Frame>
 
-                                <!-- Мое сообщение (преподавателя) -->
-                                <Frame Grid.Column="1" Grid.ColumnSpan="2"
-                                       IsVisible="{Binding IsMyMessage}"
-                                       BackgroundColor="#DCF8C6"
-                                       Padding="12"
-                                       HorizontalOptions="End"
-                                       MaximumWidthRequest="300"
-                                       CornerRadius="18">
-                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="4">
-                                        <!-- Message Content -->
-                                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="4">
-                                            <!-- Text Message -->
-                                            <Label Text="{Binding MessageText}"
-                                                   TextColor="#000000"
-                                                   FontSize="14"
-                                                   LineBreakMode="WordWrap"
-                                                   IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
-
-                                            <!-- File Message -->
-                                            <Grid ColumnDefinitions="Auto,*" 
-                                                  ColumnSpacing="8"
-                                                  IsVisible="{Binding IsFileMessage}">
-                                                <Label Grid.Column="0"
-                                                       Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
-                                                       FontSize="16"
-                                                       VerticalOptions="Center" />
-                                                <VerticalStackLayout Grid.Column="1">
-                                                    <Label Text="{Binding FileName}"
-                                                           FontSize="13"
-                                                           FontAttributes="Bold"
-                                                           LineBreakMode="TailTruncation" />
-                                                    <Label Text="{Binding FileSize}"
-                                                           FontSize="11"
-                                                           TextColor="#666666" />
-                                                </VerticalStackLayout>
-                                                <Grid.GestureRecognizers>
-                                                    <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
-                                                </Grid.GestureRecognizers>
-                                            </Grid>
-                                        </VerticalStackLayout>
-
-                                        <!-- Time and Status -->
-                                        <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                                              HorizontalOptions="End"
-                                                              Spacing="4"
-                                                              VerticalOptions="End">
-                                            <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}"
-                                                   FontSize="10"
-                                                   TextColor="#666666" />
-                                        </HorizontalStackLayout>
-                                    </Grid>
+                                <!-- Обычное сообщение -->
+                                <Frame BackgroundColor="{Binding IsMyMessage, Converter={x:StaticResource MyMessageColorConverter}}"
+                                        Padding="15"
+                                        HorizontalOptions="{Binding IsMyMessage, Converter={x:StaticResource MessageAlignmentConverter}}"
+                                        CornerRadius="15"
+                                        IsVisible="{Binding IsFileMessage, Converter={x:StaticResource BoolInverseConverter}}">
+                                    <VerticalStackLayout>
+                                        <Label Text="{Binding MessageText}" 
+                                               FontSize="14" />
+                                        <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}" 
+                                               FontSize="10" 
+                                               TextColor="#666"
+                                               HorizontalOptions="End" />
+                                    </VerticalStackLayout>
                                 </Frame>
+
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
-                <!-- Ввод -->
-                <Border Grid.Row="2" BackgroundColor="White" Stroke="#E0E0E0" StrokeThickness="1" Padding="10">
-                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                        <Entry Grid.Column="0" x:Name="MessageEntry" Placeholder="Type a message..." Completed="OnMessageSent" ReturnType="Send" />
-                        <Button Grid.Column="1" Text="📎" BackgroundColor="Transparent" TextColor="#2E86AB" WidthRequest="40" HeightRequest="40" Clicked="OnAttachFileClicked" />
-                        <Button Grid.Column="2" Text="➤" BackgroundColor="#2E86AB" TextColor="White" WidthRequest="40" HeightRequest="40" Clicked="OnSendMessageClicked" />
-                    </Grid>
-                </Border>
+                <!-- Панель ввода -->
+                <Grid Grid.Row="2" 
+                      BackgroundColor="White" 
+                      Padding="10"
+                      ColumnDefinitions="*,Auto,Auto">
+
+                    <Entry Grid.Column="0"
+                           x:Name="MessageEntry"
+                           Placeholder="Введите сообщение..."
+                           Completed="OnMessageSent"
+                           Margin="0,0,10,0" />
+
+                    <Button Grid.Column="1"
+                            Text="📎"
+                            Clicked="OnAttachFileClicked"
+                            BackgroundColor="Transparent"
+                            TextColor="#2E86AB"
+                            Margin="0,0,10,0" />
+
+                    <Button Grid.Column="2"
+                            Text="Отправить"
+                            Clicked="OnSendMessageClicked"
+                            BackgroundColor="#2E86AB"
+                            TextColor="White" />
+
+                </Grid>
+
             </Grid>
+
+            <!-- Заглушка когда чат не выбран -->
+            <VerticalStackLayout HorizontalOptions="Center" 
+                                 VerticalOptions="Center"
+                                 IsVisible="{Binding HasActiveChat, Converter={x:StaticResource BoolInverseConverter}}">
+                <Label Text="💬" 
+                       FontSize="40" 
+                       HorizontalOptions="Center" />
+                <Label Text="Выберите группу для начала общения" 
+                       FontSize="16" 
+                       TextColor="Gray" 
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
         </Grid>
+
     </Grid>
 </ContentPage>

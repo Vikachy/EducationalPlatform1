@@ -1,9 +1,10 @@
-using System.Collections.ObjectModel;
+using EducationalPlatform.Converters;
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
-using System.Globalization;
-using EducationalPlatform.Converters;
 using Microsoft.Data.SqlClient;
+using System.Collections.ObjectModel;
+using System.Data;
+using System.Globalization;
 
 namespace EducationalPlatform.Views
 {
@@ -31,6 +32,8 @@ namespace EducationalPlatform.Views
                 { DevicePlatform.WinUI, new[] { ".zip", ".doc", ".docx", ".ppt", ".pptx", ".pdf", ".txt", ".xls", ".xlsx", ".jpg", ".png", ".mp4" } },
                 { DevicePlatform.macOS, new[] { ".zip", ".doc", ".docx", ".ppt", ".pptx", ".pdf", ".txt", ".xls", ".xlsx", ".jpg", ".png", ".mp4" } }
             });
+
+        public bool HasActiveChat => _activeGroup != null;
 
         public TeacherChatsPage(User user, DatabaseService dbService, SettingsService settingsService)
         {
@@ -77,28 +80,39 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Загружаем группы и непрочитанные сообщения
+                // Используем тот же подход, что и у студента - через таблицу участников чата
                 var groups = await _dbService.GetTeacherStudyGroupsAsync(_currentUser.UserId);
                 _unreadMessagesCount = await _dbService.GetTeacherUnreadMessagesCountAsync(_currentUser.UserId);
 
                 Groups.Clear();
+
                 foreach (var group in groups)
                 {
-                    var courseName = await GetCourseNameForGroup(group.GroupId);
+                    // Получаем дополнительную информацию о группе
+                    var groupInfo = await GetGroupChatInfoAsync(group.GroupId);
                     var unreadCount = _unreadMessagesCount.ContainsKey(group.GroupId) ? _unreadMessagesCount[group.GroupId] : 0;
 
                     Groups.Add(new TeacherGroupChat
                     {
                         GroupId = group.GroupId,
                         GroupName = group.GroupName,
-                        CourseName = courseName ?? "No Course",
-                        StudentCount = group.StudentCount,
+                        CourseName = groupInfo.CourseName ?? "No Course",
+                        StudentCount = groupInfo.StudentCount,
                         IsActive = group.IsActive,
-                        UnreadMessages = unreadCount
+                        UnreadMessages = unreadCount,
+                        LastMessage = groupInfo.LastMessage,
+                        LastMessageTime = groupInfo.LastMessageTime
                     });
                 }
 
                 Console.WriteLine($"📊 Загружено {Groups.Count} групп с непрочитанными сообщениями");
+
+                // Обновляем отображение
+                GroupsCollectionView.ItemsSource = null;
+                GroupsCollectionView.ItemsSource = Groups;
+
+                // Уведомляем об изменении свойства для привязок
+                OnPropertyChanged(nameof(HasActiveChat));
             }
             catch (Exception ex)
             {
@@ -106,7 +120,7 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private async Task<string?> GetCourseNameForGroup(int groupId)
+        private async Task<(string CourseName, int StudentCount, string LastMessage, DateTime LastMessageTime)> GetGroupChatInfoAsync(int groupId)
         {
             try
             {
@@ -114,39 +128,55 @@ namespace EducationalPlatform.Views
                 await connection.OpenAsync();
 
                 var query = @"
-                    SELECT c.CourseName 
+                    SELECT 
+                        c.CourseName,
+                        COUNT(DISTINCT ge.StudentId) as StudentCount,
+                        (SELECT TOP 1 MessageText FROM GroupChatMessages WHERE GroupId = @GroupId ORDER BY SentAt DESC) as LastMessage,
+                        (SELECT TOP 1 SentAt FROM GroupChatMessages WHERE GroupId = @GroupId ORDER BY SentAt DESC) as LastMessageTime
                     FROM StudyGroups sg
                     JOIN Courses c ON sg.CourseId = c.CourseId
-                    WHERE sg.GroupId = @GroupId";
+                    LEFT JOIN GroupEnrollments ge ON sg.GroupId = ge.GroupId AND ge.Status = 'active'
+                    WHERE sg.GroupId = @GroupId
+                    GROUP BY c.CourseName";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@GroupId", groupId);
 
-                var result = await command.ExecuteScalarAsync();
-                return result?.ToString();
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    return (
+                        reader.GetString("CourseName"),
+                        reader.GetInt32("StudentCount"),
+                        reader.IsDBNull("LastMessage") ? "Чат создан" : reader.GetString("LastMessage"),
+                        reader.IsDBNull("LastMessageTime") ? DateTime.Now : reader.GetDateTime("LastMessageTime")
+                    );
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                Console.WriteLine($"Ошибка получения информации о группе: {ex.Message}");
             }
+
+            return ("No Course", 0, "Чат создан", DateTime.Now);
         }
 
         private async void OnGroupSelected(object sender, SelectionChangedEventArgs e)
         {
-            if (e.CurrentSelection.FirstOrDefault() is TeacherGroupChat group)
+            if (e.CurrentSelection.FirstOrDefault() is TeacherGroupChat selectedGroup)
             {
                 try
                 {
                     _activeGroup = new StudyGroup
                     {
-                        GroupId = group.GroupId,
-                        GroupName = group.GroupName,
-                        StudentCount = group.StudentCount,
-                        IsActive = group.IsActive
+                        GroupId = selectedGroup.GroupId,
+                        GroupName = selectedGroup.GroupName,
+                        StudentCount = selectedGroup.StudentCount,
+                        IsActive = selectedGroup.IsActive
                     };
 
-                    ChatGroupNameLabel.Text = group.GroupName;
-                    ChatOnlineLabel.Text = $"Online: {group.StudentCount}";
+                    ChatGroupNameLabel.Text = selectedGroup.GroupName;
+                    ChatOnlineLabel.Text = $"Студентов: {selectedGroup.StudentCount}";
 
                     _messages.Clear();
                     await LoadMessages();
@@ -155,10 +185,13 @@ namespace EducationalPlatform.Views
                     await MarkMessagesAsRead();
 
                     // Обновляем счетчик непрочитанных в UI
-                    await UpdateUnreadCount(group.GroupId);
+                    await UpdateUnreadCount(selectedGroup.GroupId);
 
                     _refreshTimer?.Dispose();
                     _refreshTimer = new Timer(async _ => await RefreshMessages(), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+
+                    // Уведомляем об изменении свойства для привязок
+                    OnPropertyChanged(nameof(HasActiveChat));
                 }
                 catch (Exception ex)
                 {
@@ -408,6 +441,9 @@ namespace EducationalPlatform.Views
                 {
                     MessageEntry.Text = string.Empty;
                     await LoadMessages();
+
+                    // Обновляем список групп для отображения последнего сообщения
+                    await RefreshUnreadCounts();
                 }
                 else
                 {
@@ -462,6 +498,9 @@ namespace EducationalPlatform.Views
                     {
                         await DisplayAlert("Success", "File sent successfully", "OK");
                         await LoadMessages();
+
+                        // Обновляем список групп
+                        await RefreshUnreadCounts();
                     }
                     else
                     {
@@ -610,18 +649,7 @@ namespace EducationalPlatform.Views
         public int StudentCount { get; set; }
         public bool IsActive { get; set; }
         public int UnreadMessages { get; set; }
-    }
-
-    public class StatusTextConverter : IValueConverter
-    {
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            return value is bool active && active ? "Active" : "Inactive";
-        }
-
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        public string LastMessage { get; set; } = string.Empty;
+        public DateTime LastMessageTime { get; set; } = DateTime.Now;
     }
 }

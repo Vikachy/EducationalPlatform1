@@ -5936,7 +5936,7 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 Console.WriteLine($"Ошибка загрузки участников чата: {ex.Message}");
             }
             return members;
-        }
+        } 
 
     }
 

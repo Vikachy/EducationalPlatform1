@@ -142,6 +142,9 @@ namespace EducationalPlatform.Views
 
                     if (groupId > 0)
                     {
+                        // Добавляем учителя в участники чата
+                        await _dbService.SimpleAddToGroupChat(groupId, _currentUser.UserId);
+
                         // Отправляем приветственное системное сообщение
                         var welcomeMessage = $"👋 Группа '{NewGroupNameEntry.Text}' создана! Добро пожаловать в учебный чат.";
                         await _dbService.AddSystemMessageToGroupAsync(groupId, welcomeMessage);
@@ -163,7 +166,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // ДОБАВЬТЕ ЭТОТ МЕТОД В КЛАСС TeacherGroupsManagementPage
         private async Task<int> GetLastCreatedGroupId()
         {
             try
@@ -380,6 +382,9 @@ namespace EducationalPlatform.Views
 
                     if (success)
                     {
+                        // Добавляем студента в чат
+                        await _dbService.SimpleAddToGroupChat(group.GroupId, user.UserId);
+
                         // Отправляем системное сообщение в чат
                         var systemMessage = $"🎓 Студент {user.FirstName} {user.LastName} (@{user.Username}) присоединился к группе";
                         await _dbService.AddSystemMessageToGroupAsync(group.GroupId, systemMessage);
@@ -488,12 +493,8 @@ namespace EducationalPlatform.Views
             {
                 try
                 {
-                    var studyGroup = new StudyGroup
-                    {
-                        GroupId = group.GroupId,
-                        GroupName = group.GroupName
-                    };
-                    await Navigation.PushAsync(new ChatPage(studyGroup, _currentUser, _dbService, _settingsService));
+                    // Вместо ChatPage используем TeacherChatsPage
+                    await Navigation.PushAsync(new TeacherChatsPage(_currentUser, _dbService, _settingsService));
                 }
                 catch (Exception ex)
                 {
