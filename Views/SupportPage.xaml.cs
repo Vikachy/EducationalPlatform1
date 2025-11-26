@@ -1,5 +1,6 @@
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
+using Microsoft.Maui.Storage;
 
 namespace EducationalPlatform.Views
 {
@@ -70,10 +71,42 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                return await _dbService.CreateSupportTicketAsync(_currentUser.UserId, subject, description, ticketType);
+                bool ticketCreated = await _dbService.CreateSupportTicketAsync(_currentUser.UserId, subject, description, ticketType);
+                
+                if (ticketCreated)
+                {
+                    // Отправляем email на адрес из App.xaml.cs
+                    var emailService = new EmailService();
+                    string supportEmail = Preferences.Get("SenderEmail", "mituxina85@gmail.com");
+                    
+                    string emailSubject = $"Новое обращение в поддержку: {subject}";
+                    string emailBody = $@"Новое обращение в техническую поддержку
+
+Тип обращения: {ticketType}
+Тема: {subject}
+Описание: {description}
+
+Пользователь: {_currentUser.FirstName} {_currentUser.LastName} ({_currentUser.Username})
+Email пользователя: {_currentUser.Email}
+Дата обращения: {DateTime.Now:dd.MM.yyyy HH:mm}
+
+---
+Это письмо отправлено автоматически из системы Educational Platform.";
+
+                    // Отправляем email администратору
+                    bool emailSent = await emailService.SendSupportTicketEmailAsync(supportEmail, emailSubject, emailBody);
+                    
+                    if (!emailSent)
+                    {
+                        Console.WriteLine("⚠️ Не удалось отправить email, но обращение создано в базе данных");
+                    }
+                }
+                
+                return ticketCreated;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Ошибка создания обращения: {ex.Message}");
                 return false;
             }
         }

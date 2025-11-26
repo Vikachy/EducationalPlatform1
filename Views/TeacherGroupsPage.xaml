@@ -112,17 +112,6 @@
                             HorizontalOptions="FillAndExpand" />
                     </HorizontalStackLayout>
 
-                    <!-- Добавление студента по одному -->
-                    <Border BackgroundColor="#F0F8FF" Padding="10" Margin="0,10">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                            <Entry x:Name="StudentUsernameEntry" 
-                               Placeholder="Имя пользователя студента" />
-                            <Button Text="➕ Добавить" 
-                                Clicked="OnAddStudentClicked"
-                                BackgroundColor="{DynamicResource SecondaryColor}"
-                                TextColor="White" />
-                        </Grid>
-                    </Border>
 
                     <!-- Список студентов -->
                     <CollectionView x:Name="GroupStudentsCollection">

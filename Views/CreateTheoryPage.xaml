@@ -4,31 +4,93 @@
              x:Class="EducationalPlatform.Views.CreateTheoryPage"
              Title="Создание теории">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="20">
-
+    <Grid RowDefinitions="Auto,*">
+        <!-- Современный заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0">
             <Label Text="Создание теоретического урока" 
-                   FontSize="24" FontAttributes="Bold"
-                   HorizontalOptions="Center" />
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
+        </Border>
 
-            <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
-                <VerticalStackLayout Spacing="15">
+        <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource BackgroundColor}">
+            <VerticalStackLayout Spacing="20" Padding="20">
 
-                    <Label Text="Название урока:" Style="{DynamicResource StandardLabelStyle}"/>
-                    <Entry x:Name="TitleEntry" Placeholder="Введите название урока" />
+            <Border BackgroundColor="White"
+                    Stroke="#E0E0E0"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="20">
+                <VerticalStackLayout Spacing="18">
 
-                    <Label Text="Порядок урока:" Style="{DynamicResource StandardLabelStyle}"/>
-                    <Entry x:Name="OrderEntry" Placeholder="1" Keyboard="Numeric" />
+                    <Label Text="Название урока:"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource TextColor}"
+                           Margin="0,0,0,5"/>
+                    <Border BackgroundColor="#F8F9FA"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="0">
+                        <Entry x:Name="TitleEntry"
+                               Placeholder="Введите название урока"
+                               BackgroundColor="Transparent"
+                               Margin="12,0"
+                               FontSize="16"
+                               HeightRequest="50" />
+                    </Border>
 
-                    <Label Text="Содержание:" Style="{DynamicResource StandardLabelStyle}"/>
-                    <Editor x:Name="ContentEditor" 
-                            HeightRequest="200"
-                            Placeholder="Введите содержание урока простым текстом..."
-                            AutoSize="TextChanges" />
+                    <Label Text="Порядок урока:"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource TextColor}"
+                           Margin="0,0,0,5"/>
+                    <Border BackgroundColor="#F8F9FA"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="0">
+                        <Entry x:Name="OrderEntry"
+                               Placeholder="1"
+                               Keyboard="Numeric"
+                               BackgroundColor="Transparent"
+                               Margin="12,0"
+                               FontSize="16"
+                               HeightRequest="50" />
+                    </Border>
+
+                    <Label Text="Содержание:"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource TextColor}"
+                           Margin="0,0,0,5"/>
+                    <Border BackgroundColor="#F8F9FA"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="0">
+                        <Editor x:Name="ContentEditor"
+                                HeightRequest="200"
+                                Placeholder="Введите содержание урока простым текстом..."
+                                AutoSize="TextChanges"
+                                BackgroundColor="Transparent"
+                                Margin="12,10"
+                                FontSize="14" />
+                    </Border>
 
                     <!-- Секция загрузки файлов -->
-                    <Frame BackgroundColor="#F8F9FA" Padding="15">
-                        <VerticalStackLayout Spacing="10">
+                    <Border BackgroundColor="#F0F7FF"
+                            Stroke="{DynamicResource PrimaryColor}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="12">
                             <Label Text="Прикрепленные файлы:" 
                                    FontSize="16" 
                                    FontAttributes="Bold"
@@ -38,9 +100,13 @@
                                    FontSize="12" 
                                    TextColor="Gray" />
 
-                            <Button Text="📎 Выбрать файлы" 
+                            <Button Text="Выбрать файлы" 
                                     Clicked="OnSelectFilesClicked"
-                                    BackgroundColor="{DynamicResource SecondaryColor}" />
+                                    BackgroundColor="{DynamicResource SecondaryColor}"
+                                    TextColor="White"
+                                    CornerRadius="8"
+                                    HeightRequest="45"
+                                    FontSize="16" />
 
                             <!-- Список выбранных файлов -->
                             <CollectionView x:Name="AttachmentsCollection" 
@@ -61,13 +127,17 @@
                                                    TextColor="Gray"
                                                    VerticalOptions="Center"
                                                    Margin="10,0" />
+                                            <!-- Значок корзины для удаления файла -->
                                             <Button Grid.Column="2" 
-                                                    Text="❌" 
+                                                    Text="🗑️"
+                                                    Padding="5" 
                                                     Clicked="OnRemoveAttachmentClicked" 
                                                     CommandParameter="{Binding .}"
                                                     BackgroundColor="Transparent"
                                                     TextColor="Red"
-                                                    FontSize="12" />
+                                                    FontSize="16"
+                                                    WidthRequest="40"
+                                                    HeightRequest="40" />
                                         </Grid>
                                     </DataTemplate>
                                 </CollectionView.ItemTemplate>
@@ -75,7 +145,7 @@
 
                             <!-- Кнопка очистки будет управляться из кода -->
                             <Button x:Name="ClearAllButton"
-                                    Text="🗑 Очистить все" 
+                                    Text="Очистить все" 
                                     Clicked="OnClearAllFilesClicked"
                                     BackgroundColor="#FF6B6B"
                                     TextColor="White"
@@ -89,17 +159,30 @@
                                    FontSize="12"
                                    IsVisible="False" />
                         </VerticalStackLayout>
-                    </Frame>
+                    </Border>
 
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <Button Text="Назад" Clicked="OnBackClicked" />
-                        <Button Text="Создать теорию" Clicked="OnCreateClicked" 
-                                BackgroundColor="{DynamicResource PrimaryColor}" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="15" Margin="0,10,0,0">
+                        <Button Text="Назад"
+                                Clicked="OnBackClicked"
+                                BackgroundColor="#6C757D"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="50"
+                                FontSize="16" />
+                        <Button Text="Создать теорию"
+                                Clicked="OnCreateClicked"
+                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="50"
+                                FontSize="16"
+                                FontAttributes="Bold" />
                     </Grid>
 
                 </VerticalStackLayout>
             </Border>
 
-        </VerticalStackLayout>
-    </ScrollView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

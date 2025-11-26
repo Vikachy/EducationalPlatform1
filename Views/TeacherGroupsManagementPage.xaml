@@ -4,131 +4,177 @@
              x:Class="EducationalPlatform.Views.TeacherGroupsManagementPage"
              Title="Управление группами">
 
-    <Grid RowDefinitions="Auto,*,Auto">
-        <!-- Заголовок -->
-        <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
-            <Label Text="Управление учебными группами" 
-                   FontSize="18" 
-                   FontAttributes="Bold" 
-                   TextColor="White" 
-                   HorizontalOptions="Center" />
+    <Grid RowDefinitions="Auto,*,Auto" BackgroundColor="{DynamicResource BackgroundColor}">
+        <!-- Современный заголовок -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}" 
+                Padding="20,15"
+                StrokeThickness="0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Grid.Column="1"
+                       Text="Управление учебными группами" 
+                       FontSize="22" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Grid>
         </Border>
 
         <!-- Контент -->
-        <ScrollView Grid.Row="1" Padding="15">
-            <VerticalStackLayout Spacing="20">
+        <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource BackgroundColor}">
+            <VerticalStackLayout Spacing="20" Padding="20">
 
                 <!-- Создание новой группы -->
-                <Border BackgroundColor="#E3F2FD" 
-                        Stroke="#2196F3" 
+                <Border BackgroundColor="White" 
+                        Stroke="{DynamicResource PrimaryColor}" 
                         StrokeThickness="1" 
-                        StrokeShape="RoundRectangle 10" 
-                        Padding="15">
-                    <VerticalStackLayout Spacing="10">
+                        StrokeShape="RoundRectangle 12" 
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
                         <Label Text="Создать новую группу" 
-                               FontSize="16" 
-                               FontAttributes="Bold" />
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}" />
 
-                        <Entry x:Name="NewGroupNameEntry" 
-                               Placeholder="Название группы" />
+                        <Border BackgroundColor="#F8F9FA"
+                                Stroke="#E0E0E0"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="0">
+                            <Entry x:Name="NewGroupNameEntry" 
+                                   Placeholder="Название группы"
+                                   BackgroundColor="Transparent"
+                                   Margin="12,0"
+                                   FontSize="16"
+                                   HeightRequest="50" />
+                        </Border>
 
-                        <Picker x:Name="CoursePicker"
-                                Title="Выберите курс"
-                                ItemDisplayBinding="{Binding CourseName}" />
+                        <Border BackgroundColor="#F8F9FA"
+                                Stroke="#E0E0E0"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="0">
+                            <Picker x:Name="CoursePicker"
+                                    Title="Выберите курс"
+                                    ItemDisplayBinding="{Binding CourseName}"
+                                    BackgroundColor="Transparent"
+                                    Margin="12,0"
+                                    FontSize="16"
+                                    HeightRequest="50" />
+                        </Border>
 
                         <Button Text="Создать группу" 
                                 Clicked="OnCreateGroupClicked" 
-                                BackgroundColor="#2196F3" 
-                                TextColor="White" />
+                                BackgroundColor="{DynamicResource PrimaryColor}" 
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="50"
+                                FontSize="16"
+                                FontAttributes="Bold" />
                     </VerticalStackLayout>
                 </Border>
 
                 <!-- Список групп -->
                 <Label Text="Мои группы" 
-                       FontSize="16" 
-                       FontAttributes="Bold" />
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource TextColor}"
+                       Margin="0,10,0,10" />
 
                 <CollectionView x:Name="GroupsCollectionView" 
                                 ItemsSource="{Binding Groups}">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Border Margin="0,5" 
+                            <Border Margin="0,8" 
                                     BackgroundColor="White" 
-                                    Stroke="#E0E0E0" 
+                                    Stroke="{DynamicResource PrimaryColor}" 
                                     StrokeThickness="1" 
-                                    StrokeShape="RoundRectangle 5" 
-                                    Padding="15">
+                                    StrokeShape="RoundRectangle 12" 
+                                    Padding="16">
                                 <Grid ColumnDefinitions="Auto,*,Auto" 
                                       RowDefinitions="Auto,Auto"
                                       VerticalOptions="Center">
 
-                                    <!-- Иконка и основная информация -->
-                                    <Label Grid.Row="0" Grid.Column="0" 
-                                           Grid.RowSpan="2"
-                                           Text="👥" 
-                                           FontSize="20" 
-                                           VerticalOptions="Center" 
-                                           Margin="0,0,10,0" />
+                                    <!-- Иконка группы -->
+                                    <Border Grid.Row="0" Grid.Column="0" 
+                                            Grid.RowSpan="2"
+                                            BackgroundColor="{DynamicResource PrimaryColor}"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 20"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            VerticalOptions="Center"
+                                            Margin="0,0,15,0">
+                                        <Label Text="👥" 
+                                               FontSize="20" 
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                                    </Border>
 
-                                    <VerticalStackLayout Grid.Row="0" Grid.Column="1">
+                                    <!-- Информация о группе -->
+                                    <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="4">
                                         <Label Text="{Binding GroupName}" 
-                                               FontSize="14" 
-                                               FontAttributes="Bold" />
+                                               FontSize="16" 
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextColor}" />
                                         <Label Text="{Binding CourseName}" 
-                                               FontSize="12" 
+                                               FontSize="13" 
                                                TextColor="#666" />
                                     </VerticalStackLayout>
 
                                     <Label Grid.Row="1" Grid.Column="1"
                                            Text="{Binding StudentCount, StringFormat='Студентов: {0}'}" 
-                                           FontSize="10" 
-                                           TextColor="#999" />
+                                           FontSize="12" 
+                                           TextColor="#999"
+                                           Margin="0,5,0,0" />
 
                                     <!-- Кнопки управления -->
                                     <Grid Grid.Row="0" Grid.Column="2"
                                           Grid.RowSpan="2"
                                           ColumnDefinitions="Auto,Auto"
-                                          RowDefinitions="*,*"
-                                          RowSpacing="5"
-                                          ColumnSpacing="5">
+                                          RowDefinitions="Auto,Auto"
+                                          RowSpacing="8"
+                                          ColumnSpacing="8"
+                                          VerticalOptions="Center">
 
                                         <Button Grid.Row="0" Grid.Column="0"
-                                                Text="✏️" 
+                                                Text="Редактировать" 
                                                 BackgroundColor="#FFC107" 
                                                 TextColor="White" 
-                                                FontSize="10"
-                                                HeightRequest="25"
-                                                WidthRequest="25"
+                                                FontSize="11"
+                                                Padding="8,4"
+                                                CornerRadius="6"
                                                 Clicked="OnEditGroupClicked"
                                                 CommandParameter="{Binding .}" />
 
                                         <Button Grid.Row="0" Grid.Column="1"
-                                                Text="👥" 
+                                                Text="Студенты" 
                                                 BackgroundColor="#4CAF50" 
                                                 TextColor="White" 
-                                                FontSize="10"
-                                                HeightRequest="25"
-                                                WidthRequest="25"
+                                                FontSize="11"
+                                                Padding="8,4"
+                                                CornerRadius="6"
                                                 Clicked="OnManageStudentsClicked"
                                                 CommandParameter="{Binding .}" />
 
                                         <Button Grid.Row="1" Grid.Column="0"
-                                                Text="💬" 
+                                                Text="Чат" 
                                                 BackgroundColor="#2196F3" 
                                                 TextColor="White" 
-                                                FontSize="10"
-                                                HeightRequest="25"
-                                                WidthRequest="25"
+                                                FontSize="11"
+                                                Padding="8,4"
+                                                CornerRadius="6"
                                                 Clicked="OnChatClicked"
                                                 CommandParameter="{Binding .}" />
 
                                         <Button Grid.Row="1" Grid.Column="1"
-                                                Text="🗑️" 
+                                                Text="Удалить" 
                                                 BackgroundColor="#F44336" 
                                                 TextColor="White" 
-                                                FontSize="10"
-                                                HeightRequest="25"
-                                                WidthRequest="25"
+                                                FontSize="11"
+                                                Padding="8,4"
+                                                CornerRadius="6"
                                                 Clicked="OnDeleteGroupClicked"
                                                 CommandParameter="{Binding .}" />
                                     </Grid>
@@ -139,24 +185,36 @@
                 </CollectionView>
 
                 <!-- Сообщение если групп нет -->
-                <Label x:Name="NoGroupsLabel"
-                       Text="У вас пока нет учебных групп. Создайте первую группу!"
-                       FontSize="14"
-                       TextColor="Gray"
-                       HorizontalOptions="Center"
-                       IsVisible="False" />
+                <Border x:Name="NoGroupsLabel"
+                        BackgroundColor="#FFF3E0"
+                        Stroke="#FF9800"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="20"
+                        IsVisible="False">
+                    <Label Text="У вас пока нет учебных групп. Создайте первую группу!"
+                           FontSize="15"
+                           TextColor="#E65100"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center" />
+                </Border>
 
             </VerticalStackLayout>
         </ScrollView>
 
         <!-- Кнопка назад -->
-        <Button Grid.Row="2" 
-                Text="Назад" 
-                Clicked="OnBackClicked" 
-                BackgroundColor="Transparent" 
-                TextColor="#2E86AB" 
-                BorderColor="#2E86AB" 
-                BorderWidth="1" 
-                Margin="20" />
+        <Border Grid.Row="2"
+                BackgroundColor="White"
+                StrokeThickness="0"
+                Padding="20,15">
+            <Button Text="← Назад" 
+                    Clicked="OnBackClicked" 
+                    BackgroundColor="{DynamicResource SecondaryColor}" 
+                    TextColor="White" 
+                    CornerRadius="8"
+                    HeightRequest="50"
+                    FontSize="16"
+                    FontAttributes="Bold" />
+        </Border>
     </Grid>
 </ContentPage>

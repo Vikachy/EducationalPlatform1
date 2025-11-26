@@ -14,10 +14,35 @@
             <converters:FileTypeToIconConverter x:Key="FileTypeToIconConverter" />
             <converters:ChatTypeToColorConverter x:Key="ChatTypeToColorConverter" />
             <converters:ChatTypeToIconConverter x:Key="ChatTypeToIconConverter" />
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+            <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
+        <!-- Индикатор загрузки на весь экран -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.RowSpan="2"
+              BackgroundColor="#80000000"
+              IsVisible="False"
+              VerticalOptions="Fill"
+              HorizontalOptions="Fill">
+            <VerticalStackLayout 
+                Spacing="20"
+                VerticalOptions="Center"
+                HorizontalOptions="Center">
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="White"
+                                   HeightRequest="50"
+                                   WidthRequest="50"/>
+                <Label Text="Загрузка чатов..."
+                       TextColor="White"
+                       FontSize="16"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
+
         <!-- Заголовок -->
         <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
             <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
@@ -26,8 +51,12 @@
             </Grid>
         </Border>
 
-        <!-- Основная панель с двумя колонками -->
-        <Grid Grid.Row="1" ColumnDefinitions="350,*">
+        <!-- Основная панель: на мобильных - одна колонка, на десктопе - две -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="ChatsColumn" Width="{OnPlatform WinUI=350, Default=*}" />
+                <ColumnDefinition x:Name="ChatColumn" Width="{OnPlatform WinUI=*, Default=0}" />
+            </Grid.ColumnDefinitions>
             <!-- Список чатов слева -->
             <CollectionView Grid.Column="0"
                             x:Name="AllChatsCollectionView"
@@ -101,11 +130,15 @@
                                                 BackgroundColor="LightGray" Stroke="LightGray" StrokeThickness="1"
                                                 StrokeShape="RoundRectangle 20" WidthRequest="36" HeightRequest="36"
                                                 VerticalOptions="Start">
-                                            <Image Source="{Binding SenderAvatar}" Aspect="AspectFill"
+                                            <Image Source="{Binding SenderAvatar, Converter={StaticResource AvatarConverter}}" Aspect="AspectFill"
                                                    HorizontalOptions="Center" VerticalOptions="Center"
                                                    WidthRequest="32" HeightRequest="32" />
                                         </Border>
-                                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding SenderName}" FontSize="12" TextColor="#2E86AB" FontAttributes="Bold" VerticalOptions="End" />
+                                        <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="4" VerticalOptions="End">
+                                            <Label Text="{Binding SenderName}" FontSize="12" TextColor="#2E86AB" FontAttributes="Bold" />
+                                            <Label Text="{Binding UserEmoji}" FontSize="14" VerticalOptions="Center"
+                                                   IsVisible="{Binding UserEmoji, Converter={StaticResource NotNullConverter}}" />
+                                        </HorizontalStackLayout>
                                         <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
                                             <Label Text="{Binding MessageText}" TextColor="#333333" FontSize="14" LineBreakMode="WordWrap" IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
                                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsFileMessage}">
@@ -161,8 +194,8 @@
                 <Border Grid.Row="2" BackgroundColor="White" Stroke="#E0E0E0" StrokeThickness="1" Padding="10">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                         <Entry Grid.Column="0" x:Name="MessageEntry" Placeholder="Введите сообщение..." Completed="OnMessageSent" ReturnType="Send" />
-                        <Button Grid.Column="1" Text="📎" BackgroundColor="Transparent" TextColor="#2E86AB" WidthRequest="40" HeightRequest="40" Clicked="OnAttachFileClicked" />
-                        <Button Grid.Column="2" Text="➤" BackgroundColor="#2E86AB" TextColor="White" WidthRequest="40" HeightRequest="40" Clicked="OnSendMessageClicked" />
+                        <Button Grid.Column="1" Text="📎" BackgroundColor="Transparent" TextColor="#2E86AB" MinimumWidthRequest="44" MinimumHeightRequest="44" WidthRequest="44" HeightRequest="44" Clicked="OnAttachFileClicked" />
+                        <Button Grid.Column="2" Text="➤" BackgroundColor="#2E86AB" TextColor="White" MinimumWidthRequest="44" MinimumHeightRequest="44" WidthRequest="44" HeightRequest="44" Clicked="OnSendMessageClicked" />
                     </Grid>
                 </Border>
             </Grid>

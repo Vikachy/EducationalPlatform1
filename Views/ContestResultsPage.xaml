@@ -13,20 +13,52 @@
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
-        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
-            <HorizontalStackLayout>
-                <Button Text="←" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="White" />
-                <Label Text="Оценивание работ" FontSize="20" TextColor="White" FontAttributes="Bold" />
-            </HorizontalStackLayout>
+        <!-- Современный заголовок -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}" 
+                Padding="20,15"
+                StrokeThickness="0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Оценивание работ"
+                       FontSize="22"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+            </Grid>
         </Border>
 
-        <CollectionView Grid.Row="1" x:Name="SubmissionsCollection" SelectionMode="None">
+        <!-- Список работ с современным дизайном -->
+        <CollectionView Grid.Row="1" 
+                        x:Name="SubmissionsCollection" 
+                        SelectionMode="None"
+                        BackgroundColor="{DynamicResource BackgroundColor}">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Border Margin="10" Padding="12" BackgroundColor="#F8F9FA" Stroke="#DDD" StrokeThickness="1" StrokeShape="RoundRectangle 10">
-                        <VerticalStackLayout Spacing="6">
-                            <Label Text="{Binding ProjectName}" FontAttributes="Bold" />
-                            <Label FontSize="12" TextColor="#666">
+                    <Border Margin="15,8"
+                            Padding="16"
+                            BackgroundColor="White"
+                            Stroke="{DynamicResource PrimaryColor}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 12">
+                        <VerticalStackLayout Spacing="10">
+                            <!-- Заголовок проекта -->
+                            <Label Text="{Binding ProjectName}"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextColor}" />
+                            
+                            <!-- Информация о студенте -->
+                            <Label FontSize="14" TextColor="#666">
                                 <Label.Text>
                                     <MultiBinding StringFormat="Студент: {0} {1}">
                                         <Binding Path="Student.FirstName" />
@@ -34,13 +66,64 @@
                                     </MultiBinding>
                                 </Label.Text>
                             </Label>
-                            <Label Text="{Binding Description}" FontSize="11" TextColor="#888" LineBreakMode="WordWrap" IsVisible="{Binding Description, Converter={StaticResource NotNullConverter}}" />
-                            <Label Text="{Binding TeacherScore, StringFormat='Оценка: {0}'}" FontSize="12" FontAttributes="Bold" TextColor="{DynamicResource PrimaryColor}" IsVisible="{Binding TeacherScore, Converter={StaticResource GreaterThanZeroConverter}}" />
-                            <Label Text="{Binding TeacherComment}" FontSize="11" TextColor="#666" LineBreakMode="WordWrap" IsVisible="{Binding TeacherComment, Converter={StaticResource NotNullConverter}}" />
-                            <Label Text="{Binding SubmissionDate, StringFormat='📅 {0:dd.MM.yyyy HH:mm}'}" FontSize="11" TextColor="#666" />
-                            <HorizontalStackLayout Spacing="8">
-                                <Button Text="Скачать" Clicked="OnDownloadClicked" CommandParameter="{Binding ProjectFileUrl}" />
-                                <Button Text="Оценить" Clicked="OnGradeClicked" CommandParameter="{Binding .}" BackgroundColor="{DynamicResource PrimaryColor}" TextColor="White" IsVisible="{Binding Source={x:Reference Page}, Path=CanGrade}" />
+                            
+                            <!-- Описание -->
+                            <Label Text="{Binding Description}"
+                                   FontSize="13"
+                                   TextColor="#888"
+                                   LineBreakMode="WordWrap"
+                                   IsVisible="{Binding Description, Converter={StaticResource NotNullConverter}}" />
+                            
+                            <!-- Оценка -->
+                            <Border BackgroundColor="#E8F5E9"
+                                    Stroke="#4CAF50"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="10"
+                                    IsVisible="{Binding TeacherScore, Converter={StaticResource GreaterThanZeroConverter}}">
+                                <Label Text="{Binding TeacherScore, StringFormat='Оценка: {0} баллов'}"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="#2E7D32" />
+                            </Border>
+                            
+                            <!-- Комментарий преподавателя -->
+                            <Border BackgroundColor="#FFF3E0"
+                                    Stroke="#FF9800"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="10"
+                                    IsVisible="{Binding TeacherComment, Converter={StaticResource NotNullConverter}}">
+                                <Label Text="{Binding TeacherComment}"
+                                       FontSize="13"
+                                       TextColor="#E65100"
+                                       LineBreakMode="WordWrap" />
+                            </Border>
+                            
+                            <!-- Дата отправки -->
+                            <Label Text="{Binding SubmissionDate, StringFormat='Дата отправки: {0:dd.MM.yyyy HH:mm}'}"
+                                   FontSize="12"
+                                   TextColor="#999" />
+                            
+                            <!-- Кнопки действий -->
+                            <HorizontalStackLayout Spacing="10" Margin="0,5,0,0">
+                                <Button Text="Скачать файл"
+                                        Clicked="OnDownloadClicked"
+                                        CommandParameter="{Binding ProjectFileUrl}"
+                                        BackgroundColor="{DynamicResource SecondaryColor}"
+                                        TextColor="White"
+                                        CornerRadius="8"
+                                        HeightRequest="40"
+                                        HorizontalOptions="FillAndExpand" />
+                                <Button Text="Оценить"
+                                        Clicked="OnGradeClicked"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="{DynamicResource PrimaryColor}"
+                                        TextColor="White"
+                                        CornerRadius="8"
+                                        HeightRequest="40"
+                                        IsVisible="{Binding Source={x:Reference Page}, Path=CanGrade}"
+                                        HorizontalOptions="FillAndExpand" />
                             </HorizontalStackLayout>
                         </VerticalStackLayout>
                     </Border>

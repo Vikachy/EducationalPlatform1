@@ -35,9 +35,13 @@ namespace EducationalPlatform.Views
 
             BindingContext = this;
 
-            // Подписываемся на события смены темы и языка
+            // Устанавливаем глобального пользователя для всего приложения
+            UserSessionService.CurrentUser = _currentUser;
+
+            // Подписываемся на события смены темы, языка и изменения аватара
             SettingsService.GlobalThemeChanged += OnGlobalThemeChanged;
             SettingsService.GlobalLanguageChanged += OnGlobalLanguageChanged;
+            UserSessionService.AvatarChanged += OnGlobalAvatarChanged;
 
             InitializeDashboard();
         }
@@ -56,6 +60,8 @@ namespace EducationalPlatform.Views
             if (_currentUser != null)
             {
                 InitializeDashboard();
+                // Обновляем аватар при каждом появлении страницы
+                LoadUserAvatar();
             }
         }
 
@@ -109,6 +115,7 @@ namespace EducationalPlatform.Views
             base.OnDisappearing();
             SettingsService.GlobalThemeChanged -= OnGlobalThemeChanged;
             SettingsService.GlobalLanguageChanged -= OnGlobalLanguageChanged;
+            UserSessionService.AvatarChanged -= OnGlobalAvatarChanged;
         }
 
         private void OnGlobalThemeChanged(object? sender, string theme)
@@ -133,7 +140,6 @@ namespace EducationalPlatform.Views
             WelcomeLabel.Text = _settingsService.GetRandomGreeting(_currentUser.FirstName ?? "Пользователь");
             StatsLabel.Text = _settingsService.GetLocalizedString("Streak") + $": {_currentUser.StreakDays} дней 🔥 | " +
                             _settingsService.GetLocalizedString("Currency") + $": {_currentUser.GameCurrency} 💰";
-            StreakFireLabel.Text = _settingsService.GetLocalizedString("Streak") + $": {_currentUser.StreakDays} дней";
 
             UpdateSectionTitles();
         }
@@ -167,39 +173,62 @@ namespace EducationalPlatform.Views
                 var avatarImage = this.FindByName<Image>("AvatarImage");
                 if (avatarImage != null && _dbService != null && _currentUser != null)
                 {
-                    // Получаем путь к аватару из базы данных
+                    Console.WriteLine($"🔄 Загружаем аватар для пользователя {_currentUser.UserId}");
+                    
+                    // Получаем данные аватара из базы данных (base64 или путь)
                     var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
-
-                    if (!string.IsNullOrEmpty(currentAvatar))
+                    
+                    // Обновляем на главном потоке
+                    MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        // Если путь существует и файл доступен - используем его
-                        if (File.Exists(currentAvatar))
-                        {
-                            avatarImage.Source = ImageSource.FromFile(currentAvatar);
-                            _currentUser.AvatarUrl = currentAvatar;
-                        }
-                        else
-                        {
-                            // Если файл не найден, используем дефолтный аватар
-                            avatarImage.Source = "default_avatar.png";
-                            Console.WriteLine($"Аватар не найден по пути: {currentAvatar}");
-                        }
-                    }
-                    else
-                    {
-                        avatarImage.Source = "default_avatar.png";
-                    }
+                        // Используем вспомогательный метод для преобразования в ImageSource
+                        avatarImage.Source = ServiceHelper.GetImageSourceFromAvatarData(currentAvatar);
+                        _currentUser.AvatarUrl = currentAvatar;
+                        Console.WriteLine($"✅ Аватар обновлен в UI");
+                    });
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки аватара: {ex.Message}");
+                Console.WriteLine($"❌ Ошибка загрузки аватара: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 // В случае ошибки показываем дефолтный аватар
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    var avatarImage = this.FindByName<Image>("AvatarImage");
+                    if (avatarImage != null)
+                    {
+                        avatarImage.Source = "default_avatar.png";
+                    }
+                });
+            }
+        }
+
+        /// <summary>
+        /// Глобальный обработчик изменения аватара.
+        /// Вызывается после сохранения аватара в EditProfilePage.
+        /// </summary>
+        private void OnGlobalAvatarChanged(object? sender, AvatarChangedEventArgs e)
+        {
+            try
+            {
+                if (_currentUser == null || e.UserId != _currentUser.UserId)
+                    return;
+
+                _currentUser.AvatarUrl = e.AvatarData ?? _currentUser.AvatarUrl;
+
                 var avatarImage = this.FindByName<Image>("AvatarImage");
                 if (avatarImage != null)
                 {
-                    avatarImage.Source = "default_avatar.png";
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        avatarImage.Source = ServiceHelper.GetImageSourceFromAvatarData(e.AvatarData);
+                    });
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка обработки глобального изменения аватара на дашборде: {ex.Message}");
             }
         }
 
@@ -557,15 +586,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private async void OnContinueStreakClicked(object sender, EventArgs e)
-        {
-            await DisplayAlert(
-                _settingsService?.GetLocalizedString("Streak") ?? "Серия",
-                _settingsService?.CurrentLanguage == "ru"
-                    ? "Продолжайте в том же духе! Ваша серия сохраняется."
-                    : "Keep it up! Your streak is maintained.",
-                "OK");
-        }
 
         // ИСПРАВЛЕННЫЙ МЕТОД - переход к изучению курса при клике
         private async void OnMyCourseSelected(object sender, SelectionChangedEventArgs e)

@@ -94,7 +94,7 @@ namespace EducationalPlatform.Views
             {
                 var course = (TeacherCourse)CoursePicker.SelectedItem;
                 var startDate = DateTime.Now;
-                var endDate = startDate.AddMonths(9); // Группа на 3 месяца
+                var endDate = startDate.AddMonths(9); // Группа на 9 месяцев
 
                 var success = await _dbService.CreateStudyGroupAsync(
                     GroupNameEntry.Text.Trim(),
@@ -205,59 +205,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // ДОБАВЛЕНИЕ СТУДЕНТА В ГРУППУ
-        private async void OnAddStudentClicked(object sender, EventArgs e)
-        {
-            if (GroupsCollection.SelectedItem is not StudyGroup selectedGroup)
-            {
-                await DisplayAlert("Ошибка", "Сначала выберите группу", "OK");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(StudentUsernameEntry.Text))
-            {
-                await DisplayAlert("Ошибка", "Введите имя пользователя студента", "OK");
-                return;
-            }
-
-            try
-            {
-                // Поиск студента по имени пользователя
-                var student = await _dbService.GetUserByUsernameAsync(StudentUsernameEntry.Text.Trim());
-
-                if (student == null)
-                {
-                    await DisplayAlert("Ошибка", "Студент не найден", "OK");
-                    return;
-                }
-
-                if (student.RoleId != 1) // Проверяем, что это студент (RoleId = 1)
-                {
-                    await DisplayAlert("Ошибка", "Пользователь не является студентом", "OK");
-                    return;
-                }
-
-                // Добавление студента в группу
-                bool success = await _dbService.EnrollStudentToGroupAsync(selectedGroup.GroupId, student.UserId);
-
-                if (success)
-                {
-                    await DisplayAlert("Успех", $"Студент {student.Username} добавлен в группу", "OK");
-                    StudentUsernameEntry.Text = string.Empty;
-                    await LoadGroupStudents(selectedGroup.GroupId);
-                    await LoadGroups(); // Обновляем счетчик студентов
-                }
-                else
-                {
-                    await DisplayAlert("Ошибка", "Не удалось добавить студента в группу", "OK");
-                }
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", $"Ошибка при добавлении студента: {ex.Message}", "OK");
-            }
-        }
-
         // УДАЛЕНИЕ СТУДЕНТА ИЗ ГРУППЫ
         private async void OnRemoveStudentClicked(object sender, EventArgs e)
         {
@@ -295,7 +242,7 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // МАССОВОЕ ДОБАВЛЕНИЕ СТУДЕНТОВ - ИСПРАВЛЕННАЯ ВЕРСИЯ
+        // МАССОВОЕ ДОБАВЛЕНИЕ СТУДЕНТОВ
         private async void OnAddMultipleStudentsClicked(object sender, EventArgs e)
         {
             if (GroupsCollection.SelectedItem is not StudyGroup selectedGroup)

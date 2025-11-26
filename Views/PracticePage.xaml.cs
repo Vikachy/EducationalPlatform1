@@ -66,10 +66,11 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                var attachments = await GetLessonAttachmentsAsync(_lessonId);
-                if (attachments.Any())
+                // Реальная загрузка вложений из базы данных
+                var attachments = await _dbService.GetLessonAttachmentsAsync(_lessonId);
+                if (attachments != null && attachments.Any())
                 {
-                    // Добавляем иконки файлов
+                    // Добавляем иконки файлов и подготавливаем модель для отображения
                     var attachmentsWithIcons = attachments.Select(a => new AttachmentViewModel
                     {
                         FileName = a.FileName,
@@ -81,41 +82,15 @@ namespace EducationalPlatform.Views
                     AttachmentsCollection.ItemsSource = attachmentsWithIcons;
                     AttachmentsSection.IsVisible = true;
                 }
+                else
+                {
+                    AttachmentsSection.IsVisible = false;
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка загрузки вложений: {ex.Message}");
-            }
-        }
-
-        // Временная реализация до добавления метода в DatabaseService
-        private async Task<List<LessonAttachment>> GetLessonAttachmentsAsync(int lessonId)
-        {
-            try
-            {
-                // Временная реализация - замените на реальный вызов к БД
-                return new List<LessonAttachment>
-                {
-                    new LessonAttachment
-                    {
-                        FileName = "example.pdf",
-                        FileSize = "2.1 MB",
-                        FilePath = "/storage/example.pdf",
-                        FileType = ".pdf"
-                    },
-                    new LessonAttachment
-                    {
-                        FileName = "sample_code.cs",
-                        FileSize = "1.5 KB",
-                        FilePath = "/storage/sample_code.cs",
-                        FileType = ".cs"
-                    }
-                };
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка загрузки вложений урока: {ex.Message}");
-                return new List<LessonAttachment>();
+                AttachmentsSection.IsVisible = false;
             }
         }
 
@@ -224,7 +199,15 @@ namespace EducationalPlatform.Views
                     var filePath = attachment.FilePath;
                     var fileName = attachment.FileName;
 
-                    var success = await _fileService.DownloadFileAsync(filePath, fileName);
+                    // Восстанавливаем фактический путь к файлу (с учётом data URL и разных платформ)
+                    var resolvedPath = await _fileService.ResolveFilePath(filePath, fileName, "PracticeFiles");
+                    if (string.IsNullOrEmpty(resolvedPath) || !File.Exists(resolvedPath))
+                    {
+                        await DisplayAlert("Ошибка", $"Файл не найден: {fileName}", "OK");
+                        return;
+                    }
+
+                    var success = await _fileService.DownloadFileAsync(resolvedPath, fileName);
 
                     if (success)
                     {

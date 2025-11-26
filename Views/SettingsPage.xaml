@@ -128,7 +128,8 @@
                     <HorizontalStackLayout Spacing="15">
                         <CheckBox x:Name="EmailNotifications"
                                   Color="{DynamicResource PrimaryColor}"
-                                  VerticalOptions="Center" />
+                                  VerticalOptions="Center"
+                                  CheckedChanged="OnEmailNotificationsChanged" />
                         <Label Text="Email уведомления"
                                FontSize="14"
                                TextColor="{DynamicResource TextColor}"
@@ -138,7 +139,8 @@
                     <HorizontalStackLayout Spacing="15">
                         <CheckBox x:Name="PushNotifications"
                                   Color="{DynamicResource PrimaryColor}"
-                                  VerticalOptions="Center" />
+                                  VerticalOptions="Center"
+                                  CheckedChanged="OnPushNotificationsChanged" />
                         <Label Text="Push уведомления"
                                FontSize="14"
                                TextColor="{DynamicResource TextColor}"

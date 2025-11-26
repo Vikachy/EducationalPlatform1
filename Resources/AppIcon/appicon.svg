@@ -1,29 +1,45 @@
-<?xml version="1.0" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
- "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
- width="500.000000pt" height="500.000000pt" viewBox="0 0 500.000000 500.000000"
- preserveAspectRatio="xMidYMid meet">
-
-<g transform="translate(0.000000,500.000000) scale(0.100000,-0.100000)"
-fill="#000000" stroke="none">
-<path d="M1262 3337 l-22 -23 0 -817 0 -816 22 -21 c21 -20 32 -20 544 -20
-l523 0 1 -216 c0 -125 5 -224 11 -235 9 -18 1 -19 -286 -19 l-297 0 -29 -29
-c-36 -36 -37 -70 -3 -110 l26 -31 747 0 c737 0 748 0 769 20 30 28 38 68 21
-99 -27 48 -44 51 -352 51 -281 0 -287 0 -277 19 6 12 10 106 10 235 l0 216
-523 0 524 0 21 23 22 23 0 816 0 817 -26 20 c-27 21 -28 21 -1239 21 l-1212 0
--21 -23z m736 -536 c-27 -24 -33 -36 -33 -70 0 -117 165 -132 190 -18 6 28 8
-30 15 12 33 -77 -9 -178 -89 -211 -70 -29 -156 -3 -200 61 -20 30 -23 44 -19
-100 3 58 8 69 38 100 32 33 71 52 113 54 13 1 9 -6 -15 -28z m1020 12 c-54
--34 -63 -96 -19 -145 24 -28 36 -33 71 -32 52 2 90 34 90 78 0 22 3 27 11 19
-7 -7 12 -36 13 -65 1 -127 -122 -205 -234 -148 -80 41 -112 137 -72 216 11 22
-28 46 36 53 20 17 85 40 111 40 17 0 16 -2 -7 -16z m218 -525 c8 -12 -55 -73
--87 -83 -10 -4 -19 -11 -19 -16 0 -5 -7 -9 -16 -9 -9 0 -12 -5 -8 -12 5 -7 3
--8 -6 -3 -7 4 -15 4 -19 -1 -9 -14 -147 -79 -228 -107 -209 -75 -448 -77 -668
--5 -38 12 -76 22 -82 21 -7 0 -13 3 -13 8 0 5 -6 9 -13 9 -7 0 -46 19 -88 43
--42 24 -82 41 -90 39 -8 -3 -11 -1 -7 3 5 5 -15 23 -42 42 -49 33 -57 53 -21
-53 9 0 35 -13 57 -29 45 -33 194 -113 194 -105 0 4 6 1 14 -5 21 -17 174 -68
-246 -81 91 -17 271 -15 352 4 151 35 313 99 301 119 -3 6 -1 7 6 3 12 -8 109
-46 181 99 38 28 46 30 56 13z"/>
-</g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Фон с градиентом -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2E86AB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A5F7A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F0F8FF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Фон -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGradient)"/>
+  
+  <!-- Книга (основной элемент) -->
+  <g transform="translate(256, 256)">
+    <!-- Обложка книги -->
+    <rect x="-120" y="-140" width="240" height="280" rx="8" fill="url(#bookGradient)" stroke="#2E86AB" stroke-width="4"/>
+    
+    <!-- Страницы книги -->
+    <rect x="-115" y="-135" width="230" height="270" rx="4" fill="#FFFFFF"/>
+    
+    <!-- Линии текста на страницах -->
+    <line x1="-100" y1="-100" x2="100" y2="-100" stroke="#2E86AB" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-100" y1="-60" x2="80" y2="-60" stroke="#2E86AB" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-100" y1="-20" x2="100" y2="-20" stroke="#2E86AB" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-100" y1="20" x2="90" y2="20" stroke="#2E86AB" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-100" y1="60" x2="70" y2="60" stroke="#2E86AB" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-100" y1="100" x2="100" y2="100" stroke="#2E86AB" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Закладка -->
+    <rect x="115" y="-140" width="20" height="100" rx="2" fill="#FFD700"/>
+    
+    <!-- Звездочка (символ достижений) -->
+    <path d="M 0 -180 L 8 -160 L 28 -160 L 12 -148 L 20 -128 L 0 -140 L -20 -128 L -12 -148 L -28 -160 L -8 -160 Z" 
+          fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+  </g>
+  
+  <!-- Декоративные элементы -->
+  <circle cx="100" cy="100" r="30" fill="#FFFFFF" opacity="0.3"/>
+  <circle cx="412" cy="412" r="25" fill="#FFFFFF" opacity="0.2"/>
 </svg>

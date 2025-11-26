@@ -35,7 +35,8 @@
                     IsVisible="False">
                 <VerticalStackLayout Spacing="8">
                     <HorizontalStackLayout Spacing="10">
-                        <Label Text="💡" 
+                        <Label Text="Подсказка"
+                               FontAttributes="Bold" 
                                FontSize="16" />
                         <Label Text="Подсказка" 
                                FontSize="16" 
@@ -83,7 +84,7 @@
                 <VerticalStackLayout Spacing="0">
                     <Border BackgroundColor="#6C757D"
                             Padding="10">
-                        <Label Text="📎 Прикрепленные файлы" 
+                        <Label Text="Прикрепленные файлы" 
                                FontSize="14" 
                                FontAttributes="Bold" 
                                TextColor="White" />
@@ -110,7 +111,9 @@
                                                TextColor="Gray" />
                                     </VerticalStackLayout>
                                     <Button Grid.Column="2" 
-                                            Text="📥" 
+                                            Text="Скачать"
+                                            FontSize="12"
+                                            Padding="5" 
                                             Clicked="OnDownloadAttachmentClicked"
                                             CommandParameter="{Binding .}"
                                             BackgroundColor="Transparent"
@@ -124,7 +127,7 @@
             </Border>
 
             <!-- Кнопка проверки -->
-            <Button Text="✅ Проверить решение" 
+            <Button Text="Проверить решение" 
                     Clicked="OnCheckClicked"
                     BackgroundColor="{DynamicResource PrimaryColor}"
                     TextColor="White"

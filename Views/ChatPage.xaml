@@ -36,10 +36,10 @@
         </Border>
 
         <!-- Список сообщений -->
-        <CollectionView Grid.Row="1"
-                        x:Name="MessagesCollectionView"
-                        ItemsSource="{Binding Messages}"
-                        SelectionMode="None">
+        <ScrollView Grid.Row="1">
+            <CollectionView x:Name="MessagesCollectionView"
+                            ItemsSource="{Binding Messages}"
+                            SelectionMode="None">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Grid Padding="10,5" ColumnDefinitions="*,*">
@@ -49,7 +49,7 @@
                                BackgroundColor="#F5F5F5"
                                Padding="12"
                                HorizontalOptions="Start"
-                               MaximumWidthRequest="300"
+                               MaximumWidthRequest="{OnPlatform WinUI=400, Default=300}"
                                CornerRadius="18"
                                BorderColor="#E0E0E0">
                             <VerticalStackLayout Spacing="4">
@@ -79,7 +79,7 @@
                                BackgroundColor="#2E86AB"
                                Padding="12"
                                HorizontalOptions="End"
-                               MaximumWidthRequest="300"
+                               MaximumWidthRequest="{OnPlatform WinUI=400, Default=300}"
                                CornerRadius="18">
                             <VerticalStackLayout Spacing="4">
                                 <!-- Текст сообщения -->
@@ -103,7 +103,8 @@
                     </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
-        </CollectionView>
+            </CollectionView>
+        </ScrollView>
 
         <!-- Поле ввода сообщения -->
         <Border Grid.Row="2"
@@ -122,16 +123,20 @@
                         Text="📎"
                         BackgroundColor="Transparent"
                         TextColor="#2E86AB"
-                        WidthRequest="40"
-                        HeightRequest="40"
+                        MinimumWidthRequest="44"
+                        MinimumHeightRequest="44"
+                        WidthRequest="44"
+                        HeightRequest="44"
                         Clicked="OnAttachFileClicked" />
 
                 <Button Grid.Column="2"
                         Text="➤"
                         BackgroundColor="#2E86AB"
                         TextColor="White"
-                        WidthRequest="40"
-                        HeightRequest="40"
+                        MinimumWidthRequest="44"
+                        MinimumHeightRequest="44"
+                        WidthRequest="44"
+                        HeightRequest="44"
                         Clicked="OnSendMessageClicked" />
             </Grid>
         </Border>

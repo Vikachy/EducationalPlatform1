@@ -20,6 +20,8 @@ namespace EducationalPlatform.Models
         public string? FileName { get; set; }
         public string? FileType { get; set; }
         public string? FileSize { get; set; }
+        public string? FilePath { get; set; }
+        public string? UserEmoji { get; set; }
         public bool IsDelivered { get; set; } = true;
     }
 

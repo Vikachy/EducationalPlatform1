@@ -5,6 +5,9 @@ using Microsoft.Data.SqlClient;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Globalization;
+using Microsoft.Maui.Devices;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace EducationalPlatform.Views
 {
@@ -21,30 +24,119 @@ namespace EducationalPlatform.Views
         private StudyGroup? _activeGroup;
         private readonly ObservableCollection<GroupChatMessage> _messages = new();
         private Timer? _refreshTimer;
+        private bool _isLoadingGroups;
+        private bool _isLoadingMessages;
+        private bool _isRefreshingMessages;
+        private bool _isSendingMessage;
+        private bool _isSendingFile;
 
         // Словарь для хранения непрочитанных сообщений
         private Dictionary<int, int> _unreadMessagesCount = new();
+        private readonly Dictionary<int, string> _avatarCache = new();
 
         // Поддерживаемые форматы файлов
         private readonly FilePickerFileType _supportedFileTypes = new(
             new Dictionary<DevicePlatform, IEnumerable<string>>
             {
                 { DevicePlatform.WinUI, new[] { ".zip", ".doc", ".docx", ".ppt", ".pptx", ".pdf", ".txt", ".xls", ".xlsx", ".jpg", ".png", ".mp4" } },
-                { DevicePlatform.macOS, new[] { ".zip", ".doc", ".docx", ".ppt", ".pptx", ".pdf", ".txt", ".xls", ".xlsx", ".jpg", ".png", ".mp4" } }
+                { DevicePlatform.macOS, new[] { ".zip", ".doc", ".docx", ".ppt", ".pptx", ".pdf", ".txt", ".xls", ".xlsx", ".jpg", ".png", ".mp4" } },
+                { DevicePlatform.Android, new[] { ".zip", ".doc", ".docx", ".ppt", ".pptx", ".pdf", ".txt", ".xls", ".xlsx", ".jpg", ".png", ".mp4" } },
+                { DevicePlatform.iOS, new[] { ".zip", ".doc", ".docx", ".ppt", ".pptx", ".pdf", ".txt", ".xls", ".xlsx", ".jpg", ".png", ".mp4" } }
             });
 
-        public bool HasActiveChat => _activeGroup != null;
+        public StudyGroup? ActiveGroup
+        {
+            get => _activeGroup;
+            private set
+            {
+                if (_activeGroup != value)
+                {
+                    _activeGroup = value;
+                    OnPropertyChanged(nameof(ActiveGroup));
+                    OnPropertyChanged(nameof(HasActiveChat));
+                }
+            }
+        }
+
+        private async Task RefreshTeacherGroups()
+        {
+            try
+            {
+                var groups = await _dbService.GetTeacherStudyGroupsAsync(_currentUser.UserId) ?? new List<StudyGroup>();
+                _unreadMessagesCount = await _dbService.GetTeacherUnreadMessagesCountAsync(_currentUser.UserId);
+
+                var infoCache = new Dictionary<int, (string CourseName, int StudentCount, string LastMessage, DateTime LastMessageTime)>();
+                foreach (var group in groups)
+                {
+                    infoCache[group.GroupId] = await GetGroupChatInfoAsync(group.GroupId);
+                }
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    var updatedIds = groups.Select(g => g.GroupId).ToHashSet();
+
+                    foreach (var group in groups)
+                    {
+                        var info = infoCache[group.GroupId];
+                        var unreadCount = _unreadMessagesCount.TryGetValue(group.GroupId, out var count) ? count : 0;
+
+                        var existing = Groups.FirstOrDefault(g => g.GroupId == group.GroupId);
+                        if (existing != null)
+                        {
+                            existing.UpdateMeta(info.CourseName ?? existing.CourseName, info.StudentCount, info.LastMessage, info.LastMessageTime, unreadCount, group.IsActive);
+                        }
+                        else
+                        {
+                            Groups.Add(new TeacherGroupChat
+                            {
+                                GroupId = group.GroupId,
+                                GroupName = group.GroupName,
+                                CourseName = info.CourseName ?? "No Course",
+                                StudentCount = info.StudentCount,
+                                IsActive = group.IsActive,
+                                UnreadMessages = unreadCount,
+                                LastMessage = info.LastMessage,
+                                LastMessageTime = info.LastMessageTime
+                            });
+                        }
+                    }
+
+                    var toRemove = Groups.Where(g => !updatedIds.Contains(g.GroupId)).ToList();
+                    foreach (var remove in toRemove)
+                    {
+                        Groups.Remove(remove);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка обновления списка групп: {ex.Message}");
+            }
+        }
+
+        public bool HasActiveChat => ActiveGroup != null;
 
         public TeacherChatsPage(User user, DatabaseService dbService, SettingsService settingsService)
         {
             InitializeComponent();
-            _currentUser = user;
-            _dbService = dbService;
-            _settingsService = settingsService;
-            _fileService = new FileService();
+            _currentUser = user ?? throw new ArgumentNullException(nameof(user));
+            _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
+            _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
 
+            // Используем Dependency Injection для получения FileService
+            _fileService = ServiceHelper.GetService<FileService>();
+
+            // ИНИЦИАЛИЗАЦИЯ КОЛЛЕКЦИИ ПЕРЕД ИСПОЛЬЗОВАНИЕМ
             Groups = new ObservableCollection<TeacherGroupChat>();
+
             BindingContext = this;
+
+            // Подписываемся на глобальное событие изменения аватара,
+            // чтобы сбрасывать кэш и обновлять аватарки в чате
+            UserSessionService.AvatarChanged += OnGlobalAvatarChanged;
+
+            // Устанавливаем ItemsSource для CollectionView
+            GroupsCollectionView.ItemsSource = Groups;
 
             LoadTeacherGroups();
 
@@ -55,6 +147,7 @@ namespace EducationalPlatform.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
+            // Всегда обновляем список групп при появлении страницы
             LoadTeacherGroups();
         }
 
@@ -62,6 +155,7 @@ namespace EducationalPlatform.Views
         {
             base.OnDisappearing();
             _refreshTimer?.Dispose();
+            UserSessionService.AvatarChanged -= OnGlobalAvatarChanged;
         }
 
         private async void OnManageGroupsClicked(object sender, EventArgs e)
@@ -78,21 +172,57 @@ namespace EducationalPlatform.Views
 
         private async void LoadTeacherGroups()
         {
+            if (_isLoadingGroups)
+            {
+                return;
+            }
+
+            _isLoadingGroups = true;
+
             try
             {
-                // Используем тот же подход, что и у студента - через таблицу участников чата
-                var groups = await _dbService.GetTeacherStudyGroupsAsync(_currentUser.UserId);
+                // Показываем индикатор загрузки на весь экран
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    var loadingOverlay = this.FindByName<Grid>("LoadingOverlay");
+                    var loadingIndicator = this.FindByName<ActivityIndicator>("LoadingIndicator");
+                    if (loadingOverlay != null)
+                    {
+                        loadingOverlay.IsVisible = true;
+                    }
+                    if (loadingIndicator != null)
+                    {
+                        loadingIndicator.IsRunning = true;
+                    }
+                });
+                if (_dbService == null)
+                {
+                    Console.WriteLine("❌ DatabaseService не инициализирован");
+                    return;
+                }
+
+                Console.WriteLine($"🔄 Загружаем группы для учителя {_currentUser.UserId}");
+
+                var groups = await _dbService.GetTeacherStudyGroupsAsync(_currentUser.UserId) ?? new List<StudyGroup>();
                 _unreadMessagesCount = await _dbService.GetTeacherUnreadMessagesCountAsync(_currentUser.UserId);
 
-                Groups.Clear();
+                Console.WriteLine($"📊 Получено {groups.Count} групп из БД");
+
+                var preparedItems = new List<TeacherGroupChat>();
+                var addedGroupIds = new HashSet<int>();
 
                 foreach (var group in groups)
                 {
-                    // Получаем дополнительную информацию о группе
-                    var groupInfo = await GetGroupChatInfoAsync(group.GroupId);
-                    var unreadCount = _unreadMessagesCount.ContainsKey(group.GroupId) ? _unreadMessagesCount[group.GroupId] : 0;
+                    if (!addedGroupIds.Add(group.GroupId))
+                    {
+                        Console.WriteLine($"⚠️ Пропущен дубликат группы: {group.GroupName}, ID: {group.GroupId}");
+                        continue;
+                    }
 
-                    Groups.Add(new TeacherGroupChat
+                    var groupInfo = await GetGroupChatInfoAsync(group.GroupId);
+                    var unreadCount = _unreadMessagesCount.TryGetValue(group.GroupId, out var count) ? count : 0;
+
+                    preparedItems.Add(new TeacherGroupChat
                     {
                         GroupId = group.GroupId,
                         GroupName = group.GroupName,
@@ -105,18 +235,43 @@ namespace EducationalPlatform.Views
                     });
                 }
 
-                Console.WriteLine($"📊 Загружено {Groups.Count} групп с непрочитанными сообщениями");
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    Groups.Clear();
+                    foreach (var item in preparedItems)
+                    {
+                        Groups.Add(item);
+                    }
 
-                // Обновляем отображение
-                GroupsCollectionView.ItemsSource = null;
-                GroupsCollectionView.ItemsSource = Groups;
+                    OnPropertyChanged(nameof(HasActiveChat));
+                });
 
-                // Уведомляем об изменении свойства для привязок
-                OnPropertyChanged(nameof(HasActiveChat));
+                Console.WriteLine($"✅ Загружено {Groups.Count} уникальных групп");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Ошибка загрузки групп: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 await DisplayAlert("Error", $"Failed to load groups: {ex.Message}", "OK");
+            }
+            finally
+            {
+                _isLoadingGroups = false;
+                
+                // Скрываем индикатор загрузки
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    var loadingOverlay = this.FindByName<Grid>("LoadingOverlay");
+                    var loadingIndicator = this.FindByName<ActivityIndicator>("LoadingIndicator");
+                    if (loadingOverlay != null)
+                    {
+                        loadingOverlay.IsVisible = false;
+                    }
+                    if (loadingIndicator != null)
+                    {
+                        loadingIndicator.IsRunning = false;
+                    }
+                });
             }
         }
 
@@ -167,31 +322,56 @@ namespace EducationalPlatform.Views
             {
                 try
                 {
-                    _activeGroup = new StudyGroup
+                    Console.WriteLine($"🎯 Выбрана группа: {selectedGroup.GroupName}, ID: {selectedGroup.GroupId}");
+
+                    // На мобильных устройствах переходим на отдельную страницу чата
+                    if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
                     {
-                        GroupId = selectedGroup.GroupId,
-                        GroupName = selectedGroup.GroupName,
-                        StudentCount = selectedGroup.StudentCount,
-                        IsActive = selectedGroup.IsActive
-                    };
+                        // Оптимизация: используем данные из selectedGroup вместо запроса к БД
+                        // Переход должен быть быстрым, без блокирующих операций
+                        var group = new StudyGroup
+                        {
+                            GroupId = selectedGroup.GroupId,
+                            GroupName = selectedGroup.GroupName,
+                            StudentCount = selectedGroup.StudentCount,
+                            IsActive = selectedGroup.IsActive
+                        };
+                        
+                        Console.WriteLine($"✅ Группа подготовлена, переходим в чат");
+                        // Навигация выполняется напрямую на главном потоке для быстрого отклика
+                        await Navigation.PushAsync(new GroupChatPage(group, _currentUser, _dbService, _settingsService));
+                    }
+                    else
+                    {
+                        // На десктопе показываем встроенный чат
+                        ActiveGroup = new StudyGroup
+                        {
+                            GroupId = selectedGroup.GroupId,
+                            GroupName = selectedGroup.GroupName,
+                            StudentCount = selectedGroup.StudentCount,
+                            IsActive = selectedGroup.IsActive
+                        };
 
-                    ChatGroupNameLabel.Text = selectedGroup.GroupName;
-                    ChatOnlineLabel.Text = $"Студентов: {selectedGroup.StudentCount}";
+                        ChatGroupNameLabel.Text = selectedGroup.GroupName;
+                        ChatOnlineLabel.Text = $"Студентов: {selectedGroup.StudentCount}";
 
-                    _messages.Clear();
-                    await LoadMessages();
+                        _messages.Clear();
+                        await LoadMessages();
 
-                    // Отмечаем сообщения как прочитанные при открытии чата
-                    await MarkMessagesAsRead();
+                        // Отмечаем сообщения как прочитанные при открытии чата
+                        await MarkMessagesAsRead();
 
-                    // Обновляем счетчик непрочитанных в UI
-                    await UpdateUnreadCount(selectedGroup.GroupId);
+                        // Обновляем счетчик непрочитанных в UI
+                        await UpdateUnreadCount(selectedGroup.GroupId);
 
-                    _refreshTimer?.Dispose();
-                    _refreshTimer = new Timer(async _ => await RefreshMessages(), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+                        StartAutoRefresh();
 
-                    // Уведомляем об изменении свойства для привязок
-                    OnPropertyChanged(nameof(HasActiveChat));
+                        // Уведомляем об изменении свойства для привязок
+                        OnPropertyChanged(nameof(HasActiveChat));
+
+                        // Обновляем список групп в фоне (не блокируем UI)
+                        _ = Task.Run(async () => await RefreshTeacherGroups());
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -212,15 +392,14 @@ namespace EducationalPlatform.Views
                 }
 
                 // Обновляем отображение в списке групп
-                var group = Groups.FirstOrDefault(g => g.GroupId == groupId);
-                if (group != null)
+                await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    group.UnreadMessages = 0;
-
-                    // Принудительно обновляем отображение
-                    GroupsCollectionView.ItemsSource = null;
-                    GroupsCollectionView.ItemsSource = Groups;
-                }
+                    var group = Groups.FirstOrDefault(g => g.GroupId == groupId);
+                    if (group != null)
+                    {
+                        group.UnreadMessages = 0;
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -228,58 +407,78 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private async Task<string?> GetUserAvatarAsync(int userId)
+        private async Task<string> GetUserAvatarAsync(int userId)
         {
+            if (_avatarCache.TryGetValue(userId, out var cached))
+            {
+                return cached;
+            }
+
             try
             {
-                if (_dbService != null)
+                var avatarData = await _dbService.GetUserAvatarAsync(userId);
+                if (string.IsNullOrEmpty(avatarData))
                 {
-                    var avatarPath = await _dbService.GetUserAvatarAsync(userId);
-
-                    if (!string.IsNullOrEmpty(avatarPath))
-                    {
-                        if (File.Exists(avatarPath))
-                        {
-                            Console.WriteLine($"✅ Аватар найден для пользователя {userId}: {avatarPath}");
-                            return avatarPath;
-                        }
-                        else
-                        {
-                            var localPath = Path.Combine(FileSystem.AppDataDirectory, avatarPath);
-                            if (File.Exists(localPath))
-                            {
-                                Console.WriteLine($"✅ Аватар найден по локальному пути: {localPath}");
-                                return localPath;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"❌ Аватар не найден по пути: {avatarPath}");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"ℹ️ Аватар не установлен для пользователя {userId}");
-                    }
+                    avatarData = "default_avatar.png";
                 }
+
+                _avatarCache[userId] = avatarData;
+                return avatarData;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Ошибка загрузки аватара пользователя {userId}: {ex.Message}");
+                return "default_avatar.png";
             }
+        }
 
-            return "default_avatar.png";
+        private void OnGlobalAvatarChanged(object? sender, AvatarChangedEventArgs e)
+        {
+            try
+            {
+                // Сбрасываем кэш для пользователя с обновлённым аватаром
+                if (_avatarCache.ContainsKey(e.UserId))
+                    _avatarCache.Remove(e.UserId);
+
+                var newAvatar = e.AvatarData ?? "default_avatar.png";
+
+                // Обновляем аватар в уже загруженных сообщениях
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    foreach (var msg in _messages.Where(m => m.SenderId == e.UserId))
+                    {
+                        msg.SenderAvatar = newAvatar;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка обработки глобального изменения аватара в TeacherChatsPage: {ex.Message}");
+            }
         }
 
         private async Task LoadMessages()
         {
-            if (_activeGroup == null) return;
+            if (_isLoadingMessages || ActiveGroup == null) return;
+            _isLoadingMessages = true;
             try
             {
-                var list = await _dbService.GetGroupChatMessagesAsync(_activeGroup.GroupId);
-                _messages.Clear();
+                var list = await _dbService.GetGroupChatMessagesAsync(ActiveGroup.GroupId);
 
-                foreach (var m in list)
+                // Очищаем только если это первая загрузка или группа изменилась
+                if (_messages.Count == 0 || !_messages.Any(m => list.Any(l => l.MessageId == m.MessageId)))
+                {
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        _messages.Clear();
+                    });
+                }
+
+                // Добавляем только новые сообщения
+                var existingIds = _messages.Select(m => m.MessageId).ToHashSet();
+                var newMessages = list.Where(m => !existingIds.Contains(m.MessageId)).ToList();
+
+                foreach (var m in newMessages)
                 {
                     m.IsMyMessage = m.SenderId == _currentUser.UserId;
 
@@ -298,7 +497,7 @@ namespace EducationalPlatform.Views
                         m.FileName = fileData.FileName;
                         m.FileType = fileData.FileType?.ToLower();
                         m.FileSize = fileData.FileSize;
-                        m.FilePath = fileData.FilePath;
+                        m.FilePath = await ResolveFilePath(fileData.StorageDescriptor, fileData.FileName); // РЕШАЕМ ПУТЬ К ФАЙЛУ
 
                         Console.WriteLine($"📄 Файл: {m.FileName}, тип: {m.FileType}, путь: {m.FilePath}");
                     }
@@ -307,12 +506,29 @@ namespace EducationalPlatform.Views
                         m.IsFileMessage = false;
                     }
 
-                    _messages.Add(m);
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        _messages.Add(m);
+                    });
                 }
+
+                // Сортируем по дате отправки
+                var sortedMessages = _messages.OrderBy(m => m.SentAt).ToList();
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    _messages.Clear();
+                    foreach (var msg in sortedMessages)
+                    {
+                        _messages.Add(msg);
+                    }
+                });
 
                 if (_messages.Count > 0)
                 {
-                    MessagesCollectionView.ScrollTo(_messages[^1], position: ScrollToPosition.End, animate: true);
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        MessagesCollectionView.ScrollTo(_messages[^1], position: ScrollToPosition.End, animate: true);
+                    });
                 }
 
                 Console.WriteLine($"✅ Загружено {_messages.Count} сообщений, файловых: {_messages.Count(m => m.IsFileMessage)}");
@@ -321,15 +537,28 @@ namespace EducationalPlatform.Views
             {
                 Console.WriteLine($"❌ Ошибка загрузки сообщений: {ex.Message}");
             }
+            finally
+            {
+                _isLoadingMessages = false;
+            }
+        }
+
+        // УНИВЕРСАЛЬНЫЙ МЕТОД ДЛЯ РЕШЕНИЯ ПУТЕЙ К ФАЙЛАМ НА ВСЕХ ПЛАТФОРМАХ
+        private async Task<string> ResolveFilePath(string filePath, string? preferredFileName = null)
+        {
+            return await _fileService.ResolveFilePath(filePath, preferredFileName, "ChatFiles");
         }
 
         private async Task RefreshMessages()
         {
-            if (_activeGroup == null) return;
+            if (_isRefreshingMessages || ActiveGroup == null) return;
+            _isRefreshingMessages = true;
             try
             {
-                var list = await _dbService.GetGroupChatMessagesAsync(_activeGroup.GroupId);
-                var newOnes = list.Where(m => !_messages.Any(x => x.MessageId == m.MessageId)).ToList();
+                var list = await _dbService.GetGroupChatMessagesAsync(ActiveGroup.GroupId);
+                var existingIds = _messages.Select(m => m.MessageId).ToHashSet();
+                var newOnes = list.Where(m => !existingIds.Contains(m.MessageId)).ToList();
+
                 if (newOnes.Count == 0) return;
 
                 foreach (var m in newOnes)
@@ -350,11 +579,29 @@ namespace EducationalPlatform.Views
                         m.FileName = fileData.FileName;
                         m.FileType = fileData.FileType?.ToLower();
                         m.FileSize = fileData.FileSize;
-                        m.FilePath = fileData.FilePath;
+                        m.FilePath = await ResolveFilePath(fileData.StorageDescriptor, fileData.FileName);
+                    }
+                    else
+                    {
+                        m.IsFileMessage = false;
                     }
 
-                    _messages.Add(m);
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        _messages.Add(m);
+                    });
                 }
+
+                // Сортируем по дате
+                var sortedMessages = _messages.OrderBy(m => m.SentAt).ToList();
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    _messages.Clear();
+                    foreach (var msg in sortedMessages)
+                    {
+                        _messages.Add(msg);
+                    }
+                });
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
@@ -369,6 +616,16 @@ namespace EducationalPlatform.Views
             {
                 Console.WriteLine($"Ошибка обновления сообщений: {ex.Message}");
             }
+            finally
+            {
+                _isRefreshingMessages = false;
+            }
+        }
+
+        private void StartAutoRefresh()
+        {
+            _refreshTimer?.Dispose();
+            _refreshTimer = new Timer(async _ => await RefreshMessages(), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
         }
 
         private async Task RefreshUnreadCounts()
@@ -390,9 +647,6 @@ namespace EducationalPlatform.Views
                     }
                 }
 
-                // Принудительно обновляем отображение
-                GroupsCollectionView.ItemsSource = null;
-                GroupsCollectionView.ItemsSource = Groups;
             }
             catch (Exception ex)
             {
@@ -402,14 +656,14 @@ namespace EducationalPlatform.Views
 
         private async Task MarkMessagesAsRead()
         {
-            if (_activeGroup == null) return;
+            if (ActiveGroup == null) return;
 
             try
             {
-                var success = await _dbService.MarkGroupMessagesAsReadAsync(_activeGroup.GroupId, _currentUser.UserId);
+                var success = await _dbService.MarkGroupMessagesAsReadAsync(ActiveGroup.GroupId, _currentUser.UserId);
                 if (success)
                 {
-                    Console.WriteLine($"✅ Все сообщения в группе {_activeGroup.GroupId} отмечены как прочитанные");
+                    Console.WriteLine($"✅ Все сообщения в группе {ActiveGroup.GroupId} отмечены как прочитанные");
                 }
             }
             catch (Exception ex)
@@ -430,20 +684,21 @@ namespace EducationalPlatform.Views
 
         private async Task SendMessage()
         {
-            if (_activeGroup == null) return;
+            if (ActiveGroup == null || _isSendingMessage) return;
             var text = MessageEntry.Text?.Trim();
             if (string.IsNullOrEmpty(text)) return;
 
             try
             {
-                var ok = await _dbService.SendGroupChatMessageAsync(_activeGroup.GroupId, _currentUser.UserId, text);
+                _isSendingMessage = true;
+                var ok = await _dbService.SendGroupChatMessageAsync(ActiveGroup.GroupId, _currentUser.UserId, text);
                 if (ok)
                 {
                     MessageEntry.Text = string.Empty;
                     await LoadMessages();
 
                     // Обновляем список групп для отображения последнего сообщения
-                    await RefreshUnreadCounts();
+                    await RefreshTeacherGroups();
                 }
                 else
                 {
@@ -454,11 +709,15 @@ namespace EducationalPlatform.Views
             {
                 await DisplayAlert("Error", $"Error sending: {ex.Message}", "OK");
             }
+            finally
+            {
+                _isSendingMessage = false;
+            }
         }
 
         private async void OnAttachFileClicked(object sender, EventArgs e)
         {
-            if (_activeGroup == null) return;
+            if (ActiveGroup == null || _isSendingFile) return;
             try
             {
                 var result = await FilePicker.Default.PickAsync(new PickOptions
@@ -480,47 +739,72 @@ namespace EducationalPlatform.Views
 
         private async Task SendFileAsync(FileResult fileResult)
         {
+            if (ActiveGroup == null) return;
             try
             {
+                _isSendingFile = true;
                 using var stream = await fileResult.OpenReadAsync();
-                var uniqueFileName = _fileService.GenerateUniqueFileName(fileResult.FileName);
-                var savedPath = await _fileService.SaveDocumentAsync(stream, uniqueFileName);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var fileBytes = memoryStream.ToArray();
 
-                if (!string.IsNullOrEmpty(savedPath))
+                var fileSize = _fileService.FormatFileSize(fileBytes.Length);
+                var mimeType = _fileService.GetMimeType(Path.GetExtension(fileResult.FileName));
+                var base64Payload = Convert.ToBase64String(fileBytes);
+
+                var message = $"[FILE]|BASE64|{mimeType}|{base64Payload}|{fileResult.FileName}|{fileSize}|{Path.GetExtension(fileResult.FileName)}";
+
+                var ok = await _dbService.SendGroupChatMessageAsync(ActiveGroup.GroupId, _currentUser.UserId, message);
+                if (ok)
                 {
-                    var fileInfo = new FileInfo(savedPath);
-                    var fileSize = FormatFileSize(fileInfo.Length);
+                    await DisplayAlert("Success", "File sent successfully", "OK");
+                    await LoadMessages();
 
-                    var message = $"[FILE]|{savedPath}|{fileResult.FileName}|{fileSize}|{Path.GetExtension(fileResult.FileName)}";
-
-                    var ok = await _dbService.SendGroupChatMessageAsync(_activeGroup.GroupId, _currentUser.UserId, message);
-                    if (ok)
-                    {
-                        await DisplayAlert("Success", "File sent successfully", "OK");
-                        await LoadMessages();
-
-                        // Обновляем список групп
-                        await RefreshUnreadCounts();
-                    }
-                    else
-                    {
-                        await DisplayAlert("Error", "Failed to send file", "OK");
-                    }
+                    // Обновляем список групп
+                    await RefreshTeacherGroups();
+                }
+                else
+                {
+                    await DisplayAlert("Error", "Failed to send file", "OK");
                 }
             }
             catch (Exception ex)
             {
                 await DisplayAlert("Error", $"Error sending file: {ex.Message}", "OK");
             }
+            finally
+            {
+                _isSendingFile = false;
+            }
         }
 
-        private (string FilePath, string FileName, string FileType, string FileSize) ParseFileMessage(string messageText)
+        private FileMessagePayload ParseFileMessage(string messageText)
         {
             try
             {
                 Console.WriteLine($"🔍 Парсим файловое сообщение: {messageText}");
 
                 var parts = messageText.Split('|');
+                if (parts.Length >= 7 && parts[0] == "[FILE]" && parts[1].Equals("BASE64", StringComparison.OrdinalIgnoreCase))
+                {
+                    var mime = parts[2];
+                    var base64 = parts[3];
+                    var fileName = parts[4];
+                    var fileSize = parts[5];
+                    var fileType = parts[6];
+
+                    Console.WriteLine($"📁 Распарсено (base64): {fileName}, тип: {fileType}, размер: {fileSize}");
+
+                    return new FileMessagePayload
+                    {
+                        StorageDescriptor = $"data:{mime};base64,{base64}",
+                        FileName = fileName,
+                        FileType = fileType,
+                        FileSize = fileSize,
+                        MimeType = mime
+                    };
+                }
+
                 if (parts.Length >= 5 && parts[0] == "[FILE]")
                 {
                     var filePath = parts[1];
@@ -528,9 +812,16 @@ namespace EducationalPlatform.Views
                     var fileSize = parts[3];
                     var fileType = parts[4];
 
-                    Console.WriteLine($"📁 Распарсено: {fileName}, тип: {fileType}, размер: {fileSize}, путь: {filePath}");
+                    Console.WriteLine($"📁 Распарсено (legacy): {fileName}, тип: {fileType}, размер: {fileSize}");
 
-                    return (filePath, fileName, fileType, fileSize);
+                    return new FileMessagePayload
+                    {
+                        StorageDescriptor = filePath,
+                        FileName = fileName,
+                        FileType = fileType,
+                        FileSize = fileSize,
+                        MimeType = _fileService.GetMimeType(fileType)
+                    };
                 }
             }
             catch (Exception ex)
@@ -538,15 +829,7 @@ namespace EducationalPlatform.Views
                 Console.WriteLine($"❌ Ошибка парсинга файлового сообщения: {ex.Message}");
             }
 
-            return (string.Empty, "Unknown file", "", "");
-        }
-
-        private string FormatFileSize(long bytes)
-        {
-            if (bytes >= 1 << 30) return $"{(bytes / (1 << 30)):F1} GB";
-            if (bytes >= 1 << 20) return $"{(bytes / (1 << 20)):F1} MB";
-            if (bytes >= 1 << 10) return $"{(bytes / (1 << 10)):F1} KB";
-            return $"{bytes} B";
+            return new FileMessagePayload();
         }
 
         private async void OnFileMessageTapped(object sender, TappedEventArgs e)
@@ -558,6 +841,15 @@ namespace EducationalPlatform.Views
                     var fileData = ParseFileMessage(message.MessageText);
                     Console.WriteLine($"🎯 Тап по файловому сообщению: {message.FileName}");
 
+                    // РЕШАЕМ ПУТЬ К ФАЙЛУ ПЕРЕД ОТКРЫТИЕМ
+                    var resolvedPath = await ResolveFilePath(fileData.StorageDescriptor, fileData.FileName);
+
+                    if (string.IsNullOrEmpty(resolvedPath) || !File.Exists(resolvedPath))
+                    {
+                        await DisplayAlert("Ошибка", "Файл не найден", "OK");
+                        return;
+                    }
+
                     var action = await DisplayActionSheet(
                         $"File: {fileData.FileName} ({fileData.FileSize})",
                         "Cancel",
@@ -567,11 +859,11 @@ namespace EducationalPlatform.Views
 
                     if (action == "📥 Download file")
                     {
-                        await DownloadFile(fileData.FilePath, fileData.FileName);
+                        await DownloadFile(resolvedPath, fileData.FileName);
                     }
                     else if (action == "📁 Open file")
                     {
-                        await OpenFile(fileData.FilePath);
+                        await OpenFile(resolvedPath);
                     }
                 }
                 catch (Exception ex)
@@ -639,17 +931,123 @@ namespace EducationalPlatform.Views
         {
             await Navigation.PopAsync();
         }
+
+        // Вспомогательные методы для работы с UI
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+        }
+
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+        private class FileMessagePayload
+        {
+            public string StorageDescriptor { get; set; } = string.Empty;
+            public string FileName { get; set; } = "Unknown file";
+            public string FileType { get; set; } = string.Empty;
+            public string FileSize { get; set; } = string.Empty;
+            public string MimeType { get; set; } = "application/octet-stream";
+        }
     }
 
-    public class TeacherGroupChat
+    public class TeacherGroupChat : INotifyPropertyChanged
     {
         public int GroupId { get; set; }
         public string GroupName { get; set; } = string.Empty;
-        public string CourseName { get; set; } = string.Empty;
-        public int StudentCount { get; set; }
-        public bool IsActive { get; set; }
-        public int UnreadMessages { get; set; }
-        public string LastMessage { get; set; } = string.Empty;
-        public DateTime LastMessageTime { get; set; } = DateTime.Now;
+
+        private string _courseName = string.Empty;
+        public string CourseName
+        {
+            get => _courseName;
+            set => SetProperty(ref _courseName, value);
+        }
+
+        private int _studentCount;
+        public int StudentCount
+        {
+            get => _studentCount;
+            set => SetProperty(ref _studentCount, value);
+        }
+
+        private bool _isActive;
+        public bool IsActive
+        {
+            get => _isActive;
+            set => SetProperty(ref _isActive, value);
+        }
+
+        private int _unreadMessages;
+        public int UnreadMessages
+        {
+            get => _unreadMessages;
+            set
+            {
+                if (SetProperty(ref _unreadMessages, value))
+                {
+                    OnPropertyChanged(nameof(UnreadBadgeText));
+                    OnPropertyChanged(nameof(HasUnreadMessages));
+                }
+            }
+        }
+
+        private string _lastMessage = string.Empty;
+        public string LastMessage
+        {
+            get => _lastMessage;
+            set
+            {
+                if (SetProperty(ref _lastMessage, value))
+                {
+                    OnPropertyChanged(nameof(LastMessagePreview));
+                }
+            }
+        }
+
+        private DateTime _lastMessageTime = DateTime.Now;
+        public DateTime LastMessageTime
+        {
+            get => _lastMessageTime;
+            set
+            {
+                if (SetProperty(ref _lastMessageTime, value))
+                {
+                    OnPropertyChanged(nameof(LastMessageTimeDisplay));
+                }
+            }
+        }
+
+        public string UnreadBadgeText => UnreadMessages > 0 ? UnreadMessages.ToString() : "";
+        public bool HasUnreadMessages => UnreadMessages > 0;
+        public string LastMessagePreview => LastMessage.Length > 50 ? LastMessage.Substring(0, 50) + "..." : LastMessage;
+        public string LastMessageTimeDisplay => LastMessageTime.ToString("dd.MM.yyyy HH:mm");
+
+        public void UpdateMeta(string courseName, int studentCount, string lastMessage, DateTime lastMessageTime, int unreadMessages, bool isActive)
+        {
+            CourseName = courseName;
+            StudentCount = studentCount;
+            LastMessage = lastMessage;
+            LastMessageTime = lastMessageTime;
+            UnreadMessages = unreadMessages;
+            IsActive = isActive;
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(storage, value))
+            {
+                return false;
+            }
+
+            storage = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
     }
 }

@@ -75,7 +75,7 @@
 
                 <!-- Загрузка файлов -->
                 <StackLayout x:Name="FileAnswerSection" IsVisible="False">
-                    <Button Text="📎 Выбрать файл" 
+                    <Button Text="Выбрать файл" 
                             Clicked="OnSelectFileClicked"
                             BackgroundColor="{DynamicResource PrimaryColor}"
                             TextColor="White" />
@@ -90,7 +90,7 @@
 
                 <!-- Подсказка -->
                 <StackLayout x:Name="HintSection" IsVisible="False">
-                    <Label Text="💡 Подсказка:" 
+                    <Label Text="Подсказка:" 
                            FontSize="14" 
                            FontAttributes="Bold"
                            TextColor="{DynamicResource SecondaryColor}" />
@@ -108,12 +108,94 @@
                         Padding="15">
                     <VerticalStackLayout>
                         <Label x:Name="ResultLabel" 
-                               Text="✅ Задание выполнено успешно!"
+                               Text="Задание выполнено успешно!"
                                FontSize="16"
                                TextColor="#4CAF50" />
                         <Label x:Name="FeedbackLabel" 
                                FontSize="14"
                                TextColor="#666" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Прикрепленные файлы -->
+                <Border x:Name="AttachmentsSection" 
+                        IsVisible="False"
+                        BackgroundColor="#F8F9FA"
+                        Padding="15"
+                        Stroke="#DEE2E6"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Margin="0,15,0,0">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Прикрепленные файлы:" 
+                               FontSize="16" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}" />
+
+                        <CollectionView x:Name="AttachmentsCollection" ItemsSource="{Binding Attachments}">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- Интерактивная карточка файла -->
+                                    <Border BackgroundColor="White"
+                                            Stroke="{DynamicResource PrimaryColor}"
+                                            StrokeThickness="2"
+                                            StrokeShape="RoundRectangle 12"
+                                            Padding="15"
+                                            Margin="0,8">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnAttachmentTapped" CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+                                        
+                                        <Grid ColumnDefinitions="Auto,*,Auto" 
+                                              ColumnSpacing="15"
+                                              RowDefinitions="Auto,Auto">
+                                            
+                                            <!-- Большая иконка файла -->
+                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                                    BackgroundColor="{DynamicResource PrimaryColor}"
+                                                    StrokeThickness="0"
+                                                    StrokeShape="RoundRectangle 8"
+                                                    WidthRequest="50"
+                                                    HeightRequest="50"
+                                                    VerticalOptions="Center">
+                                                <Label Text="{Binding FileIcon}"
+                                                       FontSize="24"
+                                                       HorizontalOptions="Center"
+                                                       VerticalOptions="Center"
+                                                       TextColor="White"/>
+                                            </Border>
+
+                                            <!-- Информация о файле -->
+                                            <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="4">
+                                                <Label Text="{Binding FileName}" 
+                                                       FontSize="16"
+                                                       FontAttributes="Bold"
+                                                       LineBreakMode="TailTruncation"
+                                                       TextColor="{DynamicResource TextColor}"/>
+                                                <Label Text="{Binding FileSize}" 
+                                                       FontSize="13"
+                                                       TextColor="#666"/>
+                                            </VerticalStackLayout>
+
+                                            <!-- Кнопка скачивания -->
+                                            <Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="2"
+                                                    Text="📥"
+                                                    FontSize="20"
+                                                    Clicked="OnOpenAttachmentClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="{DynamicResource AccentColor}"
+                                                    TextColor="White"
+                                                    WidthRequest="50"
+                                                    HeightRequest="50"
+                                                    MinimumWidthRequest="50"
+                                                    MinimumHeightRequest="50"
+                                                    CornerRadius="25"
+                                                    VerticalOptions="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
                     </VerticalStackLayout>
                 </Border>
 

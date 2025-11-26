@@ -8,6 +8,7 @@ namespace EducationalPlatform.Services
     public interface IEmailService
     {
         Task<bool> SendPasswordResetCodeAsync(string recipientEmail, string recipientName, string resetCode);
+        Task<bool> SendSupportTicketEmailAsync(string recipientEmail, string subject, string body);
     }
 
     public class EmailService : IEmailService
@@ -51,6 +52,11 @@ namespace EducationalPlatform.Services
 
 Это письмо отправлено автоматически. Пожалуйста, не отвечайте на него.";
 
+            return await SendPlainTextEmailAsync(recipientEmail, subject, body);
+        }
+
+        public async Task<bool> SendSupportTicketEmailAsync(string recipientEmail, string subject, string body)
+        {
             return await SendPlainTextEmailAsync(recipientEmail, subject, body);
         }
 

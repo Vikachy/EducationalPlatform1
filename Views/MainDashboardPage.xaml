@@ -13,9 +13,10 @@
                 StrokeThickness="1"
                 StrokeShape="RoundRectangle 0,0,0,20"
                 Padding="0">
-            <Grid ColumnDefinitions="Auto,*,Auto,Auto"
-                  Padding="20,15"
-                  VerticalOptions="Center">
+            <Grid ColumnDefinitions="{OnIdiom Default='Auto,*,Auto,Auto,Auto', Desktop='Auto,*,Auto,Auto,Auto'}"
+                  Padding="{OnIdiom Default='10,10', Desktop='20,15'}"
+                  VerticalOptions="Center"
+                  ColumnSpacing="{OnIdiom Default='5', Desktop='10'}">
 
                 <!-- АВАТАР -->
                 <Border Grid.Column="0"
@@ -23,32 +24,34 @@
                     Stroke="{DynamicResource AccentColor}"
                     StrokeThickness="2"
                     StrokeShape="RoundRectangle 25"
-                    WidthRequest="50"
-                    HeightRequest="50"
+                    WidthRequest="{OnIdiom Default='45', Desktop='50'}"
+                    HeightRequest="{OnIdiom Default='45', Desktop='50'}"
                     VerticalOptions="Center">
                     <Image x:Name="AvatarImage"
                         Source="default_avatar.png"
                         Aspect="AspectFill"
                         HorizontalOptions="Center"
                         VerticalOptions="Center"
-                        WidthRequest="46"
-                        HeightRequest="46" />
+                        WidthRequest="{OnIdiom Default='41', Desktop='46'}"
+                        HeightRequest="{OnIdiom Default='41', Desktop='46'}" />
                 </Border>
 
                 <!-- ПРИВЕТСТВИЕ -->
                 <VerticalStackLayout Grid.Column="1"
-                                    Spacing="2"
-                                    Padding="15,0"
+                                    Spacing="{OnIdiom Default='1', Desktop='2'}"
+                                    Padding="{OnIdiom Default='8,0', Desktop='15,0'}"
                                     VerticalOptions="Center">
                     <Label x:Name="WelcomeLabel"
                            Text="Добро пожаловать!"
-                           FontSize="16"
+                           FontSize="{OnIdiom Default='13', Desktop='16'}"
                            TextColor="White"
-                           FontAttributes="Bold" />
+                           FontAttributes="Bold"
+                           LineBreakMode="TailTruncation" />
                     <Label x:Name="StatsLabel"
                            Text="Серия: 0 дней 🔥 | Валюта: 0 🪙"
-                           FontSize="12"
-                           TextColor="White" />
+                           FontSize="{OnIdiom Default='9', Desktop='12'}"
+                           TextColor="White"
+                           LineBreakMode="TailTruncation" />
                 </VerticalStackLayout>
 
                 <!-- КНОПКА НАСТРОЕК -->
@@ -57,31 +60,35 @@
                         Clicked="OnSettingsClicked"
                         BackgroundColor="Transparent"
                         TextColor="White"
-                        FontSize="18"
-                        WidthRequest="45"
-                        HeightRequest="45"
-                        CornerRadius="22"
-                        Margin="0,0,10,0" />
+                        FontSize="{OnIdiom Default='16', Desktop='18'}"
+                        WidthRequest="{OnIdiom Default='38', Desktop='45'}"
+                        HeightRequest="{OnIdiom Default='38', Desktop='45'}"
+                        CornerRadius="19"
+                        Padding="0" />
 
-                <!-- КНОПКИ ПРОФИЛЬ/ВЫЙТИ -->
-                <HorizontalStackLayout Grid.Column="3" Spacing="8">
-                    <Button Text="👤"
-                            Clicked="OnProfileClicked"
-                            BackgroundColor="Transparent"
-                            TextColor="White"
-                            FontSize="20"
-                            WidthRequest="45"
-                            HeightRequest="45"
-                            CornerRadius="22" />
-                    <Button Text="⎋"
-                            Clicked="OnLogoutClicked"
-                            BackgroundColor="Transparent"
-                            TextColor="White"
-                            FontSize="18"
-                            WidthRequest="45"
-                            HeightRequest="45"
-                            CornerRadius="22" />
-                </HorizontalStackLayout>
+                <!-- КНОПКА ПРОФИЛЯ -->
+                <Button Grid.Column="3"
+                        Text="👤"
+                        Clicked="OnProfileClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="{OnIdiom Default='16', Desktop='20'}"
+                        WidthRequest="{OnIdiom Default='38', Desktop='45'}"
+                        HeightRequest="{OnIdiom Default='38', Desktop='45'}"
+                        CornerRadius="19"
+                        Padding="0" />
+
+                <!-- КНОПКА ВЫХОДА -->
+                <Button Grid.Column="4"
+                        Text="⎋"
+                        Clicked="OnLogoutClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="{OnIdiom Default='14', Desktop='18'}"
+                        WidthRequest="{OnIdiom Default='38', Desktop='45'}"
+                        HeightRequest="{OnIdiom Default='38', Desktop='45'}"
+                        CornerRadius="19"
+                        Padding="0" />
             </Grid>
         </Border>
 
@@ -89,55 +96,6 @@
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Spacing="20" Padding="20">
 
-                <!-- БЛОК С СЕРИЕЙ И ГИФКОЙ ОГНЯ -->
-                <Border BackgroundColor="Black"
-                        Stroke="{DynamicResource AccentColor}"
-                        StrokeThickness="2"
-                        StrokeShape="RoundRectangle 15"
-                        HeightRequest="120"
-                        HorizontalOptions="Fill">
-                    <Grid>
-                        <VerticalStackLayout
-                            HorizontalOptions="Center"
-                            VerticalOptions="Center"
-                            Spacing="10">
-                            <Label Text="🔥 Огонек 🔥"
-                                   FontSize="20"
-                                   TextColor="White"
-                                   FontAttributes="Bold"
-                                   HorizontalOptions="Center" />
-
-                            <!-- СЕРИЯ С ГИФКОЙ ОГНЯ -->
-                            <HorizontalStackLayout Spacing="10"
-                                                  HorizontalOptions="Center"
-                                                  VerticalOptions="Center">
-                                <Image
-                                    x:Name="FireGif"
-                                    Source="fire_animation.gif"
-                                    HeightRequest="40"
-                                    WidthRequest="40"
-                                    HorizontalOptions="Center"
-                                    VerticalOptions="Center" />
-
-                                <Label x:Name="StreakFireLabel"
-                                       Text="Серия: 0 дней"
-                                       FontSize="16"
-                                       TextColor="White"
-                                       FontAttributes="Bold"
-                                       VerticalOptions="Center" />
-                            </HorizontalStackLayout>
-
-                            <Button Text="🔥 Продолжить серию"
-                                    Clicked="OnContinueStreakClicked"
-                                    BackgroundColor="{DynamicResource AccentColor}"
-                                    TextColor="White"
-                                    HeightRequest="30"
-                                    CornerRadius="15"
-                                    FontSize="12"
-                                    HorizontalOptions="Center" />
-                        </VerticalStackLayout>
-                    </Grid>
-                </Border>
 
                 <!-- МОИ АКТИВНЫЕ КУРСЫ -->
                 <Border BackgroundColor="{DynamicResource BackgroundColor}"
@@ -149,31 +107,33 @@
                         <Border BackgroundColor="{DynamicResource PrimaryColor}"
                                 StrokeThickness="0"
                                 Padding="20,15">
-                            <HorizontalStackLayout>
+                            <VerticalStackLayout Spacing="10">
                                 <Label Text="🎯 Мои активные курсы"
-                                       FontSize="18"
+                                       FontSize="{OnIdiom Default='16', Desktop='18'}"
                                        TextColor="White"
                                        FontAttributes="Bold"
                                        VerticalOptions="Center" />
-                                <Button Text="Мои курсы →"
-                                        Clicked="OnMyCoursesClicked"
-                                        BackgroundColor="Transparent"
-                                        TextColor="White"
-                                        BorderColor="White"
-                                        BorderWidth="1"
-                                        HeightRequest="35"
-                                        CornerRadius="15"
-                                        Margin="10,0,0,0" />
-                                <Button Text="Все курсы →"
-                                        Clicked="OnAllCoursesClicked"
-                                        BackgroundColor="Transparent"
-                                        TextColor="White"
-                                        BorderColor="White"
-                                        BorderWidth="1"
-                                        HeightRequest="35"
-                                        CornerRadius="15"
-                                        Margin="20,0,0,0" />
-                            </HorizontalStackLayout>
+                                <HorizontalStackLayout Spacing="10">
+                                    <Button Text="Мои курсы →"
+                                            Clicked="OnMyCoursesClicked"
+                                            BackgroundColor="Transparent"
+                                            TextColor="White"
+                                            BorderColor="White"
+                                            BorderWidth="1"
+                                            HeightRequest="{OnIdiom Default='30', Desktop='35'}"
+                                            CornerRadius="15"
+                                            FontSize="{OnIdiom Default='11', Desktop='14'}" />
+                                    <Button Text="Все курсы →"
+                                            Clicked="OnAllCoursesClicked"
+                                            BackgroundColor="Transparent"
+                                            TextColor="White"
+                                            BorderColor="White"
+                                            BorderWidth="1"
+                                            HeightRequest="{OnIdiom Default='30', Desktop='35'}"
+                                            CornerRadius="15"
+                                            FontSize="{OnIdiom Default='11', Desktop='14'}" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
                         </Border>
 
                         <CollectionView x:Name="MyCoursesCollectionView"
@@ -239,9 +199,10 @@
                        TextColor="{DynamicResource TextColor}"
                        FontAttributes="Bold" />
 
-                <Grid ColumnDefinitions="*,*"
-                      ColumnSpacing="15"
-                      RowSpacing="15">
+                <Grid ColumnDefinitions="{OnIdiom Default='*,*', Desktop='*,*'}"
+                      RowDefinitions="{OnIdiom Default='Auto,Auto', Desktop='Auto,Auto'}"
+                      ColumnSpacing="{OnIdiom Default='10', Desktop='15'}"
+                      RowSpacing="{OnIdiom Default='10', Desktop='15'}">
 
                     <!-- КУРСЫ -->
                     <Border Grid.Row="0" Grid.Column="0"
@@ -249,12 +210,12 @@
                             Stroke="{DynamicResource PrimaryColor}"
                             StrokeThickness="2"
                             StrokeShape="RoundRectangle 15">
-                        <VerticalStackLayout Spacing="12" Padding="20">
+                        <VerticalStackLayout Spacing="12" Padding="{OnIdiom Default='15', Desktop='20'}">
                             <Label Text="📚"
-                                   FontSize="28"
+                                   FontSize="{OnIdiom Default='24', Desktop='28'}"
                                    HorizontalOptions="Center" />
                             <Label Text="Все курсы"
-                                   FontSize="16"
+                                   FontSize="{OnIdiom Default='14', Desktop='16'}"
                                    FontAttributes="Bold"
                                    HorizontalOptions="Center"
                                    TextColor="{DynamicResource TextColor}" />
@@ -262,8 +223,9 @@
                                     Clicked="OnCoursesClicked"
                                     BackgroundColor="{DynamicResource PrimaryColor}"
                                     TextColor="White"
-                                    HeightRequest="40"
+                                    HeightRequest="{OnIdiom Default='35', Desktop='40'}"
                                     CornerRadius="20"
+                                    FontSize="{OnIdiom Default='12', Desktop='14'}"
                                     FontAttributes="Bold" />
                         </VerticalStackLayout>
                     </Border>
@@ -274,12 +236,12 @@
                             Stroke="{DynamicResource PrimaryColor}"
                             StrokeThickness="2"
                             StrokeShape="RoundRectangle 15">
-                        <VerticalStackLayout Spacing="12" Padding="20">
+                        <VerticalStackLayout Spacing="12" Padding="{OnIdiom Default='15', Desktop='20'}">
                             <Label Text="📊"
-                                   FontSize="28"
+                                   FontSize="{OnIdiom Default='24', Desktop='28'}"
                                    HorizontalOptions="Center" />
                             <Label Text="Прогресс"
-                                   FontSize="16"
+                                   FontSize="{OnIdiom Default='14', Desktop='16'}"
                                    FontAttributes="Bold"
                                    HorizontalOptions="Center"
                                    TextColor="{DynamicResource TextColor}" />
@@ -287,8 +249,9 @@
                                     Clicked="OnProgressClicked"
                                     BackgroundColor="{DynamicResource PrimaryColor}"
                                     TextColor="White"
-                                    HeightRequest="40"
+                                    HeightRequest="{OnIdiom Default='35', Desktop='40'}"
                                     CornerRadius="20"
+                                    FontSize="{OnIdiom Default='12', Desktop='14'}"
                                     FontAttributes="Bold" />
                         </VerticalStackLayout>
                     </Border>
@@ -299,12 +262,12 @@
                             Stroke="{DynamicResource AccentColor}"
                             StrokeThickness="2"
                             StrokeShape="RoundRectangle 15">
-                        <VerticalStackLayout Spacing="12" Padding="20">
+                        <VerticalStackLayout Spacing="12" Padding="{OnIdiom Default='15', Desktop='20'}">
                             <Label Text="🏆"
-                                   FontSize="28"
+                                   FontSize="{OnIdiom Default='24', Desktop='28'}"
                                    HorizontalOptions="Center" />
                             <Label Text="Достижения"
-                                   FontSize="16"
+                                   FontSize="{OnIdiom Default='14', Desktop='16'}"
                                    FontAttributes="Bold"
                                    HorizontalOptions="Center"
                                    TextColor="{DynamicResource TextColor}" />
@@ -312,8 +275,9 @@
                                     Clicked="OnAchievementsClicked"
                                     BackgroundColor="{DynamicResource AccentColor}"
                                     TextColor="White"
-                                    HeightRequest="40"
+                                    HeightRequest="{OnIdiom Default='35', Desktop='40'}"
                                     CornerRadius="20"
+                                    FontSize="{OnIdiom Default='12', Desktop='14'}"
                                     FontAttributes="Bold" />
                         </VerticalStackLayout>
                     </Border>
@@ -324,12 +288,12 @@
                             Stroke="{DynamicResource SecondaryColor}"
                             StrokeThickness="2"
                             StrokeShape="RoundRectangle 15">
-                        <VerticalStackLayout Spacing="12" Padding="20">
+                        <VerticalStackLayout Spacing="12" Padding="{OnIdiom Default='15', Desktop='20'}">
                             <Label Text="🛒"
-                                   FontSize="28"
+                                   FontSize="{OnIdiom Default='24', Desktop='28'}"
                                    HorizontalOptions="Center" />
                             <Label Text="Магазин"
-                                   FontSize="16"
+                                   FontSize="{OnIdiom Default='14', Desktop='16'}"
                                    FontAttributes="Bold"
                                    HorizontalOptions="Center"
                                    TextColor="{DynamicResource TextColor}" />
@@ -337,8 +301,9 @@
                                     Clicked="OnShopClicked"
                                     BackgroundColor="{DynamicResource SecondaryColor}"
                                     TextColor="White"
-                                    HeightRequest="40"
+                                    HeightRequest="{OnIdiom Default='35', Desktop='40'}"
                                     CornerRadius="20"
+                                    FontSize="{OnIdiom Default='12', Desktop='14'}"
                                     FontAttributes="Bold" />
                         </VerticalStackLayout>
                     </Border>
@@ -482,23 +447,28 @@
                     <VerticalStackLayout Spacing="0">
                         <Border BackgroundColor="{DynamicResource PrimaryColor}"
                                 StrokeThickness="0"
-                                Padding="20,15">
-                            <HorizontalStackLayout>
-                                <Label Text="📢 Последние новости"
-                                       FontSize="18"
+                                Padding="{OnIdiom Default='15,12', Desktop='20,15'}">
+                            <Grid ColumnDefinitions="{OnIdiom Default='*,Auto', Desktop='*,Auto'}"
+                                  ColumnSpacing="{OnIdiom Default='10', Desktop='20'}">
+                                <Label Grid.Column="0"
+                                       Text="📢 Последние новости"
+                                       FontSize="{OnIdiom Default='16', Desktop='18'}"
                                        TextColor="White"
                                        FontAttributes="Bold"
                                        VerticalOptions="Center" />
-                                <Button Text="Все новости →"
+                                <Button Grid.Column="1"
+                                        Text="{OnIdiom Default='→', Desktop='Все новости →'}"
                                         Clicked="OnAllNewsClicked"
                                         BackgroundColor="Transparent"
                                         TextColor="White"
                                         BorderColor="White"
                                         BorderWidth="1"
-                                        HeightRequest="35"
+                                        HeightRequest="{OnIdiom Default='32', Desktop='35'}"
+                                        WidthRequest="{OnIdiom Default='40', Desktop='Auto'}"
                                         CornerRadius="15"
-                                        Margin="20,0,0,0" />
-                            </HorizontalStackLayout>
+                                        FontSize="{OnIdiom Default='16', Desktop='14'}"
+                                        Padding="{OnIdiom Default='8,0', Desktop='12,0'}" />
+                            </Grid>
                         </Border>
                         <CollectionView x:Name="NewsCollectionView"
                                       HeightRequest="200"

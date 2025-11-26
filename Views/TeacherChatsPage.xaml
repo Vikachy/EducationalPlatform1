@@ -5,8 +5,41 @@
              x:Class="EducationalPlatform.Views.TeacherChatsPage"
              Title="Чаты групп">
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:MyMessageColorConverter x:Key="MyMessageColorConverter" />
+            <converters:MessageAlignmentConverter x:Key="MessageAlignmentConverter" />
+            <converters:BoolInverseConverter x:Key="BoolInverseConverter" />
+            <converters:IntToBoolConverter x:Key="IntToBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
-    <Grid ColumnDefinitions="300,*" ColumnSpacing="1">
+    <!-- Адаптивный макет: на мобильных - одна колонка, на десктопе - две -->
+    <Grid x:Name="MainGrid"
+          ColumnDefinitions="{OnIdiom Default='*', Desktop='300,*'}">
+        
+        <!-- Индикатор загрузки на весь экран -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.ColumnSpan="2"
+              BackgroundColor="#80000000"
+              IsVisible="False"
+              VerticalOptions="Fill"
+              HorizontalOptions="Fill">
+            <VerticalStackLayout 
+                Spacing="20"
+                VerticalOptions="Center"
+                HorizontalOptions="Center">
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="White"
+                                   HeightRequest="50"
+                                   WidthRequest="50"/>
+                <Label Text="Загрузка чатов..."
+                       TextColor="White"
+                       FontSize="16"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
 
         <!-- Левая панель - список групп -->
         <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto">
@@ -99,10 +132,11 @@
 
         </Grid>
 
-        <!-- Правая панель - чат -->
+        <!-- Правая панель - чат (скрыта на мобильных, показывается через навигацию) -->
         <Grid Grid.Column="1" 
               BackgroundColor="#F5F5F5"
-              IsVisible="{Binding HasActiveChat}">
+              IsVisible="{OnIdiom Default=False, Desktop=True}"
+              x:Name="ChatPanel">
 
             <Grid RowDefinitions="Auto,*,Auto" 
                   ColumnDefinitions="*">
@@ -111,7 +145,8 @@
                 <Border Grid.Row="0" 
                         BackgroundColor="White" 
                         Stroke="LightGray" 
-                        StrokeThickness="0,0,0,1"
+                        StrokeThickness="1"
+                        StrokeShape="Rectangle"
                         Padding="15">
                     <Grid ColumnDefinitions="*,Auto">
                         <VerticalStackLayout Grid.Column="0">
@@ -224,13 +259,17 @@
                             Clicked="OnAttachFileClicked"
                             BackgroundColor="Transparent"
                             TextColor="#2E86AB"
+                            MinimumWidthRequest="44"
+                            MinimumHeightRequest="44"
                             Margin="0,0,10,0" />
 
                     <Button Grid.Column="2"
                             Text="Отправить"
                             Clicked="OnSendMessageClicked"
                             BackgroundColor="#2E86AB"
-                            TextColor="White" />
+                            TextColor="White"
+                            MinimumWidthRequest="44"
+                            MinimumHeightRequest="44" />
 
                 </Grid>
 
@@ -239,7 +278,7 @@
             <!-- Заглушка когда чат не выбран -->
             <VerticalStackLayout HorizontalOptions="Center" 
                                  VerticalOptions="Center"
-                                 IsVisible="{Binding HasActiveChat, Converter={x:StaticResource BoolInverseConverter}}">
+                                 IsVisible="{OnIdiom Default=True, Desktop=False}">
                 <Label Text="💬" 
                        FontSize="40" 
                        HorizontalOptions="Center" />

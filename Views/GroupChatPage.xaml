@@ -9,6 +9,8 @@
         <ResourceDictionary>
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
             <converters:FileTypeToIconConverter x:Key="FileTypeToIconConverter" />
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+            <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 
@@ -56,11 +58,19 @@
         </Border>
 
         <!-- Messages -->
-        <CollectionView Grid.Row="1"
-                        x:Name="MessagesCollectionView"
-                        ItemsSource="{Binding Messages}"
-                        SelectionMode="None"
-                        VerticalScrollBarVisibility="Always">
+        <Grid Grid.Row="1">
+            <ActivityIndicator x:Name="LoadingIndicator"
+                              IsVisible="False"
+                              IsRunning="False"
+                              Color="{DynamicResource PrimaryColor}"
+                              VerticalOptions="Center"
+                              HorizontalOptions="Center" />
+            
+            <ScrollView>
+                <CollectionView x:Name="MessagesCollectionView"
+                                ItemsSource="{Binding Messages}"
+                                SelectionMode="None"
+                                VerticalScrollBarVisibility="Always">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Grid Padding="10,5"
@@ -73,7 +83,7 @@
                                BackgroundColor="#FFFFFF"
                                Padding="12"
                                HorizontalOptions="Start"
-                               MaximumWidthRequest="280"
+                               MaximumWidthRequest="{OnPlatform WinUI=400, Default=280}"
                                HasShadow="False"
                                CornerRadius="18"
                                BorderColor="#E0E0E0">
@@ -89,7 +99,7 @@
                                         WidthRequest="36"
                                         HeightRequest="36"
                                         VerticalOptions="Start">
-                                    <Image Source="{Binding SenderAvatar}"
+                                    <Image Source="{Binding SenderAvatar, Converter={StaticResource AvatarConverter}}"
                                            Aspect="AspectFill"
                                            HorizontalOptions="Center"
                                            VerticalOptions="Center"
@@ -97,13 +107,19 @@
                                            HeightRequest="32" />
                                 </Border>
 
-                                <!-- Sender Name -->
-                                <Label Grid.Row="0" Grid.Column="1"
-                                       Text="{Binding SenderName}"
-                                       FontSize="12"
-                                       TextColor="#2E86AB"
-                                       FontAttributes="Bold"
-                                       VerticalOptions="End" />
+                                <!-- Sender Name with Emoji -->
+                                <HorizontalStackLayout Grid.Row="0" Grid.Column="1"
+                                                       Spacing="4"
+                                                       VerticalOptions="End">
+                                    <Label Text="{Binding SenderName}"
+                                           FontSize="12"
+                                           TextColor="#2E86AB"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding UserEmoji}"
+                                           FontSize="14"
+                                           IsVisible="{Binding UserEmoji, Converter={StaticResource NotNullConverter}}"
+                                           VerticalOptions="Center" />
+                                </HorizontalStackLayout>
 
                                 <!-- Message Text or File -->
                                 <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
@@ -115,23 +131,33 @@
                                            IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
 
                                     <!-- File Message -->
-                                    <Grid ColumnDefinitions="Auto,*" 
-                                          ColumnSpacing="8"
-                                          IsVisible="{Binding IsFileMessage}">
-                                        <Label Grid.Column="0"
-                                               Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
-                                               FontSize="16"
-                                               VerticalOptions="Center" />
-                                        <VerticalStackLayout Grid.Column="1">
-                                            <Label Text="{Binding FileName}"
-                                                   FontSize="13"
-                                                   FontAttributes="Bold"
-                                                   LineBreakMode="TailTruncation" />
-                                            <Label Text="{Binding FileSize}"
-                                                   FontSize="11"
-                                                   TextColor="Gray" />
-                                        </VerticalStackLayout>
-                                    </Grid>
+                                    <Border BackgroundColor="#E8F4F8"
+                                            Stroke="#2E86AB"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="10"
+                                            IsVisible="{Binding IsFileMessage}">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+                                        <Grid ColumnDefinitions="Auto,*" 
+                                              ColumnSpacing="8">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
+                                                   FontSize="20"
+                                                   VerticalOptions="Center" />
+                                            <VerticalStackLayout Grid.Column="1">
+                                                <Label Text="{Binding FileName}"
+                                                       FontSize="13"
+                                                       FontAttributes="Bold"
+                                                       LineBreakMode="TailTruncation"
+                                                       TextColor="#2E86AB" />
+                                                <Label Text="{Binding FileSize}"
+                                                       FontSize="11"
+                                                       TextColor="Gray" />
+                                            </VerticalStackLayout>
+                                        </Grid>
+                                    </Border>
                                 </VerticalStackLayout>
 
                                 <!-- Time -->
@@ -151,7 +177,7 @@
                                BackgroundColor="#DCF8C6"
                                Padding="12"
                                HorizontalOptions="End"
-                               MaximumWidthRequest="280"
+                               MaximumWidthRequest="{OnPlatform WinUI=400, Default=280}"
                                HasShadow="False"
                                CornerRadius="18">
                             <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto"
@@ -167,23 +193,33 @@
                                            IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
 
                                     <!-- File Message -->
-                                    <Grid ColumnDefinitions="Auto,*" 
-                                          ColumnSpacing="8"
-                                          IsVisible="{Binding IsFileMessage}">
-                                        <Label Grid.Column="0"
-                                               Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
-                                               FontSize="16"
-                                               VerticalOptions="Center" />
-                                        <VerticalStackLayout Grid.Column="1">
-                                            <Label Text="{Binding FileName}"
-                                                   FontSize="13"
-                                                   FontAttributes="Bold"
-                                                   LineBreakMode="TailTruncation" />
-                                            <Label Text="{Binding FileSize}"
-                                                   FontSize="11"
-                                                   TextColor="#666666" />
-                                        </VerticalStackLayout>
-                                    </Grid>
+                                    <Border BackgroundColor="#E8F4F8"
+                                            Stroke="#2E86AB"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="10"
+                                            IsVisible="{Binding IsFileMessage}">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+                                        <Grid ColumnDefinitions="Auto,*" 
+                                              ColumnSpacing="8">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
+                                                   FontSize="20"
+                                                   VerticalOptions="Center" />
+                                            <VerticalStackLayout Grid.Column="1">
+                                                <Label Text="{Binding FileName}"
+                                                       FontSize="13"
+                                                       FontAttributes="Bold"
+                                                       LineBreakMode="TailTruncation"
+                                                       TextColor="#2E86AB" />
+                                                <Label Text="{Binding FileSize}"
+                                                       FontSize="11"
+                                                       TextColor="#666666" />
+                                            </VerticalStackLayout>
+                                        </Grid>
+                                    </Border>
                                 </VerticalStackLayout>
 
                                 <!-- Time and Status -->
@@ -204,7 +240,9 @@
                     </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
-        </CollectionView>
+            </CollectionView>
+            </ScrollView>
+        </Grid>
 
         <!-- Message Input как в Telegram -->
         <Border Grid.Row="2"
@@ -233,8 +271,10 @@
                         Clicked="OnAttachFileClicked"
                         BackgroundColor="Transparent"
                         TextColor="#2E86AB"
-                        WidthRequest="40"
-                        HeightRequest="40"
+                        MinimumWidthRequest="44"
+                        MinimumHeightRequest="44"
+                        WidthRequest="44"
+                        HeightRequest="44"
                         FontSize="16" />
 
                 <Button Grid.Column="2"
@@ -242,9 +282,11 @@
                         Clicked="OnSendMessageClicked"
                         BackgroundColor="#2E86AB"
                         TextColor="White"
-                        WidthRequest="40"
-                        HeightRequest="40"
-                        CornerRadius="20"
+                        MinimumWidthRequest="44"
+                        MinimumHeightRequest="44"
+                        WidthRequest="44"
+                        HeightRequest="44"
+                        CornerRadius="22"
                         FontSize="16"
                         FontAttributes="Bold" />
             </Grid>

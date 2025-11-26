@@ -6,14 +6,19 @@
     Title="Конкурсы"
     BackgroundColor="{DynamicResource BackgroundColor}">
 
-    <ScrollView>
+    <ScrollView BackgroundColor="{DynamicResource BackgroundColor}">
         <VerticalStackLayout Spacing="20" Padding="20">
-            <!-- Заголовок -->
-            <Label Text="Конкурсы программирования"
-                   FontSize="28"
-                   HorizontalOptions="Center"
-                   TextColor="#2E86AB"
-                   FontAttributes="Bold" />
+            <!-- Современный заголовок -->
+            <Border BackgroundColor="{DynamicResource PrimaryColor}"
+                    StrokeThickness="0"
+                    Padding="20,15"
+                    StrokeShape="RoundRectangle 15,15,0,0">
+                <Label Text="Конкурсы программирования"
+                       FontSize="26"
+                       HorizontalOptions="Center"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+            </Border>
 
             <!-- Активные конкурсы -->
             <Label Text="Активные конкурсы"

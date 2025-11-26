@@ -67,15 +67,19 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private void OnThemeChanged(object sender, EventArgs e)
+        private async void OnThemeChanged(object sender, EventArgs e)
         {
             if (ThemePicker.SelectedIndex != -1)
             {
                 string theme = ThemePicker.SelectedIndex == 0 ? "standard" : "teen";
                 _settingsService.ApplyTheme(theme);
+                
+                // Сохраняем тему в БД для синхронизации между устройствами
+                await _dbService.SaveUserSettingsAsync(_currentUser.UserId, _settingsService.CurrentLanguage, theme);
+                
                 UpdateCurrentSettingsDisplay();
 
-                DisplayAlert("Успех", "Тема изменена! 🎨", "OK");
+                await DisplayAlert("Успех", "Тема изменена! 🎨", "OK");
             }
         }
 

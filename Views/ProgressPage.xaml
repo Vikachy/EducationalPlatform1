@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:converters="clr-namespace:EducationalPlatform.Converters"
     x:Class="EducationalPlatform.Views.ProgressPage"
-    Title="Progress">
+    Title="Прогресс">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -27,7 +27,7 @@
                     HeightRequest="50"
                     WidthRequest="50"/>
                 <Label 
-                    Text="Loading data..."
+                    Text="Загрузка данных..."
                     TextColor="{DynamicResource TextColor}"
                     HorizontalOptions="Center"/>
             </VerticalStackLayout>
@@ -40,7 +40,7 @@
 
                 <!-- Заголовок -->
                 <Label x:Name="TitleLabel" 
-                       Text="📊 Learning Progress"
+                       Text="📊 Прогресс обучения"
                        FontSize="28"
                        TextColor="{DynamicResource TextColor}"
                        FontAttributes="Bold"
@@ -50,7 +50,7 @@
                 <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
                     <VerticalStackLayout Spacing="15">
                         <Label x:Name="OverallProgressLabel"
-                               Text="Overall Progress"
+                               Text="Общий прогресс"
                                FontSize="18"
                                TextColor="{DynamicResource TextColor}"
                                FontAttributes="Bold" />
@@ -60,7 +60,7 @@
                             <!-- Завершенные курсы -->
                             <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="8">
                                 <Label x:Name="CompletedCoursesText"
-                                       Text="Completed Courses"
+                                       Text="Завершенные курсы"
                                        TextColor="{DynamicResource TextColor}"
                                        FontSize="14"/>
                                 <ProgressBar 
@@ -69,7 +69,7 @@
                                     BackgroundColor="#E0E0E0"
                                     HeightRequest="8"/>
                                 <Label 
-                                    Text="{Binding UserStatistics.CompletedCourses, StringFormat='{0} completed'}"
+                                    Text="{Binding UserStatistics.CompletedCourses, StringFormat='{0} завершено'}"
                                     TextColor="{DynamicResource TextColor}"
                                     FontSize="12"
                                     HorizontalOptions="Center"/>
@@ -78,7 +78,7 @@
                             <!-- Средний балл -->
                             <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
                                 <Label x:Name="AverageScoreText"
-                                       Text="Average Score"
+                                       Text="Средний балл"
                                        TextColor="{DynamicResource TextColor}"
                                        FontSize="14"/>
                                 <ProgressBar 
@@ -96,7 +96,7 @@
                             <!-- Процент завершения -->
                             <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="8">
                                 <Label x:Name="CompletionRateText"
-                                       Text="Completion Rate"
+                                       Text="Процент завершения"
                                        TextColor="{DynamicResource TextColor}"
                                        FontSize="14"/>
                                 <ProgressBar 
@@ -116,12 +116,12 @@
                                 <Grid ColumnDefinitions="*, *" ColumnSpacing="10" RowSpacing="10">
                                     <VerticalStackLayout Spacing="4">
                                         <Label x:Name="CurrentStreakText"
-                                               Text="Current Streak"
+                                               Text="Текущая серия"
                                                TextColor="{DynamicResource TextColor}"
                                                FontSize="11"
                                                HorizontalOptions="Center"/>
                                         <Label 
-                                            Text="{Binding UserStatistics.CurrentStreak, StringFormat='{0} days'}"
+                                            Text="{Binding UserStatistics.CurrentStreak, StringFormat='{0} дней'}"
                                             TextColor="{DynamicResource PrimaryColor}"
                                             FontSize="16"
                                             FontAttributes="Bold"
@@ -130,12 +130,12 @@
 
                                     <VerticalStackLayout Grid.Column="1" Spacing="4">
                                         <Label x:Name="TotalLearningText"
-                                               Text="Total Days"
+                                               Text="Всего дней"
                                                TextColor="{DynamicResource TextColor}"
                                                FontSize="11"
                                                HorizontalOptions="Center"/>
                                         <Label 
-                                            Text="{Binding UserStatistics.TotalDays, StringFormat='{0} days'}"
+                                            Text="{Binding UserStatistics.TotalDays, StringFormat='{0} дней'}"
                                             TextColor="{DynamicResource SecondaryColor}"
                                             FontSize="16"
                                             FontAttributes="Bold"
@@ -152,7 +152,7 @@
                 <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
                     <VerticalStackLayout Spacing="15">
                         <Label x:Name="RecentAchievementsLabel"
-                               Text="Recent Achievements"
+                               Text="Последние достижения"
                                FontSize="18"
                                TextColor="{DynamicResource TextColor}"
                                FontAttributes="Bold" />
@@ -165,7 +165,7 @@
                                       HeightRequest="200">
                             <CollectionView.EmptyView>
                                 <Label x:Name="NoAchievementsLabel"
-                                       Text="No achievements yet"
+                                       Text="Пока нет достижений"
                                        TextColor="#666"
                                        FontSize="14"
                                        HorizontalOptions="Center"
@@ -199,7 +199,7 @@
                 <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
                     <VerticalStackLayout Spacing="15">
                         <Label x:Name="CourseProgressLabel"
-                               Text="Course Progress"
+                               Text="Прогресс по курсам"
                                FontSize="18"
                                TextColor="{DynamicResource TextColor}"
                                FontAttributes="Bold" />
@@ -211,7 +211,7 @@
                                       ItemsLayout="VerticalList">
                             <CollectionView.EmptyView>
                                 <Label x:Name="NoCoursesLabel"
-                                       Text="No courses found"
+                                       Text="Курсы не найдены"
                                        TextColor="#666"
                                        FontSize="14"
                                        HorizontalOptions="Center"
@@ -256,7 +256,7 @@
 
                                             <!-- Дополнительная информация -->
                                             <Grid ColumnDefinitions="*, *">
-                                                <Label Text="{Binding Attempts, StringFormat='Attempts: {0}'}"
+                                                <Label Text="{Binding Attempts, StringFormat='Попыток: {0}'}"
                                                        TextColor="#666"
                                                        FontSize="11"/>
                                                 <Label Grid.Column="1"
@@ -274,7 +274,7 @@
                 </Border>
 
                 <!-- Кнопка возврата -->
-                <Button Text="Back to Home"
+                <Button Text="Вернуться на главную"
                         Clicked="OnBackClicked"
                         Style="{DynamicResource StandardButtonStyle}"
                         HorizontalOptions="Center" />

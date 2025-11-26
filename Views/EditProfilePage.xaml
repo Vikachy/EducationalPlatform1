@@ -5,8 +5,31 @@
     x:Class="EducationalPlatform.Views.EditProfilePage"
     Title="Редактирование профиля">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="20">
+    <Grid>
+        <!-- Индикатор загрузки на весь экран -->
+        <Grid x:Name="LoadingOverlay"
+              BackgroundColor="#80000000"
+              IsVisible="False"
+              VerticalOptions="Fill"
+              HorizontalOptions="Fill">
+            <VerticalStackLayout 
+                Spacing="20"
+                VerticalOptions="Center"
+                HorizontalOptions="Center">
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="White"
+                                   HeightRequest="50"
+                                   WidthRequest="50"/>
+                <Label Text="Сохранение..."
+                       TextColor="White"
+                       FontSize="16"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
+
+        <ScrollView>
+            <VerticalStackLayout Spacing="20" Padding="20">
 
             <!-- ЗАГОЛОВОК -->
             <Label Text="✏️ Редактирование профиля"
@@ -130,13 +153,8 @@
                         CornerRadius="25"
                         FontAttributes="Bold" />
             </Grid>
-            <ActivityIndicator x:Name="LoadingIndicator"
-                   IsVisible="False"
-                   IsRunning="False"
-                   Color="{DynamicResource PrimaryColor}"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center" />
         </VerticalStackLayout>
     </ScrollView>
+    </Grid>
 
 </ContentPage>

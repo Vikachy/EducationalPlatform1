@@ -32,17 +32,18 @@ namespace EducationalPlatform.Views
                 UsernameEntry.Text = _currentUser.Username ?? "";
                 EmailEntry.Text = _currentUser.Email ?? "";
 
-                // Загружаем текущий аватар из БД
+                // УНИВЕРСАЛЬНАЯ ЗАГРУЗКА АВАТАРА ДЛЯ ВСЕХ ПЛАТФОРМ (base64 data URL, file:// и др.)
                 var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
 
                 if (!string.IsNullOrEmpty(currentAvatar))
                 {
-                    AvatarPreview.Source = ImageSource.FromFile(currentAvatar);
+                    AvatarPreview.Source = ServiceHelper.GetImageSourceFromAvatarData(currentAvatar);
                     _avatarUrl = currentAvatar;
                     _currentUser.AvatarUrl = currentAvatar;
                 }
                 else
                 {
+                    // Универсальный дефолтный аватар из ресурсов приложения
                     AvatarPreview.Source = "default_avatar.png";
                     _avatarUrl = null;
                 }
@@ -65,16 +66,17 @@ namespace EducationalPlatform.Views
 
                 if (result != null)
                 {
-                    // Проверяем размер файла (макс 5MB)
-                    var fileInfo = new FileInfo(result.FullPath);
-                    if (fileInfo.Length > 5 * 1024 * 1024)
+                    try
                     {
-                        await DisplayAlert("Ошибка", "Размер файла не должен превышать 5MB", "OK");
-                        return;
+                        _selectedImage = result;
+                        AvatarPreview.Source = ImageSource.FromFile(result.FullPath);
+                        Console.WriteLine($"✅ Изображение выбрано: {result.FileName}");
                     }
-
-                    _selectedImage = result;
-                    AvatarPreview.Source = ImageSource.FromFile(result.FullPath);
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Ошибка загрузки изображения: {ex.Message}");
+                        await DisplayAlert("Ошибка", $"Не удалось загрузить изображение: {ex.Message}", "OK");
+                    }
                 }
             }
             catch (Exception ex)
@@ -134,9 +136,17 @@ namespace EducationalPlatform.Views
                 return;
             }
 
-            // Показываем индикатор загрузки
-            LoadingIndicator.IsVisible = true;
-            LoadingIndicator.IsRunning = true;
+            // Показываем индикатор загрузки на весь экран
+            var loadingOverlay = this.FindByName<Grid>("LoadingOverlay");
+            if (loadingOverlay != null)
+            {
+                loadingOverlay.IsVisible = true;
+            }
+            var loadingIndicator = this.FindByName<ActivityIndicator>("LoadingIndicator");
+            if (loadingIndicator != null)
+            {
+                loadingIndicator.IsRunning = true;
+            }
 
             try
             {
@@ -145,21 +155,59 @@ namespace EducationalPlatform.Views
                 // Загружаем файл если был выбран новый
                 if (_selectedImage != null)
                 {
-                    Console.WriteLine($"Загружаем новый аватар: {_selectedImage.FileName}");
+                    Console.WriteLine($"📸 Загружаем новый аватар: {_selectedImage.FileName}");
 
-                    using var stream = await _selectedImage.OpenReadAsync();
-                    finalAvatarUrl = await _dbService.UploadAvatarAsync(stream, _selectedImage.FileName, _currentUser.UserId);
-
-                    if (string.IsNullOrEmpty(finalAvatarUrl))
+                    try
                     {
-                        await DisplayAlert("Ошибка", "Не удалось загрузить аватар", "OK");
-                        LoadingIndicator.IsVisible = false;
-                        LoadingIndicator.IsRunning = false;
+                        using var stream = await _selectedImage.OpenReadAsync();
+
+                        // УНИВЕРСАЛЬНАЯ ЗАГРУЗКА АВАТАРА ДЛЯ ВСЕХ ПЛАТФОРМ
+                        finalAvatarUrl = await _dbService.UploadAvatarAsync(stream, _selectedImage.FileName, _currentUser.UserId);
+
+                        if (string.IsNullOrEmpty(finalAvatarUrl))
+                        {
+                            Console.WriteLine($"❌ UploadAvatarAsync вернул null");
+                            await DisplayAlert("Ошибка", "Не удалось загрузить аватар. Попробуйте выбрать другое изображение.", "OK");
+
+                            // ИСПРАВЛЕНИЕ: используем существующие переменные без повторного объявления
+                            if (loadingOverlay != null)
+                            {
+                                loadingOverlay.IsVisible = false;
+                            }
+                            if (loadingIndicator != null)
+                            {
+                                loadingIndicator.IsRunning = false;
+                            }
+                            return;
+                        }
+
+                        Console.WriteLine($"✅ Аватар успешно загружен: {finalAvatarUrl?.Substring(0, Math.Min(50, finalAvatarUrl?.Length ?? 0))}...");
+
+                        // Сразу обновляем превью аватара
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            AvatarPreview.Source = ServiceHelper.GetImageSourceFromAvatarData(finalAvatarUrl);
+                        });
+                        _avatarUrl = finalAvatarUrl;
+                        _currentUser.AvatarUrl = finalAvatarUrl;
+                    }
+                    catch (Exception avatarEx)
+                    {
+                        Console.WriteLine($"❌ Ошибка загрузки аватара: {avatarEx.Message}");
+                        Console.WriteLine($"Stack trace: {avatarEx.StackTrace}");
+                        await DisplayAlert("Ошибка", $"Не удалось обновить аватарку: {avatarEx.Message}", "OK");
+
+                        // ИСПРАВЛЕНИЕ: используем существующие переменные без повторного объявления
+                        if (loadingOverlay != null)
+                        {
+                            loadingOverlay.IsVisible = false;
+                        }
+                        if (loadingIndicator != null)
+                        {
+                            loadingIndicator.IsRunning = false;
+                        }
                         return;
                     }
-
-                    Console.WriteLine($"Аватар успешно загружен: {finalAvatarUrl}");
-                    await DisplayAlert("Успех", "Новый аватар загружен!", "OK");
                 }
 
                 // Обновляем данные пользователя
@@ -179,6 +227,10 @@ namespace EducationalPlatform.Views
                     _currentUser.Username = UsernameEntry.Text;
                     _currentUser.Email = EmailEntry.Text;
                     _currentUser.AvatarUrl = finalAvatarUrl;
+
+                    // Обновляем глобальное состояние пользователя и уведомляем все страницы об изменении аватара
+                    UserSessionService.CurrentUser = _currentUser;
+                    UserSessionService.RaiseAvatarChanged(_currentUser.UserId, finalAvatarUrl);
 
                     await DisplayAlert("Успех", "Профиль успешно обновлен!", "OK");
 
@@ -210,8 +262,15 @@ namespace EducationalPlatform.Views
             finally
             {
                 // Скрываем индикатор загрузки
-                LoadingIndicator.IsVisible = false;
-                LoadingIndicator.IsRunning = false;
+                // ИСПРАВЛЕНИЕ: используем существующие переменные без повторного объявления
+                if (loadingOverlay != null)
+                {
+                    loadingOverlay.IsVisible = false;
+                }
+                if (loadingIndicator != null)
+                {
+                    loadingIndicator.IsRunning = false;
+                }
             }
         }
 

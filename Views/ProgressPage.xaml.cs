@@ -10,6 +10,18 @@ namespace EducationalPlatform.Views
         private DatabaseService? _dbService;
         private SettingsService? _settingsService;
 
+        // Свойство для биндинга статистики в XAML
+        private UserStatistics? _userStatistics;
+        public UserStatistics? UserStatistics
+        {
+            get => _userStatistics;
+            set
+            {
+                _userStatistics = value;
+                OnPropertyChanged(nameof(UserStatistics));
+            }
+        }
+
         public ObservableCollection<ProgressItem> ProgressItems { get; set; }
         public ObservableCollection<Achievement> RecentAchievements { get; set; }
 
@@ -18,6 +30,8 @@ namespace EducationalPlatform.Views
             InitializeComponent();
             ProgressItems = new ObservableCollection<ProgressItem>();
             RecentAchievements = new ObservableCollection<Achievement>();
+
+            BindingContext = this;
         }
 
         // Конструктор с параметрами для инициализации
@@ -66,22 +80,21 @@ namespace EducationalPlatform.Views
         {
             if (_settingsService == null) return;
 
-            Title = _settingsService.GetLocalizedString("Progress");
+            // Фиксированные русские заголовки, как просил пользователь
+            Title = "Прогресс";
             var overallProgressLabel = this.FindByName<Label>("OverallProgressLabel");
             if (overallProgressLabel != null)
-                overallProgressLabel.Text = _settingsService.GetLocalizedString("OverallProgress");
+                overallProgressLabel.Text = "Общий прогресс";
 
             var recentAchievementsLabel = this.FindByName<Label>("RecentAchievementsLabel");
             if (recentAchievementsLabel != null)
-                recentAchievementsLabel.Text = _settingsService.GetLocalizedString("RecentAchievements");
+                recentAchievementsLabel.Text = "Последние достижения";
 
             var courseProgressLabel = this.FindByName<Label>("CourseProgressLabel");
             if (courseProgressLabel != null)
-                courseProgressLabel.Text = _settingsService.GetLocalizedString("CourseProgress");
+                courseProgressLabel.Text = "Прогресс по курсам";
 
-            var statisticsLabel = this.FindByName<Label>("StatisticsLabel");
-            if (statisticsLabel != null)
-                statisticsLabel.Text = _settingsService.GetLocalizedString("Statistics");
+            // Элемент StatisticsLabel сейчас не используется в XAML, оставляем код на будущее
         }
 
         private async void LoadProgressData()
@@ -112,36 +125,8 @@ namespace EducationalPlatform.Views
         {
             if (statistics == null) return;
 
-            // Обновляем прогресс-бары и значения
-            var totalCoursesProgress = this.FindByName<ProgressBar>("TotalCoursesProgress");
-            var averageScoreProgress = this.FindByName<ProgressBar>("AverageScoreProgress");
-            var completionRateProgress = this.FindByName<ProgressBar>("CompletionRateProgress");
-            var totalCoursesLabel = this.FindByName<Label>("TotalCoursesLabel");
-            var averageScoreLabel = this.FindByName<Label>("AverageScoreLabel");
-            var completionRateLabel = this.FindByName<Label>("CompletionRateLabel");
-            var currentStreakLabel = this.FindByName<Label>("CurrentStreakLabel");
-            var totalDaysLabel = this.FindByName<Label>("TotalDaysLabel");
-
-            if (totalCoursesProgress != null)
-                totalCoursesProgress.Progress = statistics.TotalCourses > 0 ?
-                    (double)statistics.CompletedCourses / statistics.TotalCourses : 0;
-
-            if (averageScoreProgress != null)
-                averageScoreProgress.Progress = (statistics.AverageScore ?? 0.0) / 100.0;
-
-            if (completionRateProgress != null)
-                completionRateProgress.Progress = statistics.CompletionRate ?? 0.0;
-
-            if (totalCoursesLabel != null)
-                totalCoursesLabel.Text = $"{statistics.CompletedCourses}/{statistics.TotalCourses}";
-            if (averageScoreLabel != null)
-                averageScoreLabel.Text = $"{(statistics.AverageScore ?? 0.0):F1}%"; // Исправлено: 0.0 вместо 0
-            if (completionRateLabel != null)
-                completionRateLabel.Text = $"{(statistics.CompletionRate ?? 0.0) * 100:F1}%"; // Исправлено: 0.0 вместо 0
-            if (currentStreakLabel != null)
-                currentStreakLabel.Text = $"{(statistics.CurrentStreak ?? 0)} {_settingsService?.GetLocalizedString("Days")}"; // Исправлено
-            if (totalDaysLabel != null)
-                totalDaysLabel.Text = $"{(statistics.TotalDays ?? 0)} {_settingsService?.GetLocalizedString("Days")}"; // Исправлено
+            // Сохраняем статистику в свойство, к которому привязан XAML
+            UserStatistics = statistics;
         }
 
         private async Task LoadCourseProgress()
@@ -245,27 +230,27 @@ namespace EducationalPlatform.Views
     }
 
     // Модель данных для отображения прогресса
-    public class ProgressItem
+        public class ProgressItem
     {
         public string CourseName { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public int Score { get; set; }
         public DateTime? CompletionDate { get; set; }
         public int Attempts { get; set; }
-        public string StatusColor => Status switch
-        {
-            "completed" => "#4CAF50",
-            "in_progress" => "#2196F3",
-            "not_started" => "#9E9E9E",
-            _ => "#9E9E9E"
-        };
+            public Color StatusColor => Status switch
+            {
+                "completed" => Color.FromArgb("#4CAF50"),
+                "in_progress" => Color.FromArgb("#2196F3"),
+                "not_started" => Color.FromArgb("#9E9E9E"),
+                _ => Color.FromArgb("#9E9E9E")
+            };
         public string StatusText => Status switch
         {
-            "completed" => "Completed",
-            "in_progress" => "In Progress",
-            "not_started" => "Not Started",
+            "completed" => "Завершено",
+            "in_progress" => "В процессе",
+            "not_started" => "Не начато",
             _ => Status
         };
-        public string FormattedCompletionDate => CompletionDate?.ToString("dd.MM.yyyy") ?? "Not completed";
+        public string FormattedCompletionDate => CompletionDate?.ToString("dd.MM.yyyy") ?? "Не завершено";
     }
 }

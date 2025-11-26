@@ -22,9 +22,13 @@ namespace EducationalPlatform.Views
             ActiveCourses = new ObservableCollection<ActiveCourse>();
             BindingContext = this;
 
+            // Устанавливаем глобального пользователя
+            UserSessionService.CurrentUser = _currentUser;
+
             // Подписываемся на глобальные события
             SettingsService.GlobalThemeChanged += OnGlobalThemeChanged;
             SettingsService.GlobalLanguageChanged += OnGlobalLanguageChanged;
+            UserSessionService.AvatarChanged += OnGlobalAvatarChanged;
 
             LoadUserData();
             LoadAchievements();
@@ -37,18 +41,25 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                Console.WriteLine($"🔄 Загружаем аватар для пользователя {_currentUser.UserId}");
+                
                 // Получаем актуальный аватар из базы
                 var currentAvatar = await _dbService.GetUserAvatarAsync(_currentUser.UserId);
 
-                if (!string.IsNullOrEmpty(currentAvatar))
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    AvatarImage.Source = ImageSource.FromFile(currentAvatar);
-                    _currentUser.AvatarUrl = currentAvatar;
-                }
-                else
-                {
-                    AvatarImage.Source = "default_avatar.png";
-                }
+                    if (!string.IsNullOrEmpty(currentAvatar))
+                    {
+                        AvatarImage.Source = ServiceHelper.GetImageSourceFromAvatarData(currentAvatar);
+                        _currentUser.AvatarUrl = currentAvatar;
+                        Console.WriteLine($"✅ Аватар загружен и отображен");
+                    }
+                    else
+                    {
+                        AvatarImage.Source = "default_avatar.png";
+                        Console.WriteLine($"⚠️ Аватар не найден, используем дефолтный");
+                    }
+                });
 
                 // применяем экипировку (рамка/эмодзи/тема)
                 var equipped = await _dbService.GetEquippedItemsAsync(_currentUser.UserId);
@@ -92,6 +103,7 @@ namespace EducationalPlatform.Views
             // Отписываемся от событий
             SettingsService.GlobalThemeChanged -= OnGlobalThemeChanged;
             SettingsService.GlobalLanguageChanged -= OnGlobalLanguageChanged;
+            UserSessionService.AvatarChanged -= OnGlobalAvatarChanged;
         }
 
         private void OnGlobalThemeChanged(object? sender, string theme)
@@ -317,11 +329,37 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                // При выходе очищаем глобального пользователя
+                UserSessionService.CurrentUser = null;
                 Application.Current!.MainPage = new NavigationPage(new MainPage());
             }
             catch (Exception ex)
             {
                 await DisplayAlert("Ошибка", $"Не удалось выйти: {ex.Message}", "OK");
+            }
+        }
+
+        /// <summary>
+        /// Глобальный обработчик изменения аватара.
+        /// Обновляет аватар на странице профиля сразу после сохранения.
+        /// </summary>
+        private void OnGlobalAvatarChanged(object? sender, AvatarChangedEventArgs e)
+        {
+            try
+            {
+                if (_currentUser == null || e.UserId != _currentUser.UserId)
+                    return;
+
+                _currentUser.AvatarUrl = e.AvatarData ?? _currentUser.AvatarUrl;
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    AvatarImage.Source = ServiceHelper.GetImageSourceFromAvatarData(e.AvatarData);
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обработки глобального изменения аватара в ProfilePage: {ex.Message}");
             }
         }
 
