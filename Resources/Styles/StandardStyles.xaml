@@ -12,21 +12,29 @@
     <Color x:Key="TextColor">#1d3557</Color>
     <Color x:Key="LightTextColor">#f1faee</Color>
 
+    <!-- Базовые цвета которые могут использоваться -->
+    <Color x:Key="White">#FFFFFF</Color>
+    <Color x:Key="Black">#000000</Color>
+    <Color x:Key="Gray100">#F5F5F5</Color>
+    <Color x:Key="Gray300">#E0E0E0</Color>
+    <Color x:Key="Gray600">#757575</Color>
+
     <!-- СТИЛИ ДЛЯ СТАНДАРТНОЙ ТЕМЫ -->
-    <Style x:Key="StandardLabelStyle" TargetType="Label">
+    <!-- Используем общие ключи, которые будут работать в обеих темах -->
+    <Style x:Key="LabelStyle" TargetType="Label">
         <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
         <Setter Property="FontFamily" Value="OpenSans-Regular" />
     </Style>
 
-    <Style x:Key="StandardEntryStyle" TargetType="Entry">
-        <Setter Property="BackgroundColor" Value="White" />
+    <Style x:Key="EntryStyle" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="{DynamicResource White}" />
         <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
-        <Setter Property="PlaceholderColor" Value="#666" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource Gray600}" />
         <Setter Property="FontFamily" Value="OpenSans-Regular" />
         <Setter Property="HeightRequest" Value="45" />
     </Style>
 
-    <Style x:Key="StandardButtonStyle" TargetType="Button">
+    <Style x:Key="ButtonStyle" TargetType="Button">
         <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryColor}" />
         <Setter Property="TextColor" Value="{DynamicResource LightTextColor}" />
         <Setter Property="FontFamily" Value="OpenSans-Regular" />
@@ -35,7 +43,7 @@
         <Setter Property="HeightRequest" Value="45" />
     </Style>
 
-    <Style x:Key="StandardFrameStyle" TargetType="Border">
+    <Style x:Key="FrameStyle" TargetType="Border">
         <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundColor}" />
         <Setter Property="Stroke" Value="{DynamicResource PrimaryColor}" />
         <Setter Property="StrokeThickness" Value="1" />
@@ -46,21 +54,18 @@
         </Setter>
     </Style>
 
-
-    <!-- Добавьте эти стили в ваш ResourceDictionary -->
-
-    <Style x:Key="StandardPickerStyle" TargetType="Picker">
-        <Setter Property="BackgroundColor" Value="White" />
+    <Style x:Key="PickerStyle" TargetType="Picker">
+        <Setter Property="BackgroundColor" Value="{DynamicResource White}" />
         <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
-        <Setter Property="TitleColor" Value="#666" />
+        <Setter Property="TitleColor" Value="{DynamicResource Gray600}" />
         <Setter Property="FontFamily" Value="OpenSans-Regular" />
         <Setter Property="HeightRequest" Value="45" />
     </Style>
 
-    <Style x:Key="StandardEditorStyle" TargetType="Editor">
-        <Setter Property="BackgroundColor" Value="White" />
+    <Style x:Key="EditorStyle" TargetType="Editor">
+        <Setter Property="BackgroundColor" Value="{DynamicResource White}" />
         <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
-        <Setter Property="PlaceholderColor" Value="#666" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource Gray600}" />
         <Setter Property="FontFamily" Value="OpenSans-Regular" />
         <Setter Property="AutoSize" Value="TextChanges" />
     </Style>

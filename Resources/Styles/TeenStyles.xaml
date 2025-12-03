@@ -3,67 +3,167 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Resources.Styles.TeenStyles">
 
-    <!-- ЦВЕТА ДЛЯ ПОДРОСТКОВОЙ ТЕМЫ -->
-    <Color x:Key="PrimaryColor">#669bbc</Color>
-    <Color x:Key="SecondaryColor">#003049</Color>
-    <Color x:Key="BackgroundColor">#fdf0d5</Color>
-    <Color x:Key="AccentColor">#c1121f</Color>
-    <Color x:Key="DangerColor">#780000</Color>
-    <Color x:Key="TextColor">#003049</Color>
-    <Color x:Key="LightTextColor">#fdf0d5</Color>
+    <!-- ТЕМНАЯ ВЕРСИЯ СТАНДАРТНОЙ ТЕМЫ -->
+    <Color x:Key="PrimaryColor">#5a9bc5</Color>
+    <!-- Светлее оригинального #457b9d для лучшего контраста -->
+    <Color x:Key="SecondaryColor">#2a3f6b</Color>
+    <!-- Темнее оригинального #1d3557 -->
+    <Color x:Key="BackgroundColor">#121826</Color>
+    <!-- Темно-синий фон вместо светлого -->
+    <Color x:Key="AccentColor">#ff5a6e</Color>
+    <!-- Ярче оригинального #e63946 -->
+    <Color x:Key="DangerColor">#ff5a6e</Color>
+    <Color x:Key="TextColor">#d6e4ff</Color>
+    <!-- Светлый текст на темном фоне (более синий оттенок) -->
+    <Color x:Key="LightTextColor">#d6e4ff</Color>
+    <!-- Светлый текст -->
 
-    <!-- СТИЛИ ДЛЯ ПОДРОСТКОВОЙ ТЕМЫ -->
-    <Style x:Key="TeenLabelStyle" TargetType="Label">
-        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
-        <Setter Property="FontFamily" Value="OpenSans-Semibold" />
-    </Style>
+    <!-- Базовые цвета для темной темы -->
+    <Color x:Key="White">#d6e4ff</Color>
+    <!-- Не чисто белый, а светло-голубой -->
+    <Color x:Key="Black">#0a0e17</Color>
+    <!-- Очень темный синий -->
+    <Color x:Key="Gray100">#1a1f2e</Color>
+    <!-- Темно-серый для элементов -->
+    <Color x:Key="Gray300">#2d3345</Color>
+    <!-- Средний серый для границ -->
+    <Color x:Key="Gray600">#6c748a</Color>
+    <!-- Светло-серый для плейсхолдеров -->
 
-    <Style x:Key="TeenEntryStyle" TargetType="Entry">
-        <Setter Property="BackgroundColor" Value="White" />
+    <!-- Дополнительные цвета темной темы -->
+    <Color x:Key="SurfaceColor">#1a1f2e</Color>
+    <!-- Цвет поверхностей -->
+    <Color x:Key="BorderColor">#2d3345</Color>
+    <!-- Цвет границ -->
+    <Color x:Key="HoverColor">#3a4157</Color>
+    <!-- Цвет при наведении -->
+
+    <!-- СТИЛИ ДЛЯ ТЕМНОЙ ТЕМЫ -->
+    <Style x:Key="LabelStyle" TargetType="Label">
         <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
-        <Setter Property="PlaceholderColor" Value="#666" />
         <Setter Property="FontFamily" Value="OpenSans-Regular" />
-        <Setter Property="HeightRequest" Value="50" />
     </Style>
 
-    <Style x:Key="TeenButtonStyle" TargetType="Button">
-        <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryColor}" />
-        <Setter Property="TextColor" Value="{DynamicResource LightTextColor}" />
-        <Setter Property="FontFamily" Value="OpenSans-Semibold" />
-        <Setter Property="FontSize" Value="16" />
-        <Setter Property="CornerRadius" Value="25" />
-        <Setter Property="HeightRequest" Value="50" />
+    <Style x:Key="LabelLargeStyle" TargetType="Label">
+        <Setter Property="TextColor" Value="{DynamicResource White}" />
+        <Setter Property="FontFamily" Value="OpenSans-Bold" />
+        <Setter Property="FontSize" Value="18" />
     </Style>
 
-
-    <Style x:Key="TeenFrameStyle" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundColor}" />
-        <Setter Property="Stroke" Value="{DynamicResource PrimaryColor}" />
-        <Setter Property="StrokeThickness" Value="1" />
-        <Setter Property="StrokeShape">
-            <Setter.Value>
-                <RoundRectangle CornerRadius="15" />
-            </Setter.Value>
-        </Setter>
+    <Style x:Key="LabelSmallStyle" TargetType="Label">
+        <Setter Property="TextColor" Value="{DynamicResource Gray600}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="FontSize" Value="12" />
     </Style>
 
-    <!-- Добавьте эти стили в ваш ResourceDictionary -->
-
-    <Style x:Key="StandardPickerStyle" TargetType="Picker">
-        <Setter Property="BackgroundColor" Value="White" />
+    <Style x:Key="EntryStyle" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SurfaceColor}" />
         <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
-        <Setter Property="TitleColor" Value="#666" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource Gray600}" />
         <Setter Property="FontFamily" Value="OpenSans-Regular" />
         <Setter Property="HeightRequest" Value="45" />
     </Style>
 
-    <Style x:Key="StandardEditorStyle" TargetType="Editor">
-        <Setter Property="BackgroundColor" Value="White" />
+    <Style x:Key="ButtonStyle" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="TextColor" Value="{DynamicResource White}" />
+        <Setter Property="FontFamily" Value="OpenSans-Semibold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="45" />
+        <Setter Property="Padding" Value="20,0" />
+    </Style>
+
+    <Style x:Key="ButtonSecondaryStyle" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SurfaceColor}" />
         <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
-        <Setter Property="PlaceholderColor" Value="#666" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="40" />
+        <Setter Property="Padding" Value="15,0" />
+        <Setter Property="BorderColor" Value="{DynamicResource BorderColor}" />
+        <Setter Property="BorderWidth" Value="1" />
+    </Style>
+
+    <Style x:Key="ButtonAccentStyle" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource AccentColor}" />
+        <Setter Property="TextColor" Value="{DynamicResource White}" />
+        <Setter Property="FontFamily" Value="OpenSans-Bold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="45" />
+        <Setter Property="Padding" Value="20,0" />
+    </Style>
+
+    <Style x:Key="FrameStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SurfaceColor}" />
+        <Setter Property="Stroke" Value="{DynamicResource BorderColor}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="10" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Padding" Value="15" />
+    </Style>
+
+    <Style x:Key="CardStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SurfaceColor}" />
+        <Setter Property="Stroke" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="12" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="{DynamicResource Black}"
+                        Offset="0,4"
+                        Opacity="0.3"
+                        Radius="10"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PickerStyle" TargetType="Picker">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SurfaceColor}" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="TitleColor" Value="{DynamicResource Gray600}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="HeightRequest" Value="45" />
+    </Style>
+
+    <Style x:Key="EditorStyle" TargetType="Editor">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SurfaceColor}" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource Gray600}" />
         <Setter Property="FontFamily" Value="OpenSans-Regular" />
         <Setter Property="AutoSize" Value="TextChanges" />
     </Style>
 
+    <!-- Стили для навигации -->
+    <Style x:Key="NavButtonStyle" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="FontFamily" Value="OpenSans-Medium" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="HeightRequest" Value="45" />
+    </Style>
+
+    <!-- Стили для переключателей -->
+    <Style x:Key="SwitchStyle" TargetType="Switch">
+        <Setter Property="OnColor" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="ThumbColor" Value="{DynamicResource White}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource Gray300}" />
+    </Style>
+
+    <!-- Стили для прогресс-баров -->
+    <Style x:Key="ProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="ProgressColor" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource Gray300}" />
+    </Style>
 
 </ResourceDictionary>

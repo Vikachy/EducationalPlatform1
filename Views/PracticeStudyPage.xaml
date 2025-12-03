@@ -86,6 +86,17 @@
                     <Label Text="Поддерживаемые форматы: ZIP, JPG, PNG, PDF" 
                            FontSize="12"
                            TextColor="#999" />
+
+                    <!-- Превью выбранного файла -->
+                    <StackLayout x:Name="FilePreviewSection" IsVisible="False">
+                        <Label Text="Выбранный файл:" FontSize="14" FontAttributes="Bold"/>
+                        <Label x:Name="SelectedFileNameLabel" FontSize="13"/>
+                        <Label x:Name="SelectedFileSizeLabel" FontSize="12" TextColor="Gray"/>
+                        <Button Text="Удалить файл" 
+                                Clicked="OnRemoveFileClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="Red" />
+                    </StackLayout>
                 </StackLayout>
 
                 <!-- Подсказка -->
@@ -99,25 +110,7 @@
                            LineBreakMode="WordWrap" />
                 </StackLayout>
 
-                <!-- Результат проверки -->
-                <Border x:Name="ResultSection" 
-                        IsVisible="False"
-                        BackgroundColor="#E8F5E8"
-                        Stroke="#4CAF50"
-                        StrokeThickness="1"
-                        Padding="15">
-                    <VerticalStackLayout>
-                        <Label x:Name="ResultLabel" 
-                               Text="Задание выполнено успешно!"
-                               FontSize="16"
-                               TextColor="#4CAF50" />
-                        <Label x:Name="FeedbackLabel" 
-                               FontSize="14"
-                               TextColor="#666" />
-                    </VerticalStackLayout>
-                </Border>
-
-                <!-- Прикрепленные файлы -->
+                <!-- Прикрепленные файлы задания -->
                 <Border x:Name="AttachmentsSection" 
                         IsVisible="False"
                         BackgroundColor="#F8F9FA"
@@ -127,15 +120,14 @@
                         StrokeShape="RoundRectangle 10"
                         Margin="0,15,0,0">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="Прикрепленные файлы:" 
+                        <Label Text="Прикрепленные файлы задания:" 
                                FontSize="16" 
                                FontAttributes="Bold"
                                TextColor="{DynamicResource PrimaryColor}" />
 
-                        <CollectionView x:Name="AttachmentsCollection" ItemsSource="{Binding Attachments}">
+                        <CollectionView x:Name="AttachmentsCollection">
                             <CollectionView.ItemTemplate>
                                 <DataTemplate>
-                                    <!-- Интерактивная карточка файла -->
                                     <Border BackgroundColor="White"
                                             Stroke="{DynamicResource PrimaryColor}"
                                             StrokeThickness="2"
@@ -145,12 +137,12 @@
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer Tapped="OnAttachmentTapped" CommandParameter="{Binding .}" />
                                         </Border.GestureRecognizers>
-                                        
+
                                         <Grid ColumnDefinitions="Auto,*,Auto" 
                                               ColumnSpacing="15"
                                               RowDefinitions="Auto,Auto">
-                                            
-                                            <!-- Большая иконка файла -->
+
+                                            <!-- Иконка файла -->
                                             <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
                                                     BackgroundColor="{DynamicResource PrimaryColor}"
                                                     StrokeThickness="0"
@@ -199,13 +191,31 @@
                     </VerticalStackLayout>
                 </Border>
 
+                <!-- Результат проверки -->
+                <Border x:Name="ResultSection" 
+                        IsVisible="False"
+                        BackgroundColor="#E8F5E8"
+                        Stroke="#4CAF50"
+                        StrokeThickness="1"
+                        Padding="15">
+                    <VerticalStackLayout>
+                        <Label x:Name="ResultLabel" 
+                               Text="Задание выполнено успешно!"
+                               FontSize="16"
+                               TextColor="#4CAF50" />
+                        <Label x:Name="FeedbackLabel" 
+                               FontSize="14"
+                               TextColor="#666" />
+                    </VerticalStackLayout>
+                </Border>
+
             </VerticalStackLayout>
         </ScrollView>
 
         <!-- Кнопки -->
         <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="10" Padding="15">
-            <Button Text="Проверить" 
-                    Clicked="OnCheckAnswerClicked"
+            <Button Text="Отправить на проверку" 
+                    Clicked="OnSubmitClicked"
                     BackgroundColor="{DynamicResource PrimaryColor}"
                     TextColor="White" />
             <Button Text="Следующий ➡️" 

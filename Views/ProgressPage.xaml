@@ -40,7 +40,7 @@
 
                 <!-- Заголовок -->
                 <Label x:Name="TitleLabel" 
-                       Text="📊 Прогресс обучения"
+                       Text="Прогресс обучения"
                        FontSize="28"
                        TextColor="{DynamicResource TextColor}"
                        FontAttributes="Bold"

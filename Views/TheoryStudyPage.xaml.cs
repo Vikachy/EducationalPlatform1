@@ -84,38 +84,41 @@ namespace EducationalPlatform.Views
             }
         }
 
+        // В TheoryStudyPage.xaml.cs замените метод LoadAttachments на этот:
+
         private async Task LoadAttachments()
         {
             try
             {
                 Console.WriteLine($"🔄 Загружаем вложения для урока {_lessonId}");
-                
+
                 var attachments = await GetLessonAttachmentsAsync(_lessonId);
-                
-                MainThread.BeginInvokeOnMainThread(() =>
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     Attachments.Clear();
 
                     if (attachments != null && attachments.Any())
                     {
                         Console.WriteLine($"📎 Найдено {attachments.Count} вложений");
-                        
+
                         foreach (var attachment in attachments)
                         {
+                            // ИСПРАВЛЕНО: Правильно заполняем модель
                             Attachments.Add(new AttachmentViewModel
                             {
                                 AttachmentId = attachment.AttachmentId,
                                 FileName = attachment.FileName,
-                                FileSize = attachment.FileSize,
+                                FileSize = attachment.FileSize, // Уже отформатированная строка из БД
                                 FilePath = attachment.FilePath,
                                 FileIcon = _fileService.GetFileIcon(attachment.FileType)
                             });
                         }
 
                         AttachmentsSection.IsVisible = true;
-                        AttachmentsCollection.ItemsSource = null; // Сбрасываем для обновления
+                        AttachmentsCollection.ItemsSource = null;
                         AttachmentsCollection.ItemsSource = Attachments;
-                        
+
                         Console.WriteLine($"✅ Вложения загружены и отображены");
                     }
                     else
@@ -129,7 +132,7 @@ namespace EducationalPlatform.Views
             {
                 Console.WriteLine($"❌ Ошибка загрузки вложений: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                MainThread.BeginInvokeOnMainThread(() =>
+                await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     AttachmentsSection.IsVisible = false;
                 });

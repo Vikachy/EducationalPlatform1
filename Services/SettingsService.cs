@@ -65,29 +65,35 @@ namespace EducationalPlatform.Services
             {
                 Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(() =>
                 {
+                    Console.WriteLine($"Applying theme: {theme}");
+
+                    // Очищаем текущие стили
+                    Application.Current.Resources.MergedDictionaries.Clear();
+
+                    ResourceDictionary themeDict;
                     if (theme == "teen")
                     {
-                        // Подростковая тема
-                        Application.Current.Resources["PrimaryColor"] = Color.FromArgb("#669bbc");
-                        Application.Current.Resources["SecondaryColor"] = Color.FromArgb("#003049");
-                        Application.Current.Resources["BackgroundColor"] = Color.FromArgb("#fdf0d5");
-                        Application.Current.Resources["AccentColor"] = Color.FromArgb("#c1121f");
-                        Application.Current.Resources["TextColor"] = Color.FromArgb("#003049");
-                        Application.Current.Resources["LightTextColor"] = Color.FromArgb("#fdf0d5");
+                        Console.WriteLine("Loading Teen theme");
+                        themeDict = new Resources.Styles.TeenStyles();
+                        // Проверяем цвета
+                        if (themeDict.TryGetValue("PrimaryColor", out var primaryColor))
+                        {
+                            Console.WriteLine($"Teen PrimaryColor: {primaryColor}");
+                        }
                     }
                     else
                     {
-                        // Стандартная тема
-                        Application.Current.Resources["PrimaryColor"] = Color.FromArgb("#457b9d");
-                        Application.Current.Resources["SecondaryColor"] = Color.FromArgb("#1d3557");
-                        Application.Current.Resources["BackgroundColor"] = Color.FromArgb("#f1faee");
-                        Application.Current.Resources["AccentColor"] = Color.FromArgb("#e63946");
-                        Application.Current.Resources["TextColor"] = Color.FromArgb("#1d3557");
-                        Application.Current.Resources["LightTextColor"] = Color.FromArgb("#f1faee");
+                        Console.WriteLine("Loading Standard theme");
+                        themeDict = new Resources.Styles.StandardStyles();
                     }
 
-                    // Обновляем NavigationBar и StatusBar
-                    UpdateNavigationBar(theme);
+                    Application.Current.Resources.MergedDictionaries.Add(themeDict);
+
+                    // Проверяем, что цвета установлены
+                    if (Application.Current.Resources.TryGetValue("PrimaryColor", out var testColor))
+                    {
+                        Console.WriteLine($"Current PrimaryColor: {testColor}");
+                    }
                 });
             }
         }
@@ -96,7 +102,7 @@ namespace EducationalPlatform.Services
         {
             // Обновляем тексты на всех страницах через события
             UpdateAllPagesText(language);
-            
+
             // Обновляем LocalizationService
             var localizationService = new LocalizationService();
             localizationService.SetLanguage(language);
@@ -106,6 +112,11 @@ namespace EducationalPlatform.Services
         private void UpdateNavigationBar(string theme)
         {
             // Можно добавить обновление цвета navigation bar если нужно
+            // Используем цвета из текущей темы
+            if (Application.Current != null && Application.Current.Resources.TryGetValue("PrimaryColor", out object primaryColorObj))
+            {
+                var primaryColor = (Color)primaryColorObj;
+            }
         }
 
         private void UpdateAllPagesText(string language)
@@ -114,9 +125,15 @@ namespace EducationalPlatform.Services
             var localizationService = new LocalizationService();
             localizationService.SetLanguage(language);
             localizationService.SetTeenStyle(CurrentTheme == "teen");
-            
+
             // Генерируем событие для обновления всех страниц
             GlobalLanguageChanged?.Invoke(this, language);
+        }
+
+        // Метод для инициализации темы при запуске приложения
+        public void InitializeTheme()
+        {
+            ApplyThemeToApp(CurrentTheme);
         }
 
         // Методы для получения локализованных строк

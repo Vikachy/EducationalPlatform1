@@ -58,14 +58,14 @@
                   RowSpacing="10">
 
                 <Button Grid.Row="0" Grid.Column="0"
-                        Text="➕ Создать курс"
+                        Text="Создать курс"
                         Clicked="OnCreateCourseClicked"
                         BackgroundColor="{DynamicResource AccentColor}"
                         TextColor="White"
                         HeightRequest="40" />
 
                 <Button Grid.Row="0" Grid.Column="1"
-                        Text="📊 Отчеты"
+                        Text="Отчеты"
                         Clicked="OnReportsClicked"
                         BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"
@@ -98,7 +98,7 @@
 
                                     <!-- Кнопка Контент -->
                                     <Button Grid.Column="1"
-                                            Text="📝 Контент"
+                                            Text="Контент"
                                             Clicked="OnManageContentClicked"
                                             BackgroundColor="#2196F3"
                                             TextColor="White"
@@ -181,7 +181,7 @@
                                       VerticalOptions="End">
 
                                     <Button Grid.Column="0"
-                                            Text="⚙️ Управление"
+                                            Text="Управление"
                                             Clicked="OnManageCourseClicked"
                                             BackgroundColor="#4CAF50"
                                             TextColor="White"
@@ -191,7 +191,7 @@
                                             HeightRequest="36" />
 
                                     <Button Grid.Column="1"
-                                            Text="👥 Группы"
+                                            Text="Группы"
                                             Clicked="OnManageGroupsClicked"
                                             BackgroundColor="#FF9800"
                                             TextColor="White"

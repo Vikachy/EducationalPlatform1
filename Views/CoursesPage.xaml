@@ -28,7 +28,7 @@
 
                 <!-- ЗАГОЛОВОК -->
                 <Label Grid.Column="1"
-                       Text="📚 Все курсы"
+                       Text="Все курсы"
                        FontSize="20"
                        TextColor="{DynamicResource LightTextColor}"
                        FontAttributes="Bold"

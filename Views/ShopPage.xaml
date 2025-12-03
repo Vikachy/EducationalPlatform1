@@ -23,7 +23,7 @@
                         FontSize="20" />
 
                 <Label Grid.Column="1"
-                       Text="🛒 Магазин"
+                       Text="Магазин"
                        FontSize="20"
                        TextColor="White"
                        FontAttributes="Bold"
@@ -62,7 +62,7 @@
                     <VerticalStackLayout Spacing="0">
                         <Border BackgroundColor="{DynamicResource PrimaryColor}"
                                 Padding="15">
-                            <Label Text="🖼️ Рамки профиля"
+                            <Label Text="Рамки профиля"
                                    FontSize="18"
                                    TextColor="White"
                                    FontAttributes="Bold" />
@@ -144,7 +144,7 @@
                     <VerticalStackLayout Spacing="0">
                         <Border BackgroundColor="{DynamicResource AccentColor}"
                                 Padding="15">
-                            <Label Text="😊 Эмодзи для профиля"
+                            <Label Text="Эмодзи для профиля"
                                    FontSize="18"
                                    TextColor="White"
                                    FontAttributes="Bold" />
@@ -220,7 +220,7 @@
                     <VerticalStackLayout Spacing="0">
                         <Border BackgroundColor="{DynamicResource SecondaryColor}"
                                 Padding="15">
-                            <Label Text="🎨 Темы оформления"
+                            <Label Text="Темы оформления"
                                    FontSize="18"
                                    TextColor="White"
                                    FontAttributes="Bold" />
@@ -327,7 +327,7 @@
 
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                 <Button Grid.Column="0"
-                        Text="💼 Мой инвентарь"
+                        Text="Мой инвентарь"
                         BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"
                         HeightRequest="45"
@@ -335,7 +335,7 @@
                         Clicked="OnInventoryClicked" />
 
                 <Button Grid.Column="1"
-                        Text="📈 Получить монеты"
+                        Text="Получить монеты"
                         BackgroundColor="{DynamicResource AccentColor}"
                         TextColor="White"
                         HeightRequest="45"

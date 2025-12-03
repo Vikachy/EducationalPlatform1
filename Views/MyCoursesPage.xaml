@@ -10,7 +10,7 @@
                 BackgroundColor="{DynamicResource PrimaryColor}"
                 Padding="20,15">
             <HorizontalStackLayout>
-                <Label Text="🎯 Мои курсы"
+                <Label Text="Мои курсы"
                        FontSize="20"
                        TextColor="White"
                        FontAttributes="Bold"

@@ -114,9 +114,7 @@ namespace EducationalPlatform.Views
 
                     await DisplayAlert("Сохранено", "Настройки успешно сохранены! ✅", "OK");
 
-                    // Применяем тему ко всем страницам
-                    App.Current.Resources["PrimaryColor"] = _settingsService.CurrentTheme == "teen" ?
-                        Color.FromArgb("#FF6B9C") : Color.FromArgb("#2E86AB");
+                    _settingsService.ApplyTheme(_settingsService.CurrentTheme);
                 }
                 else
                 {
@@ -130,7 +128,6 @@ namespace EducationalPlatform.Views
                 await DisplayAlert("Ошибка", $"Ошибка сохранения: {ex.Message}", "OK");
             }
         }
-
         private async void OnBackClicked(object sender, EventArgs e)
         {
             await Navigation.PopAsync();

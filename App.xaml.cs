@@ -13,8 +13,8 @@ namespace EducationalPlatform
             // Инициализируем настройки
             AppSettings = new SettingsService();
 
-            // Применяем сохраненную тему
-            ApplyTheme(AppSettings.CurrentTheme);
+            // Инициализируем тему через SettingsService
+            AppSettings.InitializeTheme();
 
             // Настройка REAL EMAIL - ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ
             ConfigureRealEmailService(
@@ -24,37 +24,17 @@ namespace EducationalPlatform
                 password: "uexa rvjo zcrb kvvx"
             );
 
-            // Подписываемся на изменение темы - ИСПРАВЛЕНО: правильная сигнатура метода
+            // Подписываемся на изменение темы
             AppSettings.ThemeChanged += (s, theme) => OnThemeChanged(theme);
 
             Console.WriteLine($"🎨 Тема при запуске: {AppSettings.CurrentTheme}");
         }
 
-        private void ApplyTheme(string theme)
-        {
-            if (theme == "teen")
-            {
-                // Применяем подростковую тему
-                Resources["PrimaryColor"] = Color.FromArgb("#FF6B9C");
-                Resources["SecondaryColor"] = Color.FromArgb("#4ECDC4");
-                Resources["BackgroundColor"] = Color.FromArgb("#F0F8FF");
-                Resources["TextColor"] = Color.FromArgb("#2C3E50");
-            }
-            else
-            {
-                // Стандартная тема
-                Resources["PrimaryColor"] = Color.FromArgb("#2E86AB");
-                Resources["SecondaryColor"] = Color.FromArgb("#A23B72");
-                Resources["BackgroundColor"] = Colors.White;
-                Resources["TextColor"] = Colors.Black;
-            }
-        }
-
-        // ИСПРАВЛЕНО: правильная сигнатура метода
+        // ИСПРАВЛЕННЫЙ метод для обновления темы
         private void OnThemeChanged(string newTheme)
         {
-            // Обновляем тему во всем приложении
-            ApplyTheme(newTheme);
+            // Просто вызываем метод из SettingsService
+            AppSettings.ApplyTheme(newTheme);
         }
 
         protected override Window CreateWindow(IActivationState? activationState)

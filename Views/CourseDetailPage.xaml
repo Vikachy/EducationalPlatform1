@@ -18,7 +18,7 @@
                    Style="{DynamicResource StandardFrameStyle}"
                    IsVisible="False">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="💬 Групповые чаты" FontSize="18" FontAttributes="Bold" />
+                    <Label Text="Групповые чаты" FontSize="18" FontAttributes="Bold" />
                     <CollectionView x:Name="StudentChatsCollection" 
                                   ItemsSource="{Binding StudentGroups}"
                                   SelectionMode="Single"
@@ -66,7 +66,7 @@
             <!-- Теория -->
             <Frame Style="{DynamicResource StandardFrameStyle}">
                 <VerticalStackLayout Spacing="10">
-                    <Label x:Name="TheoryLabel" Text="📖 Теория" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="TheoryLabel" Text="Теория" FontSize="18" FontAttributes="Bold" />
                     <CollectionView x:Name="TheoryCollection" 
                                   SelectionMode="Single"
                                   SelectionChanged="OnTheorySelected">
@@ -91,7 +91,7 @@
             <!-- Практика -->
             <Frame Style="{DynamicResource StandardFrameStyle}">
                 <VerticalStackLayout Spacing="10">
-                    <Label x:Name="PracticeLabel" Text="💻 Практика" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="PracticeLabel" Text="Практика" FontSize="18" FontAttributes="Bold" />
                     <CollectionView x:Name="PracticeCollection" 
                                   SelectionMode="Single"
                                   SelectionChanged="OnPracticeSelected">
@@ -116,7 +116,7 @@
             <!-- Тесты -->
             <Frame Style="{DynamicResource StandardFrameStyle}">
                 <VerticalStackLayout Spacing="10">
-                    <Label x:Name="TestsLabel" Text="📝 Тесты" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="TestsLabel" Text="Тесты" FontSize="18" FontAttributes="Bold" />
                     <CollectionView x:Name="TestsCollection" 
                                   SelectionMode="Single"
                                   SelectionChanged="OnTestSelected">
@@ -140,7 +140,7 @@
 
             <!-- В секции кнопок действий -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Padding="15">
-                <Button Text="💬 Чат с преподавателем" 
+                <Button Text="Чат с преподавателем" 
             Clicked="OnTeacherChatClicked" 
             BackgroundColor="{DynamicResource SecondaryColor}"
             HeightRequest="50" 

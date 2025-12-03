@@ -93,7 +93,7 @@
                         StrokeThickness="2"
                         Padding="20">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="🎉 Тест завершен!" 
+                        <Label Text="Тест завершен!" 
                                FontSize="20"
                                FontAttributes="Bold"
                                HorizontalOptions="Center" />

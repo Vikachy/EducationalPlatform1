@@ -33,7 +33,7 @@
 
                     <!-- ЗАГОЛОВОК -->
                     <Label Grid.Column="1"
-                           Text="👤 Мой профиль"
+                           Text="Мой профиль"
                            FontSize="20"
                            TextColor="White"
                            FontAttributes="Bold"
@@ -104,7 +104,7 @@
                                    TextColor="{DynamicResource TextColor}"
                                    FontAttributes="Bold" />
                             <Label x:Name="UserTitleLabel"
-                                   Text="🎯 Новичок программиста"
+                                   Text="Новичок программиста"
                                    FontSize="12"
                                    TextColor="{DynamicResource PrimaryColor}"
                                    FontAttributes="Bold" />
@@ -167,7 +167,7 @@
                                        TextColor="#FF9800"
                                        FontAttributes="Bold"
                                        HorizontalOptions="Center" />
-                                <Label Text="💰 Монет"
+                                <Label Text="Монет"
                                        FontSize="10"
                                        TextColor="#666"
                                        HorizontalOptions="Center" />
@@ -183,7 +183,7 @@
                             StrokeShape="RoundRectangle 10"
                             Padding="15,10">
                         <VerticalStackLayout Spacing="8">
-                            <Label Text="📊 Общий прогресс обучения"
+                            <Label Text="Общий прогресс обучения"
                                    FontSize="14"
                                    TextColor="{DynamicResource TextColor}"
                                    FontAttributes="Bold" />
@@ -221,7 +221,7 @@
                             StrokeThickness="0"
                             Padding="15,12">
                         <HorizontalStackLayout>
-                            <Label Text="🏆 Мои достижения"
+                            <Label Text="Мои достижения"
                                    FontSize="16"
                                    TextColor="White"
                                    FontAttributes="Bold"
@@ -292,7 +292,7 @@
                             StrokeThickness="0"
                             Padding="15,12">
                         <HorizontalStackLayout>
-                            <Label Text="📚 Активные курсы"
+                            <Label Text="Активные курсы"
                                    FontSize="16"
                                    TextColor="White"
                                    FontAttributes="Bold"
@@ -356,7 +356,7 @@
                   RowSpacing="15">
 
                 <Button Grid.Row="0" Grid.Column="0"
-                        Text="⚙️ Настройки"
+                        Text="Настройки"
                         Clicked="OnSettingsClicked"
                         BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"
@@ -365,7 +365,7 @@
                         FontAttributes="Bold" />
 
                 <Button Grid.Row="0" Grid.Column="1"
-                        Text="🛒 Магазин"
+                        Text="Магазин"
                         Clicked="OnShopClicked"
                         BackgroundColor="{DynamicResource AccentColor}"
                         TextColor="White"
@@ -374,7 +374,7 @@
                         FontAttributes="Bold" />
 
                 <Button Grid.Row="1" Grid.Column="0"
-                        Text="📊 Статистика"
+                        Text="Статистика"
                         Clicked="OnStatisticsClicked"
                         BackgroundColor="{DynamicResource SecondaryColor}"
                         TextColor="White"
@@ -383,7 +383,7 @@
                         FontAttributes="Bold" />
 
                 <Button Grid.Row="1" Grid.Column="1"
-                        Text="🎨 Внешний вид"
+                        Text="Внешний вид"
                         Clicked="OnAppearanceClicked"
                         BackgroundColor="#669BBC"
                         TextColor="White"
@@ -392,7 +392,7 @@
                         FontAttributes="Bold" />
 
                 <Button Grid.Row="2" Grid.ColumnSpan="2"
-                        Text="🔐 Сменить пароль"
+                        Text="Сменить пароль"
                         Clicked="OnChangePasswordClicked"
                         BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"

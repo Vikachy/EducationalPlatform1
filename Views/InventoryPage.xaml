@@ -8,7 +8,7 @@
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="20,15">
             <HorizontalStackLayout>
-                <Label Text="🎒 Мой инвентарь" FontSize="20" TextColor="White" FontAttributes="Bold" />
+                <Label Text="Мой инвентарь" FontSize="20" TextColor="White" FontAttributes="Bold" />
                 <Button Text="Назад" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="White"
                         BorderColor="White" BorderWidth="1" HeightRequest="35" CornerRadius="15" Margin="20,0,0,0" />
             </HorizontalStackLayout>

@@ -71,13 +71,13 @@
                                                    FontSize="12" 
                                                    TextColor="Gray" />
                                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                                                    <Button Text="✏️ Редактировать" 
+                                                    <Button Text="Редактировать" 
                                                             Clicked="OnEditQuestionClicked"
                                                             CommandParameter="{Binding .}"
                                                             BackgroundColor="{DynamicResource PrimaryColor}"
                                                             TextColor="White"
                                                             HeightRequest="40"/>
-                                                    <Button Text="🗑️ Удалить" 
+                                                    <Button Text="Удалить" 
                                                             Clicked="OnDeleteQuestionClicked"
                                                             CommandParameter="{Binding .}"
                                                             BackgroundColor="Red"

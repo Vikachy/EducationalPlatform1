@@ -7,7 +7,7 @@
 
     <ScrollView>
         <VerticalStackLayout Spacing="20" Padding="20" VerticalOptions="Center">
-            <Label Text="🛠️ Админ панель"
+            <Label Text="Админ панель"
                    FontSize="28"
                    TextColor="{DynamicResource TextColor}"
                    FontAttributes="Bold"

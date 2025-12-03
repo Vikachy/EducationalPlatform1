@@ -14,7 +14,8 @@ namespace EducationalPlatform.Views
         private readonly FileService _fileService;
         private readonly int _courseId;
 
-        public ObservableCollection<TheoryFileAttachment> Attachments { get; set; } = new();
+        // ИСПРАВЛЕНО: Используем модель из пространства имен Models
+        public ObservableCollection<EnhancedFileAttachment> Attachments { get; set; } = new();
 
         public CreateTheoryPage(User user, DatabaseService dbService, SettingsService settingsService, int courseId)
         {
@@ -28,10 +29,12 @@ namespace EducationalPlatform.Views
             BindingContext = this;
             AttachmentsCollection.ItemsSource = Attachments;
 
+            // Обновляем видимость элементов при изменении коллекции
             Attachments.CollectionChanged += (s, e) =>
             {
-                ClearAllButton.IsVisible = Attachments.Any();
                 AttachmentsCollection.IsVisible = Attachments.Any();
+                ClearAllButton.IsVisible = Attachments.Any();
+                UploadProgressSection.IsVisible = false;
             };
         }
 
@@ -51,10 +54,11 @@ namespace EducationalPlatform.Views
                 var options = new PickOptions
                 {
                     PickerTitle = "Выберите файлы для прикрепления",
-                    FileTypes = fileTypes
+                    FileTypes = fileTypes,
                 };
 
-                var results = await PickFilesSequentially(options);
+                // Используем множественный выбор файлов
+                var results = await FilePicker.Default.PickMultipleAsync(options);
 
                 if (results != null && results.Any())
                 {
@@ -67,43 +71,11 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private async Task<List<FileResult>> PickFilesSequentially(PickOptions options)
-        {
-            var files = new List<FileResult>();
-            bool continueSelecting = true;
-
-            while (continueSelecting && files.Count < 10)
-            {
-                var result = await FilePicker.Default.PickAsync(options);
-                if (result != null)
-                {
-                    files.Add(result);
-
-                    if (files.Count < 10)
-                    {
-                        continueSelecting = await DisplayAlert("Файлы",
-                            $"Добавлено файлов: {files.Count}. Добавить еще?", "Да", "Нет");
-                    }
-                    else
-                    {
-                        await DisplayAlert("Информация", "Достигнут лимит в 10 файлов", "OK");
-                        continueSelecting = false;
-                    }
-                }
-                else
-                {
-                    continueSelecting = false;
-                }
-            }
-
-            return files;
-        }
-
         private async Task ProcessSelectedFiles(IEnumerable<FileResult> files)
         {
-            UploadProgressBar.IsVisible = true;
-            UploadStatusLabel.IsVisible = true;
+            UploadProgressSection.IsVisible = true;
             UploadProgressBar.Progress = 0;
+            UploadStatusLabel.Text = "Подготовка файлов...";
 
             int processed = 0;
             int total = files.Count();
@@ -116,30 +88,37 @@ namespace EducationalPlatform.Views
 
                     // Проверяем размер файла
                     long fileSize = 0;
-                    try
+                    if (!string.IsNullOrEmpty(file.FullPath) && File.Exists(file.FullPath))
                     {
-                        if (!string.IsNullOrEmpty(file.FullPath) && File.Exists(file.FullPath))
-                        {
-                            var fileInfo = new FileInfo(file.FullPath);
-                            fileSize = fileInfo.Length;
-                        }
-                        else
-                        {
-                            using var stream = await file.OpenReadAsync();
-                            fileSize = stream.Length;
-                        }
+                        var fileInfo = new FileInfo(file.FullPath);
+                        fileSize = fileInfo.Length;
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Console.WriteLine($"⚠️ Не удалось определить размер файла: {ex.Message}");
+                        using var stream = await file.OpenReadAsync();
+                        fileSize = stream.Length;
                     }
 
-                    if (fileSize > 50 * 1024 * 1024)
+                    if (fileSize > 50 * 1024 * 1024) // 50 MB
                     {
-                        await DisplayAlert("Предупреждение", $"Файл {file.FileName} слишком большой (максимум 50 МБ)", "OK");
+                        await DisplayAlert("Предупреждение",
+                            $"Файл {file.FileName} слишком большой (максимум 50 МБ)", "OK");
                         processed++;
                         continue;
                     }
+
+                    // Создаем объект вложения
+                    var attachment = new EnhancedFileAttachment
+                    {
+                        FileName = file.FileName,
+                        FileSize = fileSize,
+                        UploadDate = DateTime.Now,
+                        FileIcon = _fileService.GetFileIcon(Path.GetExtension(file.FileName)),
+                        IsUploading = true,
+                        StatusIcon = "⏳"
+                    };
+
+                    Attachments.Add(attachment);
 
                     // Читаем файл в байты
                     byte[] fileBytes;
@@ -150,16 +129,10 @@ namespace EducationalPlatform.Views
                         fileBytes = memoryStream.ToArray();
                     }
 
-                    var attachment = new TheoryFileAttachment
-                    {
-                        FileName = file.FileName,
-                        FileBytes = fileBytes,
-                        FileSize = fileBytes.Length,
-                        UploadDate = DateTime.Now,
-                        FileType = Path.GetExtension(file.FileName)
-                    };
-
-                    Attachments.Add(attachment);
+                    // Обновляем статус
+                    attachment.IsUploading = false;
+                    attachment.StatusIcon = "✅";
+                    attachment.FileBytes = fileBytes; // Сохраняем байты для последующего сохранения
 
                     processed++;
                     UploadProgressBar.Progress = (double)processed / total;
@@ -171,15 +144,19 @@ namespace EducationalPlatform.Views
                 }
             }
 
-            UploadProgressBar.IsVisible = false;
-            UploadStatusLabel.IsVisible = false;
+            UploadProgressSection.IsVisible = false;
             UploadProgressBar.Progress = 0;
-            UploadStatusLabel.Text = "";
+            UploadStatusLabel.Text = string.Empty;
+
+            if (Attachments.Any(a => !a.IsUploading))
+            {
+                await DisplayAlert("Готово", $"Успешно обработано {Attachments.Count} файлов", "OK");
+            }
         }
 
         private void OnRemoveAttachmentClicked(object sender, EventArgs e)
         {
-            if (sender is Button btn && btn.CommandParameter is TheoryFileAttachment attachment)
+            if (sender is Button btn && btn.CommandParameter is EnhancedFileAttachment attachment)
             {
                 Attachments.Remove(attachment);
             }
@@ -206,51 +183,64 @@ namespace EducationalPlatform.Views
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(ContentEditor.Text))
-                {
-                    await DisplayAlert("Ошибка", "Введите содержание урока", "OK");
-                    return;
-                }
-
                 var order = string.IsNullOrWhiteSpace(OrderEntry.Text) ? 1 : int.Parse(OrderEntry.Text);
 
                 // Создаем урок
                 var lessonId = await _dbService.AddSimpleTheoryAsync(
                     _courseId,
                     TitleEntry.Text.Trim(),
-                    ContentEditor.Text.Trim(),
+                    ContentEditor.Text?.Trim() ?? string.Empty,
                     order
                 );
 
                 if (lessonId.HasValue)
                 {
-                    // Сохраняем прикрепленные файлы
+                    // Сохраняем прикрепленные файлы в БД
                     if (Attachments.Any())
                     {
-                        foreach (var attachment in Attachments.ToList())
+                        int savedCount = 0;
+                        foreach (var attachment in Attachments.Where(a => a.FileBytes != null))
                         {
                             try
                             {
-                                var addedAttachment = await _dbService.AddLessonAttachmentAsync(
+                                var fileType = Path.GetExtension(attachment.FileName);
+                                var fileSizeFormatted = attachment.SizeFormatted;
+
+                                var savedAttachment = await _dbService.AddLessonAttachmentAsync(
                                     lessonId.Value,
                                     attachment.FileName,
-                                    attachment.FileType,
-                                    FormatFileSize(attachment.FileSize),
+                                    fileType,
+                                    fileSizeFormatted,
                                     attachment.FileBytes);
 
-                                if (addedAttachment != null)
+                                if (savedAttachment != null)
                                 {
-                                    Console.WriteLine($"✅ Файл прикреплен: {attachment.FileName}");
+                                    savedCount++;
+                                    Console.WriteLine($"✅ Файл сохранен: {attachment.FileName}");
                                 }
                             }
                             catch (Exception fileEx)
                             {
-                                Console.WriteLine($"❌ Ошибка прикрепления файла {attachment.FileName}: {fileEx.Message}");
+                                Console.WriteLine($"❌ Ошибка сохранения файла {attachment.FileName}: {fileEx.Message}");
                             }
                         }
+
+                        if (savedCount > 0)
+                        {
+                            await DisplayAlert("Успех",
+                                $"Теоретический урок создан с {savedCount} прикрепленными файлами!", "OK");
+                        }
+                        else
+                        {
+                            await DisplayAlert("Успех",
+                                "Теоретический урок создан, но файлы не были сохранены", "OK");
+                        }
+                    }
+                    else
+                    {
+                        await DisplayAlert("Успех", "Теоретический урок создан!", "OK");
                     }
 
-                    await DisplayAlert("Успех", "Теоретический урок создан!", "OK");
                     await Navigation.PopAsync();
                 }
                 else
@@ -262,13 +252,6 @@ namespace EducationalPlatform.Views
             {
                 await DisplayAlert("Ошибка", $"Ошибка создания: {ex.Message}", "OK");
             }
-        }
-
-        private string FormatFileSize(long bytes)
-        {
-            if (bytes < 1024) return $"{bytes} Б";
-            if (bytes < 1024 * 1024) return $"{bytes / 1024.0:0.0} КБ";
-            return $"{bytes / (1024.0 * 1024.0):0.0} МБ";
         }
 
         private async void OnBackClicked(object sender, EventArgs e)

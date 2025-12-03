@@ -9,7 +9,7 @@
         <VerticalStackLayout Spacing="20" Padding="20">
 
             <!-- Заголовок -->
-            <Label Text="👨‍🏫 Панель преподавателя" 
+            <Label Text="Панель преподавателя" 
                    FontSize="24" 
                    FontAttributes="Bold" 
                    HorizontalOptions="Center" />
@@ -17,28 +17,28 @@
             <!-- Быстрый доступ -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowSpacing="10">
                 <Button Grid.Row="0" Grid.Column="0"
-                        Text="📊 Отчеты"
+                        Text="Отчеты"
                         Clicked="OnReportsClicked"
                         BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"
                         HeightRequest="60"
                         CornerRadius="10" />
                 <Button Grid.Row="0" Grid.Column="1"
-                        Text="👥 Группы"
+                        Text="Группы"
                         Clicked="OnGroupsClicked"
                         BackgroundColor="{DynamicResource SecondaryColor}"
                         TextColor="White"
                         HeightRequest="60"
                         CornerRadius="10" />
                 <Button Grid.Row="1" Grid.Column="0"
-                        Text="📝 Тесты"
+                        Text="Тесты"
                         Clicked="OnTestsClicked"
                         BackgroundColor="{DynamicResource AccentColor}"
                         TextColor="White"
                         HeightRequest="60"
                         CornerRadius="10" />
                 <Button Grid.Row="1" Grid.Column="1"
-                        Text="💬 Чаты"
+                        Text="Чаты"
                         Clicked="OnChatsClicked"
                         BackgroundColor="#4CAF50"
                         TextColor="White"
@@ -53,7 +53,7 @@
                     StrokeShape="RoundRectangle 15" 
                     Padding="15">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="➕ Создать новый курс" 
+                    <Label Text="Создать новый курс" 
                            FontSize="16" 
                            FontAttributes="Bold" />
 
@@ -127,21 +127,21 @@
                                        TextColor="#666" />
 
                                 <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="5">
-                                    <Button Text="👥 Группы"
+                                    <Button Text="Группы"
                                             BackgroundColor="#4CAF50" 
                                             TextColor="White" 
                                             FontSize="10"
                                             HeightRequest="30"
                                             Clicked="OnManageGroupsClicked" 
                                             CommandParameter="{Binding .}"/>
-                                    <Button Text="📊 Статистика"
+                                    <Button Text="Статистика"
                                             BackgroundColor="#2196F3" 
                                             TextColor="White" 
                                             FontSize="10"
                                             HeightRequest="30"
                                             Clicked="OnCourseStatsClicked" 
                                             CommandParameter="{Binding .}"/>
-                                    <Button Text="📚 Контент"
+                                    <Button Text="Контент"
                                             BackgroundColor="#FF9800" 
                                             TextColor="White" 
                                             FontSize="10"
@@ -169,7 +169,7 @@
                     StrokeShape="RoundRectangle 15" 
                     Padding="15">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="📋 Работы на проверку" 
+                    <Label Text="Работы на проверку" 
                            FontSize="16" 
                            FontAttributes="Bold" />
 

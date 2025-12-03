@@ -7,7 +7,7 @@
     <ScrollView>
         <VerticalStackLayout Spacing="20" Padding="20">
 
-            <Label Text="📋 Согласие на обработку персональных данных"
+            <Label Text="Согласие на обработку персональных данных"
                    FontSize="24"
                    FontAttributes="Bold"
                    HorizontalOptions="Center" />
@@ -28,7 +28,7 @@
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                 <Button x:Name="AcceptButton"
                         Grid.Column="0"
-                        Text="✅ Принимаю"
+                        Text="Принимаю"
                         BackgroundColor="#4CAF50"
                         TextColor="White"
                         HeightRequest="50"
@@ -37,7 +37,7 @@
 
                 <Button x:Name="DeclineButton"
                         Grid.Column="1"
-                        Text="❌ Не принимаю"
+                        Text="Не принимаю"
                         BackgroundColor="#F44336"
                         TextColor="White"
                         HeightRequest="50"

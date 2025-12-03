@@ -13,7 +13,9 @@ namespace EducationalPlatform.Models
         public string Status { get; set; } = "submitted"; // submitted, graded, returned
         public int? GradedBy { get; set; }
         public DateTime? GradedAt { get; set; }
-        public string? StudentName { get; set; }
+        public string StudentName { get; set; } = string.Empty;
+
+
     }
 }
 

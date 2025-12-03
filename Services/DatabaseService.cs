@@ -101,47 +101,6 @@ WHERE gm.UserId = @UserId AND g.IsActive = 1";
                 }
             }
         }
-
-        // МЕТОДЫ ДЛЯ РАБОТЫ С ФАЙЛАМИ УРОКОВ
-        public async Task<List<LessonAttachment>> GetLessonAttachmentsAsync(int lessonId)
-        {
-            var attachments = new List<LessonAttachment>();
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-            SELECT AttachmentId, LessonId, FileName, FilePath, FileType, FileSize, UploadDate
-            FROM LessonAttachments
-            WHERE LessonId = @LessonId AND IsActive = 1
-            ORDER BY UploadDate DESC";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@LessonId", lessonId);
-
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    attachments.Add(new LessonAttachment
-                    {
-                        AttachmentId = reader.GetInt32("AttachmentId"),
-                        LessonId = reader.GetInt32("LessonId"),
-                        FileName = reader.GetString("FileName"),
-                        FilePath = reader.GetString("FilePath"),
-                        FileType = reader.GetString("FileType"),
-                        FileSize = reader.GetString("FileSize"),
-                        UploadDate = reader.GetDateTime("UploadDate")
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка загрузки вложений урока: {ex.Message}");
-            }
-            return attachments;
-        }
-
         public async Task<bool> SaveLessonAttachmentAsync(int lessonId, string fileName, string filePath, string fileType, long fileSizeBytes)
         {
             try
@@ -234,31 +193,21 @@ END";
         }
 
         // Улучшенный метод для добавления вложений уроков
+        // Улучшенный метод для добавления вложений (как в чатах)
         public async Task<LessonAttachment?> AddLessonAttachmentAsync(int lessonId, string fileName, string fileType, string fileSize, byte[] fileBytes)
         {
             try
             {
-                Console.WriteLine($"📎 Начинаем сохранение файла в БД: {fileName}, размер: {fileBytes.Length} байт");
-
-                await EnsureLessonAttachmentSchemaAsync();
+                Console.WriteLine($"📎 Сохраняем файл в БД: {fileName}, размер: {fileBytes.Length} байт");
 
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // Используем FileService для сохранения файла
-                var fileService = ServiceHelper.GetService<FileService>();
-                var savedFilePath = await fileService.SaveFileAsync(fileBytes, fileName, "LessonFiles");
+                // Создаем data URL как в чатах
+                var mimeType = GetMimeType(fileType);
+                string base64File = Convert.ToBase64String(fileBytes);
+                string filePathValue = $"data:{mimeType};base64,{base64File}";
 
-                if (string.IsNullOrEmpty(savedFilePath))
-                {
-                    Console.WriteLine("❌ Не удалось сохранить файл через FileService");
-                    return null;
-                }
-
-                Console.WriteLine($"✅ Файл сохранен через FileService: {savedFilePath}");
-
-                // Создаем data URL для хранения в БД
-                var filePathValue = BuildDataUrl(fileBytes, fileType);
                 Console.WriteLine($"💾 Data URL создан, длина: {filePathValue.Length} символов");
 
                 var query = @"
@@ -276,12 +225,12 @@ END";
                 var result = await command.ExecuteScalarAsync();
                 if (result == null)
                 {
-                    Console.WriteLine($"❌ Не удалось получить AttachmentId после вставки");
+                    Console.WriteLine($"❌ Не удалось получить AttachmentId");
                     return null;
                 }
 
                 var attachmentId = Convert.ToInt32(result);
-                Console.WriteLine($"✅ Файл успешно сохранен в БД с ID: {attachmentId}");
+                Console.WriteLine($"✅ Файл сохранен в БД с ID: {attachmentId}");
 
                 return new LessonAttachment
                 {
@@ -297,11 +246,72 @@ END";
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Ошибка добавления вложения: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return null;
             }
         }
 
+        // Метод для получения MIME типа (как в FileService)
+        private string GetMimeType(string fileExtension)
+        {
+            var ext = fileExtension?.ToLower().TrimStart('.');
+            return ext switch
+            {
+                "pdf" => "application/pdf",
+                "doc" => "application/msword",
+                "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "ppt" => "application/vnd.ms-powerpoint",
+                "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "xls" => "application/vnd.ms-excel",
+                "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "zip" => "application/zip",
+                "txt" => "text/plain",
+                "jpg" or "jpeg" => "image/jpeg",
+                "png" => "image/png",
+                "gif" => "image/gif",
+                "mp4" => "video/mp4",
+                _ => "application/octet-stream"
+            };
+        }
+
+        // Улучшенный метод получения вложений
+        public async Task<List<LessonAttachment>> GetLessonAttachmentsAsync(int lessonId)
+        {
+            var attachments = new List<LessonAttachment>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT AttachmentId, LessonId, FileName, FilePath, FileType, FileSize, UploadDate
+            FROM LessonAttachments
+            WHERE LessonId = @LessonId AND IsActive = 1
+            ORDER BY UploadDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    attachments.Add(new LessonAttachment
+                    {
+                        AttachmentId = reader.GetInt32("AttachmentId"),
+                        LessonId = reader.GetInt32("LessonId"),
+                        FileName = reader.GetString("FileName"),
+                        FilePath = reader.GetString("FilePath"),
+                        FileType = reader.GetString("FileType"),
+                        FileSize = reader.GetString("FileSize"),
+                        UploadDate = reader.GetDateTime("UploadDate")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка загрузки вложений: {ex.Message}");
+            }
+            return attachments;
+        }
         public async Task<bool> DeleteLessonAttachmentAsync(int attachmentId)
         {
             try
@@ -338,7 +348,7 @@ END";
             }
             return $"{len:0.##} {sizes[order]}";
         }
-
+        // В класс DatabaseService добавьте эти методы:
         public async Task<List<PracticeSubmission>> GetPracticeSubmissionsAsync(int lessonId)
         {
             var submissions = new List<PracticeSubmission>();
@@ -383,6 +393,120 @@ END";
             return submissions;
         }
 
+
+
+        public async Task<bool> SavePracticeSubmissionAsync(int lessonId, int studentId, string? submissionText, string? submissionFileUrl)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            INSERT INTO PracticeSubmissions (LessonId, StudentId, SubmissionText, SubmissionFileUrl, SubmissionDate, Status)
+            VALUES (@LessonId, @StudentId, @SubmissionText, @SubmissionFileUrl, GETDATE(), 'submitted')";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LessonId", lessonId);
+                command.Parameters.AddWithValue("@StudentId", studentId);
+                command.Parameters.AddWithValue("@SubmissionText", (object?)submissionText ?? DBNull.Value);
+                command.Parameters.AddWithValue("@SubmissionFileUrl", (object?)submissionFileUrl ?? DBNull.Value);
+
+                return await command.ExecuteNonQueryAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения решения: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<PracticeAttachment?> AddPracticeAttachmentAsync(int practiceId, string fileName, string fileType, string fileSize, byte[] fileBytes)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Создаем data URL как для теории
+                var mimeType = GetMimeType(fileType);
+                string base64File = Convert.ToBase64String(fileBytes);
+                string filePathValue = $"data:{mimeType};base64,{base64File}";
+
+                var query = @"
+            INSERT INTO PracticeAttachments (PracticeId, FileName, FilePath, FileType, FileSize, UploadDate, IsActive)
+            OUTPUT INSERTED.AttachmentId
+            VALUES (@PracticeId, @FileName, @FilePath, @FileType, @FileSize, GETDATE(), 1)";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@PracticeId", practiceId);
+                command.Parameters.AddWithValue("@FileName", fileName);
+                command.Parameters.Add("@FilePath", SqlDbType.NVarChar, -1).Value = filePathValue;
+                command.Parameters.AddWithValue("@FileType", fileType);
+                command.Parameters.AddWithValue("@FileSize", fileSize);
+
+                var result = await command.ExecuteScalarAsync();
+                if (result == null) return null;
+
+                return new PracticeAttachment
+                {
+                    AttachmentId = Convert.ToInt32(result),
+                    PracticeId = practiceId,
+                    FileName = fileName,
+                    FilePath = filePathValue,
+                    FileType = fileType,
+                    FileSize = fileSize,
+                    UploadDate = DateTime.Now
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка добавления вложения практики: {ex.Message}");
+                return null;
+            }
+        }
+
+
+
+        public async Task<List<PracticeAttachment>> GetPracticeAttachmentsAsync(int practiceId)
+        {
+            var attachments = new List<PracticeAttachment>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT AttachmentId, PracticeId, FileName, FilePath, FileType, FileSize, UploadDate
+            FROM PracticeAttachments
+            WHERE PracticeId = @PracticeId AND IsActive = 1
+            ORDER BY UploadDate DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@PracticeId", practiceId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    attachments.Add(new PracticeAttachment
+                    {
+                        AttachmentId = reader.GetInt32("AttachmentId"),
+                        PracticeId = reader.GetInt32("PracticeId"),
+                        FileName = reader.GetString("FileName"),
+                        FilePath = reader.GetString("FilePath"),
+                        FileType = reader.GetString("FileType"),
+                        FileSize = reader.GetString("FileSize"),
+                        UploadDate = reader.GetDateTime("UploadDate")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка загрузки вложений практики: {ex.Message}");
+            }
+            return attachments;
+        }
+
         public async Task<bool> GradePracticeSubmissionAsync(int submissionId, int teacherId, int score, string? comment)
         {
             try
@@ -410,31 +534,6 @@ END";
             }
         }
 
-        public async Task<bool> SavePracticeSubmissionAsync(int lessonId, int studentId, string? submissionText, string? submissionFileUrl)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var query = @"
-            INSERT INTO PracticeSubmissions (LessonId, StudentId, SubmissionText, SubmissionFileUrl, SubmissionDate, Status)
-            VALUES (@LessonId, @StudentId, @SubmissionText, @SubmissionFileUrl, GETDATE(), 'submitted')";
-
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@LessonId", lessonId);
-                command.Parameters.AddWithValue("@StudentId", studentId);
-                command.Parameters.AddWithValue("@SubmissionText", (object?)submissionText ?? DBNull.Value);
-                command.Parameters.AddWithValue("@SubmissionFileUrl", (object?)submissionFileUrl ?? DBNull.Value);
-
-                return await command.ExecuteNonQueryAsync() > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка сохранения решения: {ex.Message}");
-                return false;
-            }
-        }
 
         // МЕТОДЫ ДЛЯ РАБОТЫ С АВАТАРКОЙ
         public async Task<bool> UpdateUserAvatarAsync(int userId, string avatarUrl)

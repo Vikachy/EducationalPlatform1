@@ -47,7 +47,7 @@
                     HorizontalOptions="Center">
                 <VerticalStackLayout Spacing="15" HorizontalOptions="Center">
 
-                    <Label Text="🖼️ Аватар"
+                    <Label Text="Аватар"
                            FontSize="16"
                            TextColor="{DynamicResource TextColor}"
                            FontAttributes="Bold"
@@ -77,7 +77,7 @@
                     <!-- КНОПКИ ДЛЯ АВАТАРА -->
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                         <Button Grid.Column="0"
-                                Text="📁 Выбрать"
+                                Text="Выбрать"
                                 Clicked="OnSelectImageClicked"
                                 BackgroundColor="{DynamicResource PrimaryColor}"
                                 TextColor="White"
@@ -85,7 +85,7 @@
                                 CornerRadius="20" />
 
                         <Button Grid.Column="1"
-                                Text="🗑️ Удалить"
+                                Text="Удалить"
                                 Clicked="OnRemoveImageClicked"
                                 BackgroundColor="{DynamicResource AccentColor}"
                                 TextColor="White"
@@ -104,7 +104,7 @@
                     Padding="20">
                 <VerticalStackLayout Spacing="15">
 
-                    <Label Text="👤 Основная информация"
+                    <Label Text="Основная информация"
                            FontSize="16"
                            TextColor="{DynamicResource TextColor}"
                            FontAttributes="Bold" />
@@ -136,7 +136,7 @@
             <!-- ДЕЙСТВИЯ -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                 <Button Grid.Column="0"
-                        Text="💾 Сохранить"
+                        Text="Сохранить"
                         Clicked="OnSaveClicked"
                         BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"
@@ -145,7 +145,7 @@
                         FontAttributes="Bold" />
 
                 <Button Grid.Column="1"
-                        Text="❌ Отмена"
+                        Text="Отмена"
                         Clicked="OnCancelClicked"
                         BackgroundColor="{DynamicResource AccentColor}"
                         TextColor="White"

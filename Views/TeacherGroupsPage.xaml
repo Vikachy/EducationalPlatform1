@@ -9,7 +9,7 @@
         <!-- Заголовок -->
         <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
             <HorizontalStackLayout>
-                <Label Text="👥 Управление учебными группами" 
+                <Label Text="Управление учебными группами" 
                    FontSize="20" 
                    TextColor="White" 
                    FontAttributes="Bold"
@@ -77,12 +77,12 @@
                                        FontSize="12" />
 
                                     <HorizontalStackLayout Spacing="10">
-                                        <Button Text="💬 Чат" 
+                                        <Button Text="Чат" 
                                             Clicked="OnOpenChatClicked"
                                             CommandParameter="{Binding .}"
                                             BackgroundColor="{DynamicResource PrimaryColor}"
                                             TextColor="White" />
-                                        <Button Text="❌ Деактивировать" 
+                                        <Button Text="Деактивировать" 
                                             Clicked="OnDeactivateGroupClicked"
                                             CommandParameter="{Binding .}"
                                             BackgroundColor="{DynamicResource DangerColor}"
@@ -100,12 +100,12 @@
 
                     <!-- Кнопки массового управления -->
                     <HorizontalStackLayout Spacing="10" Margin="0,10">
-                        <Button Text="👥 Добавить студентов" 
+                        <Button Text="Добавить студентов" 
                             Clicked="OnAddMultipleStudentsClicked"
                             BackgroundColor="{DynamicResource PrimaryColor}"
                             TextColor="White"
                             HorizontalOptions="FillAndExpand" />
-                        <Button Text="📚 Записать на курс" 
+                        <Button Text="Записать на курс" 
                             Clicked="OnEnrollGroupToCourseClicked"
                             BackgroundColor="{DynamicResource SuccessColor}"
                             TextColor="White"
@@ -129,7 +129,7 @@
                                                FontSize="12" 
                                                TextColor="#666" />
                                         </VerticalStackLayout>
-                                        <Button Text="🗑️ Удалить" 
+                                        <Button Text="Удалить" 
                                             Clicked="OnRemoveStudentClicked"
                                             CommandParameter="{Binding .}"
                                             BackgroundColor="{DynamicResource DangerColor}"

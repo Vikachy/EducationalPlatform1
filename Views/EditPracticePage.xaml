@@ -185,7 +185,7 @@
                                 Padding="15"
                                 Margin="0,10,0,0">
                             <VerticalStackLayout Spacing="12">
-                                <Label Text="📎 Прикрепленные файлы:" 
+                                <Label Text="Прикрепленные файлы:" 
                                        FontSize="16" 
                                        FontAttributes="Bold"
                                        TextColor="{DynamicResource PrimaryColor}" />
@@ -194,7 +194,7 @@
                                        FontSize="12" 
                                        TextColor="Gray" />
 
-                                <Button Text="➕ Прикрепить файлы" 
+                                <Button Text="Прикрепить файлы" 
                                         Clicked="OnAttachFilesClicked"
                                         BackgroundColor="{DynamicResource SecondaryColor}"
                                         TextColor="White"

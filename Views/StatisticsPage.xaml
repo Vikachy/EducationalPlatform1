@@ -17,7 +17,7 @@
                 <VerticalStackLayout Spacing="0">
                     <Border BackgroundColor="{DynamicResource PrimaryColor}"
                             Padding="15">
-                        <Label Text="📊 Общая статистика"
+                        <Label Text="Общая статистика"
                                FontSize="18"
                                TextColor="White"
                                FontAttributes="Bold" />
@@ -92,7 +92,7 @@
                 <VerticalStackLayout Spacing="0">
                     <Border BackgroundColor="{DynamicResource AccentColor}"
                             Padding="15">
-                        <Label Text="🏆 Достижения"
+                        <Label Text="Достижения"
                                FontSize="18"
                                TextColor="White"
                                FontAttributes="Bold" />
@@ -155,7 +155,7 @@
                 <VerticalStackLayout Spacing="0">
                     <Border BackgroundColor="{DynamicResource SecondaryColor}"
                             Padding="15">
-                        <Label Text="📈 Активность"
+                        <Label Text="Активность"
                                FontSize="18"
                                TextColor="White"
                                FontAttributes="Bold" />
@@ -205,7 +205,7 @@
                                 Padding="10"
                                 HeightRequest="80">
 
-                            <Label Text="📊 График активности за последние 7 дней"
+                            <Label Text="График активности за последние 7 дней"
                                    FontSize="12"
                                    TextColor="#666"
                                    HorizontalOptions="Center"

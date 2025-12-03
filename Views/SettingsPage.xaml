@@ -9,7 +9,7 @@
         <VerticalStackLayout Spacing="25" Padding="20">
 
             <!-- ЗАГОЛОВОК -->
-            <Label Text="⚙️ Настройки"
+            <Label Text="Настройки"
                    FontSize="28"
                    TextColor="{DynamicResource TextColor}"
                    FontAttributes="Bold"
@@ -22,14 +22,14 @@
                     StrokeShape="RoundRectangle 15"
                     Padding="20">
                 <VerticalStackLayout Spacing="20">
-                    <Label Text="🎨 Внешний вид"
+                    <Label Text="Внешний вид"
                            FontSize="20"
                            TextColor="{DynamicResource TextColor}"
                            FontAttributes="Bold" />
 
                     <!-- ВЫБОР ЯЗЫКА -->
                     <VerticalStackLayout Spacing="8">
-                        <Label Text="🌐 Язык интерфейса"
+                        <Label Text="Язык интерфейса"
                                FontSize="16"
                                TextColor="{DynamicResource TextColor}"
                                FontAttributes="Bold" />
@@ -49,7 +49,7 @@
 
                     <!-- ВЫБОР ТЕМЫ -->
                     <VerticalStackLayout Spacing="8">
-                        <Label Text="🎭 Тема интерфейса"
+                        <Label Text="Тема интерфейса"
                                FontSize="16"
                                TextColor="{DynamicResource TextColor}"
                                FontAttributes="Bold" />
@@ -120,7 +120,7 @@
                     StrokeShape="RoundRectangle 15"
                     Padding="20">
                 <VerticalStackLayout Spacing="15">
-                    <Label Text="🔔 Уведомления"
+                    <Label Text="Уведомления"
                            FontSize="20"
                            TextColor="{DynamicResource TextColor}"
                            FontAttributes="Bold" />
@@ -151,7 +151,7 @@
 
             <!-- ДЕЙСТВИЯ -->
             <VerticalStackLayout Spacing="10">
-                <Button Text="💾 Сохранить настройки"
+                <Button Text="Сохранить настройки"
                         Clicked="OnSaveSettingsClicked"
                         BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"
