@@ -5,12 +5,6 @@ using Microsoft.Maui.Storage;
 
 namespace EducationalPlatform.Services
 {
-    public interface IEmailService
-    {
-        Task<bool> SendPasswordResetCodeAsync(string recipientEmail, string recipientName, string resetCode);
-        Task<bool> SendSupportTicketEmailAsync(string recipientEmail, string subject, string body);
-    }
-
     public class EmailService : IEmailService
     {
         private readonly EmailSettings _emailSettings;
@@ -58,6 +52,24 @@ namespace EducationalPlatform.Services
         public async Task<bool> SendSupportTicketEmailAsync(string recipientEmail, string subject, string body)
         {
             return await SendPlainTextEmailAsync(recipientEmail, subject, body);
+        }
+
+        public async Task<bool> SendNewsletterAsync(string toEmail, string subject, string body)
+        {
+            try
+            {
+                Console.WriteLine($"📧 Отправка рассылки на {toEmail}");
+                Console.WriteLine($"   Тема: {subject}");
+                Console.WriteLine($"   Текст: {body}");
+
+                // Используем существующий метод отправки
+                return await SendPlainTextEmailAsync(toEmail, subject, body);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка отправки рассылки: {ex.Message}");
+                return false;
+            }
         }
 
         private async Task<bool> SendPlainTextEmailAsync(string recipientEmail, string subject, string body)

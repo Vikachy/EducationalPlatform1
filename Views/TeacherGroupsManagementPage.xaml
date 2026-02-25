@@ -1,23 +1,70 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
              x:Class="EducationalPlatform.Views.TeacherGroupsManagementPage"
-             Title="Управление группами">
+             Title="Управление группами"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+            <!-- ДОБАВЛЯЕМ НЕДОСТАЮЩИЕ КОНВЕРТЕРЫ -->
+            <converters:ActiveStatusColorConverter x:Key="ActiveStatusColorConverter" />
+            <converters:ActiveStatusTextConverter x:Key="ActiveStatusTextConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*,Auto" BackgroundColor="{DynamicResource BackgroundColor}">
+        <!-- Индикатор загрузки -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.RowSpan="3"
+              BackgroundColor="#80000000"
+              IsVisible="False">
+            <VerticalStackLayout Spacing="20"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center">
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="White"
+                                   HeightRequest="50"
+                                   WidthRequest="50"/>
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка..."
+                       TextColor="White"
+                       FontSize="16"/>
+            </VerticalStackLayout>
+        </Grid>
+
         <!-- Современный заголовок -->
         <Border Grid.Row="0" 
                 BackgroundColor="{DynamicResource PrimaryColor}" 
                 Padding="20,15"
-                StrokeThickness="0">
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
             <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
                 <Label Grid.Column="1"
                        Text="Управление учебными группами" 
-                       FontSize="22" 
+                       FontSize="20" 
                        FontAttributes="Bold" 
                        TextColor="White" 
                        HorizontalOptions="Center"
                        VerticalOptions="Center" />
+                <Label Grid.Column="2"
+                       Text="👥"
+                       FontSize="20"
+                       TextColor="White"
+                       VerticalOptions="Center"
+                       Margin="0,0,10,0" />
             </Grid>
         </Border>
 
@@ -28,11 +75,11 @@
                 <!-- Создание новой группы -->
                 <Border BackgroundColor="White" 
                         Stroke="{DynamicResource PrimaryColor}" 
-                        StrokeThickness="1" 
-                        StrokeShape="RoundRectangle 12" 
+                        StrokeThickness="2" 
+                        StrokeShape="RoundRectangle 15" 
                         Padding="20">
                     <VerticalStackLayout Spacing="15">
-                        <Label Text="Создать новую группу" 
+                        <Label Text="➕ Создать новую группу" 
                                FontSize="18" 
                                FontAttributes="Bold"
                                TextColor="{DynamicResource PrimaryColor}" />
@@ -40,12 +87,12 @@
                         <Border BackgroundColor="#F8F9FA"
                                 Stroke="#E0E0E0"
                                 StrokeThickness="1"
-                                StrokeShape="RoundRectangle 8"
+                                StrokeShape="RoundRectangle 10"
                                 Padding="0">
                             <Entry x:Name="NewGroupNameEntry" 
                                    Placeholder="Название группы"
                                    BackgroundColor="Transparent"
-                                   Margin="12,0"
+                                   Margin="15,0"
                                    FontSize="16"
                                    HeightRequest="50" />
                         </Border>
@@ -53,22 +100,22 @@
                         <Border BackgroundColor="#F8F9FA"
                                 Stroke="#E0E0E0"
                                 StrokeThickness="1"
-                                StrokeShape="RoundRectangle 8"
+                                StrokeShape="RoundRectangle 10"
                                 Padding="0">
                             <Picker x:Name="CoursePicker"
                                     Title="Выберите курс"
                                     ItemDisplayBinding="{Binding CourseName}"
                                     BackgroundColor="Transparent"
-                                    Margin="12,0"
+                                    Margin="15,0"
                                     FontSize="16"
                                     HeightRequest="50" />
                         </Border>
 
-                        <Button Text="Создать группу" 
+                        <Button Text="✅ Создать группу" 
                                 Clicked="OnCreateGroupClicked" 
                                 BackgroundColor="{DynamicResource PrimaryColor}" 
                                 TextColor="White"
-                                CornerRadius="8"
+                                CornerRadius="10"
                                 HeightRequest="50"
                                 FontSize="16"
                                 FontAttributes="Bold" />
@@ -76,40 +123,63 @@
                 </Border>
 
                 <!-- Список групп -->
-                <Label Text="Мои группы" 
+                <Label Text="📋 Мои группы" 
                        FontSize="20" 
                        FontAttributes="Bold"
                        TextColor="{DynamicResource TextColor}"
                        Margin="0,10,0,10" />
 
                 <CollectionView x:Name="GroupsCollectionView" 
-                                ItemsSource="{Binding Groups}">
+                                ItemsSource="{Binding Groups}"
+                                SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout HorizontalOptions="Center" 
+                                             VerticalOptions="Center" 
+                                             Spacing="20"
+                                             Padding="20">
+                            <Label Text="👥" 
+                                   FontSize="64" 
+                                   HorizontalOptions="Center" 
+                                   TextColor="#999" />
+                            <Label Text="У вас пока нет групп"
+                                   FontSize="18"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center" />
+                            <Label Text="Создайте первую группу!"
+                                   FontSize="14"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Border Margin="0,8" 
                                     BackgroundColor="White" 
                                     Stroke="{DynamicResource PrimaryColor}" 
                                     StrokeThickness="1" 
-                                    StrokeShape="RoundRectangle 12" 
+                                    StrokeShape="RoundRectangle 15" 
                                     Padding="16">
                                 <Grid ColumnDefinitions="Auto,*,Auto" 
-                                      RowDefinitions="Auto,Auto"
-                                      VerticalOptions="Center">
+                                      RowDefinitions="Auto,Auto,Auto"
+                                      VerticalOptions="Center"
+                                      RowSpacing="8"
+                                      ColumnSpacing="12">
 
-                                    <!-- Иконка группы -->
+                                    <!-- Аватар группы -->
                                     <Border Grid.Row="0" Grid.Column="0" 
-                                            Grid.RowSpan="2"
-                                            BackgroundColor="{DynamicResource PrimaryColor}"
-                                            StrokeThickness="0"
-                                            StrokeShape="RoundRectangle 20"
-                                            WidthRequest="40"
-                                            HeightRequest="40"
-                                            VerticalOptions="Center"
-                                            Margin="0,0,15,0">
-                                        <Label Text="👥" 
-                                               FontSize="20" 
-                                               HorizontalOptions="Center"
-                                               VerticalOptions="Center" />
+                                            Grid.RowSpan="3"
+                                            WidthRequest="60"
+                                            HeightRequest="60"
+                                            Stroke="{DynamicResource PrimaryColor}"
+                                            StrokeThickness="2"
+                                            StrokeShape="RoundRectangle 30"
+                                            BackgroundColor="White"
+                                            VerticalOptions="Center">
+                                        <Image Source="{Binding GroupAvatarUrl, Converter={StaticResource AvatarConverter}}"
+                                               Aspect="AspectFill"
+                                               WidthRequest="56"
+                                               HeightRequest="56" />
                                     </Border>
 
                                     <!-- Информация о группе -->
@@ -120,61 +190,76 @@
                                                TextColor="{DynamicResource TextColor}" />
                                         <Label Text="{Binding CourseName}" 
                                                FontSize="13" 
-                                               TextColor="#666" />
+                                               TextColor="{DynamicResource PrimaryColor}" />
                                     </VerticalStackLayout>
 
                                     <Label Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding StudentCount, StringFormat='Студентов: {0}'}" 
+                                           Text="{Binding StudentCount, StringFormat='👥 {0} студентов'}" 
                                            FontSize="12" 
-                                           TextColor="#999"
-                                           Margin="0,5,0,0" />
+                                           TextColor="#666" />
+
+                                    <Label Grid.Row="2" Grid.Column="1"
+                                           Text="{Binding IsActive, Converter={StaticResource ActiveStatusTextConverter}}" 
+                                           FontSize="11" 
+                                           TextColor="{Binding IsActive, Converter={StaticResource ActiveStatusColorConverter}}"
+                                           FontAttributes="Bold" />
 
                                     <!-- Кнопки управления -->
                                     <Grid Grid.Row="0" Grid.Column="2"
-                                          Grid.RowSpan="2"
+                                          Grid.RowSpan="3"
                                           ColumnDefinitions="Auto,Auto"
-                                          RowDefinitions="Auto,Auto"
+                                          RowDefinitions="Auto,Auto,Auto"
                                           RowSpacing="8"
                                           ColumnSpacing="8"
                                           VerticalOptions="Center">
 
-                                        <Button Grid.Row="0" Grid.Column="0"
-                                                Text="Редактировать" 
+                                        <Button Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                                                Text="✏️ Редактировать" 
                                                 BackgroundColor="#FFC107" 
                                                 TextColor="White" 
-                                                FontSize="11"
-                                                Padding="8,4"
-                                                CornerRadius="6"
+                                                FontSize="12"
+                                                Padding="12,6"
+                                                CornerRadius="8"
                                                 Clicked="OnEditGroupClicked"
                                                 CommandParameter="{Binding .}" />
 
-                                        <Button Grid.Row="0" Grid.Column="1"
-                                                Text="Студенты" 
+                                        <Button Grid.Row="1" Grid.Column="0"
+                                                Text="👥 Студенты" 
                                                 BackgroundColor="#4CAF50" 
                                                 TextColor="White" 
-                                                FontSize="11"
-                                                Padding="8,4"
-                                                CornerRadius="6"
+                                                FontSize="12"
+                                                Padding="12,6"
+                                                CornerRadius="8"
                                                 Clicked="OnManageStudentsClicked"
                                                 CommandParameter="{Binding .}" />
 
-                                        <Button Grid.Row="1" Grid.Column="0"
-                                                Text="Чат" 
+                                        <Button Grid.Row="1" Grid.Column="1"
+                                                Text="💬 Чат" 
                                                 BackgroundColor="#2196F3" 
                                                 TextColor="White" 
-                                                FontSize="11"
-                                                Padding="8,4"
-                                                CornerRadius="6"
+                                                FontSize="12"
+                                                Padding="12,6"
+                                                CornerRadius="8"
                                                 Clicked="OnChatClicked"
                                                 CommandParameter="{Binding .}" />
 
-                                        <Button Grid.Row="1" Grid.Column="1"
-                                                Text="Удалить" 
+                                        <Button Grid.Row="2" Grid.Column="0"
+                                                Text="🖼️ Аватар" 
+                                                BackgroundColor="#9C27B0" 
+                                                TextColor="White" 
+                                                FontSize="12"
+                                                Padding="12,6"
+                                                CornerRadius="8"
+                                                Clicked="OnChangeGroupAvatarClicked"
+                                                CommandParameter="{Binding .}" />
+
+                                        <Button Grid.Row="2" Grid.Column="1"
+                                                Text="❌ Удалить" 
                                                 BackgroundColor="#F44336" 
                                                 TextColor="White" 
-                                                FontSize="11"
-                                                Padding="8,4"
-                                                CornerRadius="6"
+                                                FontSize="12"
+                                                Padding="12,6"
+                                                CornerRadius="8"
                                                 Clicked="OnDeleteGroupClicked"
                                                 CommandParameter="{Binding .}" />
                                     </Grid>
@@ -211,7 +296,7 @@
                     Clicked="OnBackClicked" 
                     BackgroundColor="{DynamicResource SecondaryColor}" 
                     TextColor="White" 
-                    CornerRadius="8"
+                    CornerRadius="10"
                     HeightRequest="50"
                     FontSize="16"
                     FontAttributes="Bold" />

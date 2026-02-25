@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.GroupMembersPage"
+             Title="Участники группы"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+            <converters:OnlineStatusColorConverter x:Key="OnlineStatusColor" />
+            <converters:ColorConverter x:Key="ColorConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Участники группы"
+                       FontSize="20"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+                <Label Grid.Column="2"
+                       x:Name="CountLabel"
+                       Text="0"
+                       FontSize="16"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       Margin="0,0,10,0" />
+            </Grid>
+        </Border>
+
+        <CollectionView Grid.Row="1"
+                        x:Name="MembersCollection"
+                        ItemsSource="{Binding Members}"
+                        SelectionMode="None"
+                        Margin="10">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout HorizontalOptions="Center" 
+                                     VerticalOptions="Center" 
+                                     Spacing="20"
+                                     Padding="20">
+                    <Label Text="👥" 
+                           FontSize="64" 
+                           HorizontalOptions="Center" 
+                           TextColor="#999" />
+                    <Label Text="В группе пока нет участников"
+                           FontSize="18"
+                           TextColor="#999"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="5,8"
+                            Padding="15"
+                            BackgroundColor="White"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 12">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
+
+                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                    WidthRequest="55"
+                                    HeightRequest="55"
+                                    Stroke="{Binding FrameColor, Converter={StaticResource ColorConverter}}"
+                                    StrokeThickness="2"
+                                    StrokeShape="RoundRectangle 27.5"
+                                    BackgroundColor="White"
+                                    Margin="0,0,15,0">
+                                <Image Source="{Binding AvatarUrl, Converter={StaticResource AvatarConverter}}"
+                                       Aspect="AspectFill"
+                                       WidthRequest="51"
+                                       HeightRequest="51" />
+                            </Border>
+
+                            <HorizontalStackLayout Grid.Row="0" Grid.Column="1"
+                                                   Spacing="4"
+                                                   VerticalOptions="End">
+                                <Label Text="{Binding DisplayName}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextColor}" />
+                                <Label Text="{Binding UserEmoji}"
+                                       FontSize="16"
+                                       IsVisible="{Binding UserEmoji, Converter={StaticResource NotNullConverter}}" />
+                            </HorizontalStackLayout>
+
+                            <Label Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding RoleName}"
+                                   FontSize="13"
+                                   TextColor="{DynamicResource PrimaryColor}"
+                                   VerticalOptions="Start" />
+
+                            <Label Grid.Row="1" Grid.Column="2"
+                                   Text="{Binding JoinedDate, StringFormat='С {0:dd.MM.yyyy}'}"
+                                   FontSize="11"
+                                   TextColor="Gray"
+                                   VerticalOptions="End" />
+
+                            <Border Grid.Row="0" Grid.Column="2"
+                                    BackgroundColor="{Binding IsOnline, Converter={StaticResource OnlineStatusColor}}"
+                                    WidthRequest="12"
+                                    HeightRequest="12"
+                                    VerticalOptions="Start"
+                                    Margin="5" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

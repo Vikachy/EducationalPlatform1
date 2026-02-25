@@ -10,6 +10,7 @@ namespace EducationalPlatform.Views
         private DatabaseService _dbService;
         private User _currentUser;
         private SettingsService _settingsService;
+        private LocalizationService _localizationService;
         public ObservableCollection<Course> Courses { get; set; }
 
         public CoursesPage(User user, DatabaseService dbService, SettingsService settingsService)
@@ -18,17 +19,20 @@ namespace EducationalPlatform.Views
             _currentUser = user;
             _dbService = dbService;
             _settingsService = settingsService;
+            _localizationService = App.AppLocalization;
+
             Courses = new ObservableCollection<Course>();
             BindingContext = this;
 
-            // Подписываемся на глобальные события
-            SettingsService.GlobalThemeChanged += OnGlobalThemeChanged;
-            SettingsService.GlobalLanguageChanged += OnGlobalLanguageChanged;
+            // Подписываемся на события
+            _settingsService.ThemeChanged += OnThemeChanged;
+            _localizationService.LanguageChanged += OnLanguageChanged;
 
             InitializeSettings();
             LoadCourses();
             UpdateUserInfo();
         }
+
         private async void OnHomeClicked(object sender, EventArgs e)
         {
             try
@@ -37,7 +41,9 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось перейти на главную: {ex.Message}", "OK");
+                await DisplayAlert(_localizationService?.GetText("Error") ?? "Ошибка",
+                    $"Не удалось перейти на главную: {ex.Message}",
+                    _localizationService?.GetText("OK") ?? "OK");
             }
         }
 
@@ -49,7 +55,9 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось перейти к профилю: {ex.Message}", "OK");
+                await DisplayAlert(_localizationService?.GetText("Error") ?? "Ошибка",
+                    $"Не удалось перейти к профилю: {ex.Message}",
+                    _localizationService?.GetText("OK") ?? "OK");
             }
         }
 
@@ -61,7 +69,9 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось перейти к настройкам: {ex.Message}", "OK");
+                await DisplayAlert(_localizationService?.GetText("Error") ?? "Ошибка",
+                    $"Не удалось перейти к настройкам: {ex.Message}",
+                    _localizationService?.GetText("OK") ?? "OK");
             }
         }
 
@@ -73,27 +83,31 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось вернуться: {ex.Message}", "OK");
+                await DisplayAlert(_localizationService?.GetText("Error") ?? "Ошибка",
+                    $"Не удалось вернуться: {ex.Message}",
+                    _localizationService?.GetText("OK") ?? "OK");
             }
         }
-
 
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
-            SettingsService.GlobalThemeChanged -= OnGlobalThemeChanged;
-            SettingsService.GlobalLanguageChanged -= OnGlobalLanguageChanged;
+            _settingsService.ThemeChanged -= OnThemeChanged;
+            _localizationService.LanguageChanged -= OnLanguageChanged;
         }
 
-        private void OnGlobalThemeChanged(object? sender, string theme)
+        private void OnThemeChanged(object? sender, string theme)
         {
             UpdatePageAppearance();
         }
 
-        private void OnGlobalLanguageChanged(object? sender, string language)
+        private void OnLanguageChanged(object? sender, string language)
         {
-            UpdatePageTexts();
-            LoadCourses(); // Перезагружаем курсы с новым языком
+            MainThread.BeginInvokeOnMainThread(() => {
+                UpdatePageTexts();
+                UpdateCurrentSettingsDisplay();
+                LoadCourses();
+            });
         }
 
         private void UpdatePageAppearance()
@@ -103,9 +117,10 @@ namespace EducationalPlatform.Views
 
         private void UpdatePageTexts()
         {
-            if (_settingsService == null) return;
-            WelcomeLabel.Text = _settingsService.GetRandomGreeting(_currentUser.FirstName ?? "Пользователь");
-            StreakLabel.Text = _settingsService.GetStreakMessage(_currentUser.StreakDays);
+            if (_localizationService == null) return;
+            WelcomeLabel.Text = _localizationService.GetRandomGreeting(_currentUser.FirstName ??
+                _localizationService.GetText("User"));
+            StreakLabel.Text = _localizationService.GetStreakMessage(_currentUser.StreakDays);
         }
 
         protected override void OnAppearing()
@@ -116,78 +131,75 @@ namespace EducationalPlatform.Views
 
         private void InitializeSettings()
         {
-            LanguagePicker.SelectedIndex = _settingsService.CurrentLanguage == "ru" ? 0 : 1;
+            LanguagePicker.SelectedIndex = _localizationService.CurrentLanguage == "ru" ? 0 : 1;
             ThemePicker.SelectedIndex = _settingsService.CurrentTheme == "standard" ? 0 : 1;
             UpdateCurrentSettingsDisplay();
-            LanguagePicker.SelectedIndexChanged += OnLanguageChanged;
-            ThemePicker.SelectedIndexChanged += OnThemeChanged;
+            LanguagePicker.SelectedIndexChanged += OnLanguagePickerChanged;
+            ThemePicker.SelectedIndexChanged += OnThemePickerChanged;
         }
 
         private void UpdateCurrentSettingsDisplay()
         {
-            if (_settingsService == null) return;
-            CurrentLanguageLabel.Text = _settingsService.CurrentLanguage == "ru"
-                ? "Текущий: Русский"
-                : "Current: English";
-            CurrentThemeLabel.Text = _settingsService.CurrentTheme == "standard"
-                ? "Текущая: Стандартная"
-                : "Current: For Teens";
+            if (_localizationService == null) return;
+            CurrentLanguageLabel.Text = _localizationService.CurrentLanguage == "ru"
+                ? _localizationService.GetText("Current") + ": " + _localizationService.GetText("Russian")
+                : _localizationService.GetText("Current") + ": " + _localizationService.GetText("English");
+
+            CurrentThemeLabel.Text = _localizationService.CurrentLanguage == "ru"
+                ? _localizationService.GetText("Current") + ": " + _localizationService.GetText("Standard")
+                : _localizationService.GetText("Current") + ": " + _localizationService.GetText("Teen");
         }
 
         private void UpdateUserInfo()
         {
             if (WelcomeLabel != null)
-                WelcomeLabel.Text = _settingsService.GetRandomGreeting(_currentUser.FirstName ?? "Пользователь");
+                WelcomeLabel.Text = _localizationService.GetRandomGreeting(_currentUser.FirstName ??
+                    _localizationService.GetText("User"));
             if (StreakLabel != null)
-                StreakLabel.Text = _settingsService.GetStreakMessage(_currentUser.StreakDays);
+                StreakLabel.Text = _localizationService.GetStreakMessage(_currentUser.StreakDays);
         }
 
-        // Обновленный метод для начала курса
         private async void OnStartCourseClicked(object? sender, EventArgs e)
         {
             if (sender is Button button && button.BindingContext is Course course)
             {
                 try
                 {
-                    // Записываем студента на курс
                     bool success = await _dbService.EnrollStudentInCourseAsync(_currentUser.UserId, course.CourseId);
 
                     if (success)
                     {
                         await DisplayAlert(
-                            _settingsService?.GetLocalizedString("Success") ?? "Успех",
-                            _settingsService?.CurrentLanguage == "ru"
+                            _localizationService?.GetText("Success") ?? "Успех",
+                            _localizationService?.CurrentLanguage == "ru"
                                 ? $"Вы успешно записались на курс '{course.CourseName}'!"
                                 : $"You have successfully enrolled in '{course.CourseName}' course!",
-                            "OK");
+                            _localizationService?.GetText("OK") ?? "OK");
 
-                        // Обновляем список курсов
                         LoadCourses();
                     }
                     else
                     {
                         await DisplayAlert(
-                            _settingsService?.GetLocalizedString("Info") ?? "Информация",
-                            _settingsService?.CurrentLanguage == "ru"
+                            _localizationService?.GetText("Info") ?? "Информация",
+                            _localizationService?.CurrentLanguage == "ru"
                                 ? $"Вы уже записаны на курс '{course.CourseName}'"
                                 : $"You are already enrolled in '{course.CourseName}' course",
-                            "OK");
+                            _localizationService?.GetText("OK") ?? "OK");
                     }
                 }
                 catch (Exception ex)
                 {
                     await DisplayAlert(
-                        _settingsService?.GetLocalizedString("Error") ?? "Ошибка",
-                        _settingsService?.CurrentLanguage == "ru"
+                        _localizationService?.GetText("Error") ?? "Ошибка",
+                        _localizationService?.CurrentLanguage == "ru"
                             ? $"Не удалось записаться на курс: {ex.Message}"
                             : $"Failed to enroll in course: {ex.Message}",
-                        "OK");
+                        _localizationService?.GetText("OK") ?? "OK");
                 }
             }
         }
 
-
-        // Обновленный метод загрузки курсов
         private async void LoadCourses()
         {
             try
@@ -196,7 +208,6 @@ namespace EducationalPlatform.Views
                 Courses.Clear();
                 foreach (var course in courses)
                 {
-                    // Добавляем проверку на null
                     if (course != null && !string.IsNullOrEmpty(course.CourseName))
                     {
                         Courses.Add(course);
@@ -206,27 +217,29 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить курсы: {ex.Message}", "OK");
+                await DisplayAlert(_localizationService?.GetText("Error") ?? "Ошибка",
+                    $"Не удалось загрузить курсы: {ex.Message}",
+                    _localizationService?.GetText("OK") ?? "OK");
             }
-        } 
+        }
 
-        private void OnLanguageChanged(object? sender, EventArgs e)
+        private void OnLanguagePickerChanged(object? sender, EventArgs e)
         {
             if (sender is Picker picker && picker.SelectedIndex != -1)
             {
                 string language = picker.SelectedIndex == 0 ? "ru" : "en";
-                _settingsService.ApplyLanguage(language);
+                _localizationService.CurrentLanguage = language;
                 UpdateCurrentSettingsDisplay();
                 UpdateUserInfo();
             }
         }
 
-        private void OnThemeChanged(object? sender, EventArgs e)
+        private void OnThemePickerChanged(object? sender, EventArgs e)
         {
             if (sender is Picker picker && picker.SelectedIndex != -1)
             {
                 string theme = picker.SelectedIndex == 0 ? "standard" : "teen";
-                _settingsService.ApplyTheme(theme);
+                _settingsService.CurrentTheme = theme;
                 UpdateCurrentSettingsDisplay();
                 UpdateUserInfo();
             }
@@ -241,28 +254,27 @@ namespace EducationalPlatform.Views
         private async void ShowExitConfirmation()
         {
             bool result = await DisplayAlert(
-                _settingsService?.GetLocalizedString("Confirmation") ?? "Подтверждение",
-                _settingsService?.CurrentLanguage == "ru"
+                _localizationService?.GetText("Confirmation") ?? "Подтверждение",
+                _localizationService?.CurrentLanguage == "ru"
                     ? "Вы точно хотите выйти из приложения?"
                     : "Do you really want to exit the application?",
-                _settingsService?.CurrentLanguage == "ru" ? "Да" : "Yes",
-                _settingsService?.CurrentLanguage == "ru" ? "Нет" : "No");
+                _localizationService?.GetText("Yes") ?? "Да",
+                _localizationService?.GetText("No") ?? "Нет");
+
             if (result && Application.Current != null)
             {
                 Application.Current.Quit();
             }
         }
 
-
-
         private async void OnNewsClicked(object sender, EventArgs e)
         {
             await DisplayAlert(
-                _settingsService?.GetLocalizedString("News") ?? "Новости",
-                _settingsService?.CurrentLanguage == "ru"
+                _localizationService?.GetText("News") ?? "Новости",
+                _localizationService?.CurrentLanguage == "ru"
                     ? "Переход к ленте новостей"
                     : "Go to news feed",
-                "OK");
+                _localizationService?.GetText("OK") ?? "OK");
         }
     }
 }

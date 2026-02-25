@@ -1,6 +1,15 @@
-using EducationalPlatform.Services;
 using EducationalPlatform.Models;
-using System.Text.Json;
+using EducationalPlatform.Services;
+using System.Collections.ObjectModel;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Storage;
+using Microsoft.Maui.ApplicationModel;
+using System.IO;
+
+#if ANDROID
+using Android.Content;
+using Android.OS;
+#endif
 
 namespace EducationalPlatform.Views
 {
@@ -12,74 +21,305 @@ namespace EducationalPlatform.Views
         private readonly FileService _fileService;
         private readonly int _courseId;
         private readonly int _lessonId;
+        private readonly string _lessonTitle;
 
-        private PracticeDto? _exercise;
+        private string _answerType = "text";
+        private string _expectedAnswer = "";
+        private FileResult _selectedFile;
+        private byte[] _selectedFileBytes;
 
-        public PracticePage(User user, DatabaseService dbService, SettingsService settingsService, int courseId, int lessonId, string lessonTitle)
+        public ObservableCollection<AttachmentViewModel> Attachments { get; set; } = new();
+
+        public string PageTitle { get; set; }
+
+        public PracticePage(
+            User currentUser,
+            DatabaseService dbService,
+            SettingsService settingsService,
+            int courseId,
+            int lessonId,
+            string lessonTitle)
         {
             InitializeComponent();
-            _currentUser = user;
-            _dbService = dbService;
-            _settingsService = settingsService;
+
+            _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
+            _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
+            _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             _fileService = new FileService();
             _courseId = courseId;
             _lessonId = lessonId;
-            TitleLabel.Text = lessonTitle;
+            _lessonTitle = lessonTitle ?? "Практическое задание";
+
+            PageTitle = _lessonTitle;
+            Title = PageTitle;
+
+            BindingContext = this;
+            AttachmentsCollection.ItemsSource = Attachments;
+
+            SetupAnswerInterface();
+            LoadPracticeContent();
+            LoadAttachments();
         }
 
-        protected override async void OnAppearing()
-        {
-            base.OnAppearing();
-            await LoadPracticeData();
-        }
-
-        private async Task LoadPracticeData()
+        private async void LoadPracticeContent()
         {
             try
             {
-                _exercise = await _dbService.GetPracticeExerciseWithLessonDataAsync(_lessonId);
-
-                if (_exercise != null)
+                var practice = await _dbService.GetPracticeExerciseAsync(_lessonId);
+                if (practice == null)
                 {
-                    TitleLabel.Text = _exercise.Title ?? "Практическое задание";
-                    DescriptionLabel.Text = _exercise.Description ?? "Описание отсутствует";
-                    CodeEditor.Text = _exercise.StarterCode ?? string.Empty;
+                    DescriptionLabel.Text = "Задание не найдено.";
+                    return;
+                }
 
-                    // Показываем подсказку если есть
-                    if (!string.IsNullOrEmpty(_exercise.Hint))
+                // Если title не передан извне — берём из базы
+                if (string.IsNullOrEmpty(_lessonTitle))
+                {
+                    PageTitle = practice.Title ?? "Практическое задание";
+                    Title = PageTitle;
+                    TitleLabel.Text = PageTitle;
+                }
+
+                DescriptionLabel.Text = practice.Description ?? "Описание отсутствует";
+                _expectedAnswer = practice.ExpectedOutput ?? "";
+                _answerType = practice.AnswerType?.ToLower() ?? "text";
+
+                SetupAnswerInterface();
+
+                if (!string.IsNullOrEmpty(practice.StarterCode))
+                {
+                    StarterCodeEditor.Text = practice.StarterCode;
+                    CodeSection.IsVisible = true;
+                }
+
+                if (!string.IsNullOrEmpty(practice.Hint))
+                {
+                    HintLabel.Text = practice.Hint;
+                    HintSection.IsVisible = true;
+                }
+
+                OnPropertyChanged(nameof(PageTitle));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка загрузки", ex.Message, "OK");
+                DescriptionLabel.Text = "Не удалось загрузить задание";
+            }
+        }
+
+        private void SetupAnswerInterface()
+        {
+            TextAnswerSection.IsVisible = _answerType == "text";
+            CodeAnswerSection.IsVisible = _answerType == "code";
+            FileAnswerSection.IsVisible = _answerType == "file";
+        }
+
+        private async void OnSelectFileClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                var result = await FilePicker.Default.PickAsync(new PickOptions
+                {
+                    PickerTitle = "Выберите файл с решением",
+                    FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
                     {
-                        HintLabel.Text = _exercise.Hint;
-                        HintSection.IsVisible = true;
-                    }
+                        { DevicePlatform.WinUI, new[] { ".zip", ".pdf", ".jpg", ".jpeg", ".png", ".txt", ".docx" } },
+                        { DevicePlatform.Android, new[] { "*/*" } },
+                        { DevicePlatform.iOS, new[] { "public.data" } }
+                    })
+                });
 
-                    // Загружаем прикрепленные файлы
-                    await LoadAttachments();
+                if (result != null)
+                {
+                    _selectedFile = result;
+
+                    using var stream = await result.OpenReadAsync();
+                    using var ms = new MemoryStream();
+                    await stream.CopyToAsync(ms);
+                    _selectedFileBytes = ms.ToArray();
+
+                    SelectedFileNameLabel.Text = result.FileName;
+                    SelectedFileSizeLabel.Text = FormatFileSize(_selectedFileBytes.Length);
+                    FilePreviewSection.IsVisible = true;
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить задание: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка", $"Не удалось выбрать файл\n{ex.Message}", "OK");
             }
         }
 
-        private async Task LoadAttachments()
+        private void OnRemoveFileClicked(object sender, EventArgs e)
+        {
+            _selectedFile = null;
+            _selectedFileBytes = null;
+            FilePreviewSection.IsVisible = false;
+        }
+
+        private async void OnSubmitClicked(object sender, EventArgs e)
         {
             try
             {
-                // Реальная загрузка вложений из базы данных
-                var attachments = await _dbService.GetLessonAttachmentsAsync(_lessonId);
-                if (attachments != null && attachments.Any())
-                {
-                    // Добавляем иконки файлов и подготавливаем модель для отображения
-                    var attachmentsWithIcons = attachments.Select(a => new AttachmentViewModel
-                    {
-                        FileName = a.FileName,
-                        FileSize = a.FileSize,
-                        FilePath = a.FilePath,
-                        FileIcon = _fileService.GetFileIcon(a.FileType)
-                    }).ToList();
+                if (!await ValidateSubmission()) return;
 
-                    AttachmentsCollection.ItemsSource = attachmentsWithIcons;
+                bool success = await SaveSubmission();
+                if (success)
+                {
+                    ShowResult(true, "Работа успешно отправлена на проверку преподавателю!");
+                    if (_courseId > 0)
+                    {
+                        await _dbService.UpdateProgressAsync(_currentUser.UserId, _courseId, "in_progress");
+                    }
+                }
+                else
+                {
+                    ShowResult(false, "Не удалось отправить работу");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка отправки", ex.Message, "OK");
+            }
+        }
+
+        private async Task<bool> ValidateSubmission()
+        {
+            switch (_answerType.ToLower())
+            {
+                case "text":
+                    if (string.IsNullOrWhiteSpace(TextAnswerEditor.Text))
+                    {
+                        await DisplayAlert("Ошибка", "Введите текстовый ответ", "OK");
+                        return false;
+                    }
+                    break;
+
+                case "code":
+                    if (string.IsNullOrWhiteSpace(CodeAnswerEditor.Text))
+                    {
+                        await DisplayAlert("Ошибка", "Напишите код решения", "OK");
+                        return false;
+                    }
+                    break;
+
+                case "file":
+                    if (_selectedFileBytes == null || _selectedFile == null)
+                    {
+                        await DisplayAlert("Ошибка", "Выберите файл с решением", "OK");
+                        return false;
+                    }
+                    break;
+
+                default:
+                    await DisplayAlert("Ошибка", "Неизвестный тип ответа", "OK");
+                    return false;
+            }
+            return true;
+        }
+
+        private async Task<bool> SaveSubmission()
+        {
+            string answerText = null;
+            string answerFilePath = null;
+
+            switch (_answerType.ToLower())
+            {
+                case "text":
+                    answerText = TextAnswerEditor.Text?.Trim();
+                    break;
+
+                case "code":
+                    answerText = CodeAnswerEditor.Text?.Trim();
+                    break;
+
+                case "file":
+                    answerFilePath = await SaveSubmissionFile();
+                    if (string.IsNullOrEmpty(answerFilePath)) return false;
+                    break;
+            }
+
+            return await _dbService.SavePracticeSubmissionAsync(
+                _lessonId,
+                _currentUser.UserId,
+                answerText,
+                answerFilePath
+            );
+        }
+
+        private async Task<string> SaveSubmissionFile()
+        {
+            try
+            {
+                var folder = Path.Combine(FileSystem.AppDataDirectory, "PracticeSubmissions");
+                Directory.CreateDirectory(folder);
+
+                var extension = Path.GetExtension(_selectedFile.FileName);
+                var fileName = $"submission_{_currentUser.UserId}_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
+                var fullPath = Path.Combine(folder, fileName);
+
+                await File.WriteAllBytesAsync(fullPath, _selectedFileBytes);
+
+                return fullPath;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения файла: {ex.Message}");
+                return null;
+            }
+        }
+
+        private void ShowResult(bool success, string message)
+        {
+            ResultSection.IsVisible = true;
+
+            ResultSection.BackgroundColor = success ? Color.FromArgb("#E8F5E8") : Color.FromArgb("#FFEBEE");
+            ResultSection.BorderColor = success ? Color.FromArgb("#4CAF50") : Color.FromArgb("#F44336");
+
+            ResultLabel.Text = success ? "✅ Успех!" : "❌ Ошибка";
+            ResultLabel.TextColor = success ? Color.FromArgb("#4CAF50") : Color.FromArgb("#F44336");
+            FeedbackLabel.Text = message;
+        }
+
+        private async void OnRunCodeClicked(object sender, EventArgs e)
+        {
+            await DisplayAlert("Запуск кода", "Функция выполнения кода будет добавлена позже", "OK");
+        }
+
+        private void OnClearCodeClicked(object sender, EventArgs e)
+        {
+            CodeAnswerEditor.Text = "";
+        }
+
+        private async void OnCopyCodeClicked(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(StarterCodeEditor.Text)) return;
+
+            await Clipboard.SetTextAsync(StarterCodeEditor.Text);
+            await DisplayAlert("Успех", "Стартовый код скопирован в буфер обмена", "OK");
+        }
+
+        // Методы работы с вложениями (как в теории)
+        private async void LoadAttachments()
+        {
+            try
+            {
+                var attachments = await _dbService.GetLessonAttachmentsAsync(_lessonId);
+                Attachments.Clear();
+
+                if (attachments?.Any() == true)
+                {
+                    foreach (var att in attachments)
+                    {
+                        Attachments.Add(new AttachmentViewModel
+                        {
+                            AttachmentId = att.AttachmentId,
+                            FileName = att.FileName,
+                            FileSize = att.FileSize,
+                            FilePath = att.FilePath,
+                            FileIcon = _fileService.GetFileIcon(att.FileType),
+                            FileType = att.FileType ?? ""
+                        });
+                    }
                     AttachmentsSection.IsVisible = true;
                 }
                 else
@@ -90,142 +330,182 @@ namespace EducationalPlatform.Views
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка загрузки вложений: {ex.Message}");
-                AttachmentsSection.IsVisible = false;
             }
         }
 
-        private async void OnCheckClicked(object sender, EventArgs e)
+        private async void OnAttachmentTapped(object sender, TappedEventArgs e)
+        {
+            if (e.Parameter is AttachmentViewModel vm)
+            {
+                await HandleAttachmentAction(vm);
+            }
+        }
+
+        private async void OnOpenAttachmentClicked(object sender, EventArgs e)
+        {
+            if (sender is Button btn && btn.CommandParameter is AttachmentViewModel vm)
+            {
+                await HandleAttachmentAction(vm);
+            }
+        }
+
+        private async Task HandleAttachmentAction(AttachmentViewModel vm)
+        {
+            var choice = await DisplayActionSheet(
+                vm.FileName,
+                "Отмена",
+                null,
+                "📥 Скачать в Загрузки",
+                "📄 Открыть"
+            );
+
+            if (choice == "📥 Скачать в Загрузки")
+            {
+                var success = await DownloadAttachmentToDownloads(vm.FilePath, vm.FileName);
+                if (success)
+                {
+                    await DisplayAlert("Успех", $"Файл {vm.FileName} сохранён в Загрузки", "OK");
+                }
+                else
+                {
+                    await DisplayAlert("Ошибка", "Не удалось сохранить файл", "OK");
+                }
+            }
+            else if (choice == "📄 Открыть")
+            {
+                await TryOpenFile(vm);
+            }
+        }
+
+        private async Task<bool> DownloadAttachmentToDownloads(string filePath, string fileName)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(CodeEditor.Text))
+                var sourcePath = await _fileService.ResolveFilePath(filePath, fileName, "PracticeFiles");
+                if (string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
                 {
-                    await DisplayAlert("Ошибка", "Введите решение", "OK");
-                    return;
+                    Console.WriteLine($"Файл не найден: {sourcePath}");
+                    return false;
                 }
 
-                int score = await EvaluateSolution();
-
-                await _dbService.UpdateProgressWithScoreAsync(_currentUser.UserId, _courseId, _lessonId,
-                    score >= 60 ? "completed" : "in_progress", score);
-
-                ShowResult(score);
-
-                if (score >= 60)
+                string destPath = await GetDownloadsPath(fileName);
+                if (string.IsNullOrEmpty(destPath))
                 {
-                    await DisplayAlert("Поздравляем!", "Вы успешно выполнили задание!", "OK");
-                    // Награда за выполнение
-                    await _dbService.AddGameCurrencyAsync(_currentUser.UserId, 50, "practice_completion");
+                    Console.WriteLine("Не удалось определить папку Загрузки");
+                    return false;
                 }
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", ex.Message, "OK");
-            }
-        }
 
-        private async Task<int> EvaluateSolution()
-        {
-            if (_exercise == null) return 0;
+                File.Copy(sourcePath, destPath, true);
+                Console.WriteLine($"Файл скопирован в: {destPath}");
 
-            int score = 0;
-
-            if (!string.IsNullOrEmpty(_exercise.ExpectedOutput))
-            {
-                // Проверка по ожидаемому выводу
-                var output = CodeEditor.Text?.Trim() ?? string.Empty;
-                score = output.Contains(_exercise.ExpectedOutput.Trim()) ? 100 : 0;
-            }
-            else if (!string.IsNullOrEmpty(_exercise.TestCasesJson))
-            {
-                // Проверка тест-кейсов
+#if ANDROID
                 try
                 {
-                    var testCases = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(_exercise.TestCasesJson) ?? new();
-                    int passed = 0;
-
-                    foreach (var tc in testCases)
+                    var context = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+                    if (context != null)
                     {
-                        if (tc.TryGetValue("expected", out var exp) &&
-                            tc.TryGetValue("input", out var input))
-                        {
-                            // Простая проверка - можно расширить для реального выполнения кода
-                            if ((CodeEditor.Text ?? string.Empty).Contains(exp) &&
-                                (CodeEditor.Text ?? string.Empty).Contains(input))
-                            {
-                                passed++;
-                            }
-                        }
-                    }
-
-                    score = testCases.Count == 0 ? 0 : (int)(100.0 * passed / testCases.Count);
-                }
-                catch
-                {
-                    score = 0;
-                }
-            }
-
-            return score;
-        }
-
-        private void ShowResult(int score)
-        {
-            ResultSection.IsVisible = true;
-
-            if (score >= 60)
-            {
-                ResultLabel.Text = $"✅ Задание выполнено успешно! Оценка: {score}%";
-                ResultLabel.TextColor = Color.FromArgb("#28A745");
-            }
-            else if (score >= 40)
-            {
-                ResultLabel.Text = $"⚠️ Задание выполнено частично. Оценка: {score}%";
-                ResultLabel.TextColor = Color.FromArgb("#FFC107");
-            }
-            else
-            {
-                ResultLabel.Text = $"❌ Задание не пройдено. Оценка: {score}%";
-                ResultLabel.TextColor = Color.FromArgb("#DC3545");
-            }
-        }
-
-        private async void OnDownloadAttachmentClicked(object sender, EventArgs e)
-        {
-            if (sender is Button button && button.CommandParameter is AttachmentViewModel attachment)
-            {
-                try
-                {
-                    var filePath = attachment.FilePath;
-                    var fileName = attachment.FileName;
-
-                    // Восстанавливаем фактический путь к файлу (с учётом data URL и разных платформ)
-                    var resolvedPath = await _fileService.ResolveFilePath(filePath, fileName, "PracticeFiles");
-                    if (string.IsNullOrEmpty(resolvedPath) || !File.Exists(resolvedPath))
-                    {
-                        await DisplayAlert("Ошибка", $"Файл не найден: {fileName}", "OK");
-                        return;
-                    }
-
-                    var success = await _fileService.DownloadFileAsync(resolvedPath, fileName);
-
-                    if (success)
-                    {
-                        await DisplayAlert("Успех", $"Файл {fileName} скачан", "OK");
-                    }
-                    else
-                    {
-                        await DisplayAlert("Ошибка", "Не удалось скачать файл", "OK");
+                        var intent = new Intent(Intent.ActionMediaScannerScanFile);
+                        intent.SetData(Android.Net.Uri.FromFile(new Java.IO.File(destPath)));
+                        context.SendBroadcast(intent);
+                        Console.WriteLine("MediaScanner уведомление отправлено");
                     }
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Ошибка", $"Ошибка при скачивании: {ex.Message}", "OK");
+                    Console.WriteLine($"Ошибка MediaScanner: {ex.Message}");
                 }
+#endif
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка скачивания: {ex.Message}\n{ex.StackTrace}");
+                return false;
             }
         }
+
+        private async Task<string> GetDownloadsPath(string fileName)
+        {
+            string downloadsFolder;
+
+#if ANDROID
+            downloadsFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads)?.AbsolutePath;
+            if (string.IsNullOrEmpty(downloadsFolder))
+            {
+                downloadsFolder = Path.Combine(Android.OS.Environment.ExternalStorageDirectory?.AbsolutePath ?? "", "Download");
+            }
+#elif WINDOWS
+            downloadsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+#elif IOS || MACCATALYST
+            downloadsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "..", "Downloads");
+#else
+            downloadsFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+#endif
+
+            if (string.IsNullOrEmpty(downloadsFolder) || !Directory.Exists(downloadsFolder))
+            {
+                try
+                {
+                    Directory.CreateDirectory(downloadsFolder);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Не удалось создать папку Загрузки: {ex.Message}");
+                    return null;
+                }
+            }
+
+            string path = Path.Combine(downloadsFolder, fileName);
+            int counter = 1;
+            string baseName = Path.GetFileNameWithoutExtension(fileName);
+            string ext = Path.GetExtension(fileName);
+
+            while (File.Exists(path))
+            {
+                path = Path.Combine(downloadsFolder, $"{baseName} ({counter++}){ext}");
+            }
+
+            return path;
+        }
+
+        private async Task TryOpenFile(AttachmentViewModel vm)
+        {
+            try
+            {
+                var path = await _fileService.ResolveFilePath(vm.FilePath, vm.FileName, "PracticeFiles");
+                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                {
+                    await DisplayAlert("Ошибка", "Файл не найден", "OK");
+                    return;
+                }
+
+                await Launcher.Default.OpenAsync(new OpenFileRequest
+                {
+                    File = new ReadOnlyFile(path)
+                });
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка открытия", ex.Message, "OK");
+            }
+        }
+
+        private async void OnNextClicked(object sender, EventArgs e)
+        {
+            await Navigation.PopAsync();
+        }
+
+        private async void OnBackClicked(object sender, EventArgs e)
+        {
+            await Navigation.PopAsync();
+        }
+
+        private string FormatFileSize(long bytes)
+        {
+            if (bytes < 1024) return $"{bytes} Б";
+            if (bytes < 1024 * 1024) return $"{(bytes / 1024.0):0.0} КБ";
+            return $"{(bytes / (1024.0 * 1024.0)):0.0} МБ";
+        }
     }
-
 }
-
-

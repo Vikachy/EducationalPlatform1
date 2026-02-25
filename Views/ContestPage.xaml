@@ -2,211 +2,430 @@
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
     x:Class="EducationalPlatform.Views.ContestPage"
-    Title="Конкурсы"
+    x:Name="ContestPageRoot"
+    Title="{Binding Title}"
     BackgroundColor="{DynamicResource BackgroundColor}">
 
-    <ScrollView BackgroundColor="{DynamicResource BackgroundColor}">
-        <VerticalStackLayout Spacing="20" Padding="20">
-            <!-- Современный заголовок -->
-            <Border BackgroundColor="{DynamicResource PrimaryColor}"
-                    StrokeThickness="0"
-                    Padding="20,15"
-                    StrokeShape="RoundRectangle 15,15,0,0">
-                <Label Text="Конкурсы программирования"
-                       FontSize="26"
-                       HorizontalOptions="Center"
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+            <converters:ScoreToColorConverter x:Key="ScoreToColorConverter" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Индикатор загрузки -->
+        <Grid x:Name="LoadingOverlay" 
+              Grid.RowSpan="2" 
+              IsVisible="False" 
+              BackgroundColor="#80000000">
+            <VerticalStackLayout HorizontalOptions="Center" 
+                                 VerticalOptions="Center" 
+                                 Spacing="20">
+                <ActivityIndicator IsRunning="True" 
+                                  Color="White" 
+                                  WidthRequest="60" 
+                                  HeightRequest="60" />
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка..." 
+                       TextColor="White" 
+                       FontSize="16" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Современный заголовок с иконками -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                <!-- Кнопка назад -->
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="24"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
+
+                <!-- Заголовок -->
+                <Label Grid.Column="1"
+                       x:Name="HeaderLabel"
+                       Text="Конкурсы программирования"
+                       FontSize="22"
                        TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+
+                <!-- Кнопка создания конкурса (только для учителей) -->
+                <Button Grid.Column="2"
+                        x:Name="CreateContestButton"
+                        Text="➕"
+                        Clicked="OnCreateContestClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="24"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22"
+                        IsVisible="{Binding CanManageContest}" />
+
+                <!-- Кнопка моих результатов -->
+                <Button Grid.Column="3"
+                        Text="📊"
+                        Clicked="OnMyResultsClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="24"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
+
+                <!-- Кнопка обновления -->
+                <Button Grid.Column="4"
+                        Text="🔄"
+                        Clicked="OnRefreshClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="24"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
+            </Grid>
+        </Border>
+
+        <!-- Основной контент -->
+        <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource BackgroundColor}">
+            <VerticalStackLayout Spacing="20" Padding="20">
+
+                <!-- Активные конкурсы -->
+                <Label x:Name="ActiveContestsLabel"
+                       Text="Активные конкурсы"
+                       FontSize="20"
+                       TextColor="{DynamicResource TextColor}"
                        FontAttributes="Bold" />
-            </Border>
 
-            <!-- Активные конкурсы -->
-            <Label Text="Активные конкурсы"
-                   FontSize="20"
-                   TextColor="#333"
-                   FontAttributes="Bold" />
+                <CollectionView x:Name="ActiveContestsCollectionView"
+                                ItemsSource="{Binding ActiveContests}"
+                                SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout HorizontalOptions="Center" 
+                                             VerticalOptions="Center" 
+                                             Spacing="10"
+                                             Padding="20">
+                            <Label Text="🏆" 
+                                   FontSize="48" 
+                                   HorizontalOptions="Center" 
+                                   TextColor="#999" />
+                            <Label Text="Нет активных конкурсов"
+                                   FontSize="16"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
 
-            <CollectionView x:Name="ActiveContestsCollectionView"
-                            ItemsSource="{Binding ActiveContests}"
-                            SelectionMode="Single">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Border Padding="15"
-                                Stroke="#2E86AB"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 10"
-                                Margin="0,5">
-                            <VerticalStackLayout Spacing="10">
-                                <Label Text="{Binding ContestName}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#2E86AB" />
-                                
-                                <Label Text="{Binding Description}"
-                                       FontSize="14"
-                                       TextColor="#666"
-                                       LineBreakMode="WordWrap" />
-                                
-                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                                    <Label Grid.Row="0" Grid.Column="0"
-                                           Text="{Binding LanguageName}"
-                                           FontSize="12"
-                                           TextColor="#888" />
-                                    
-                                    <Label Grid.Row="0" Grid.Column="1"
-                                           Text="{Binding PrizeCurrency, StringFormat='Приз: {0} монет'}"
-                                           FontSize="12"
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="15"
+                                    Stroke="{DynamicResource PrimaryColor}"
+                                    StrokeThickness="2"
+                                    StrokeShape="RoundRectangle 15"
+                                    Margin="0,5"
+                                    BackgroundColor="{DynamicResource BackgroundColor}">
+                                <VerticalStackLayout Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding ContestName}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource PrimaryColor}" />
+
+                                        <!-- Кнопки управления для учителей (если это их конкурс) -->
+                                        <HorizontalStackLayout Grid.Column="1"
+                                                               Spacing="5"
+                                                               IsVisible="{Binding CanManageContest, Source={x:Reference ContestPageRoot}}">
+                                            <Button Text="✏️"
+                                                    Clicked="OnEditContestClicked"
+                                                    CommandParameter="{Binding ContestId}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="{DynamicResource SecondaryColor}"
+                                                    FontSize="16"
+                                                    WidthRequest="35"
+                                                    HeightRequest="35" />
+                                            <Button Text="🗑️"
+                                                    Clicked="OnDeleteContestClicked"
+                                                    CommandParameter="{Binding ContestId}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="{DynamicResource DangerColor}"
+                                                    FontSize="16"
+                                                    WidthRequest="35"
+                                                    HeightRequest="35" />
+                                        </HorizontalStackLayout>
+                                    </Grid>
+
+                                    <Label Text="{Binding Description}"
+                                           FontSize="14"
+                                           TextColor="{DynamicResource TextColor}"
+                                           LineBreakMode="WordWrap" />
+
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Label Text="{Binding LanguageName}"
+                                               FontSize="12"
+                                               BackgroundColor="{DynamicResource SecondaryColor}"
+                                               TextColor="White"
+                                               Padding="8,4" />
+
+                                        <Label Text="{Binding CreatedByName, StringFormat='👤 {0}'}"
+                                               FontSize="12"
+                                               BackgroundColor="{DynamicResource AccentColor}"
+                                               TextColor="White"
+                                               Padding="8,4"/>
+                                    </HorizontalStackLayout>
+
+                                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding StartDate, StringFormat='📅 {0:dd.MM.yyyy}'}"
+                                               FontSize="12"
+                                               TextColor="#666" />
+
+                                        <Label Grid.Column="1"
+                                               Text="{Binding EndDate, StringFormat='⏰ {0:dd.MM.yyyy}'}"
+                                               FontSize="12"
+                                               TextColor="#666"
+                                               HorizontalOptions="End" />
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding PrizeCurrency, StringFormat='💰 Приз: {0} монет'}"
+                                               FontSize="12"
+                                               TextColor="#666" />
+
+                                        <Label Grid.Column="1"
+                                               Text="{Binding OnlyForGroups, StringFormat='👥 Только для групп'}"
+                                               FontSize="12"
+                                               TextColor="#666"
+                                               HorizontalOptions="End" />
+                                    </Grid>
+
+                                    <!-- Кнопка участия (для студентов) -->
+                                    <Button Text="🚀 Участвовать"
+                                            BackgroundColor="{DynamicResource PrimaryColor}"
+                                            TextColor="White"
+                                            Clicked="OnParticipateClicked"
+                                            CommandParameter="{Binding ContestId}"
+                                            CornerRadius="8"
+                                            HeightRequest="45"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            IsVisible="{Binding IsStudent, Source={x:Reference ContestPageRoot}}" />
+
+                                    <!-- Кнопка просмотра результатов (для всех) -->
+                                    <Button Text="📊 Результаты"
+                                            BackgroundColor="{DynamicResource SecondaryColor}"
+                                            TextColor="White"
+                                            Clicked="OnViewResultsClicked"
+                                            CommandParameter="{Binding ContestId}"
+                                            CornerRadius="8"
+                                            HeightRequest="40"
+                                            FontSize="13" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Завершенные конкурсы -->
+                <Label x:Name="CompletedContestsLabel"
+                       Text="Завершенные конкурсы"
+                       FontSize="20"
+                       TextColor="{DynamicResource TextColor}"
+                       FontAttributes="Bold" />
+
+                <CollectionView x:Name="CompletedContestsCollectionView"
+                                ItemsSource="{Binding CompletedContests}"
+                                SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout HorizontalOptions="Center" 
+                                             VerticalOptions="Center" 
+                                             Spacing="10"
+                                             Padding="20">
+                            <Label Text="🏁" 
+                                   FontSize="48" 
+                                   HorizontalOptions="Center" 
+                                   TextColor="#999" />
+                            <Label Text="Нет завершенных конкурсов"
+                                   FontSize="16"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="15"
+                                    Stroke="#888"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 15"
+                                    Margin="0,5"
+                                    BackgroundColor="#F5F5F5">
+                                <VerticalStackLayout Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding ContestName}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="#666" />
+
+                                        <!-- Кнопка удаления для учителей -->
+                                        <Button Grid.Column="1"
+                                                Text="🗑️"
+                                                Clicked="OnDeleteContestClicked"
+                                                CommandParameter="{Binding ContestId}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{DynamicResource DangerColor}"
+                                                FontSize="16"
+                                                WidthRequest="35"
+                                                HeightRequest="35"
+                                                IsVisible="{Binding CanManageContest, Source={x:Reference ContestPageRoot}}" />
+                                    </Grid>
+
+                                    <Label Text="{Binding Description}"
+                                           FontSize="14"
                                            TextColor="#888"
-                                           HorizontalOptions="End" />
-                                    
-                                    <Label Grid.Row="1" Grid.Column="0"
-                                           Text="{Binding StartDate, StringFormat='Начало: {0:dd.MM.yyyy}'}"
-                                           FontSize="12"
-                                           TextColor="#888" />
-                                    
-                                    <Label Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding EndDate, StringFormat='Окончание: {0:dd.MM.yyyy}'}"
-                                           FontSize="12"
-                                           TextColor="#888"
-                                           HorizontalOptions="End" />
-                                </Grid>
-                                
-                                <Button Text="Участвовать"
-                                        BackgroundColor="#2E86AB"
-                                        TextColor="White"
-                                        Clicked="OnParticipateClicked"
-                                        CommandParameter="{Binding ContestId}" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                                           LineBreakMode="WordWrap" />
 
-            <!-- Завершенные конкурсы -->
-            <Label Text="Завершенные конкурсы"
-                   FontSize="20"
-                   TextColor="#333"
-                   FontAttributes="Bold" />
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Label Text="{Binding LanguageName}"
+                                               FontSize="12"
+                                               BackgroundColor="#888"
+                                               TextColor="White"
+                                               Padding="8,4" />
 
-            <CollectionView x:Name="CompletedContestsCollectionView"
-                            ItemsSource="{Binding CompletedContests}"
-                            SelectionMode="Single">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Border Padding="15"
-                                Stroke="#888"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 10"
-                                Margin="0,5">
-                            <VerticalStackLayout Spacing="10">
-                                <Label Text="{Binding ContestName}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#888" />
-                                
-                                <Label Text="{Binding Description}"
-                                       FontSize="14"
-                                       TextColor="#999"
-                                       LineBreakMode="WordWrap" />
-                                
-                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                                    <Label Grid.Row="0" Grid.Column="0"
-                                           Text="{Binding LanguageName}"
-                                           FontSize="12"
-                                           TextColor="#999" />
-                                    
-                                    <Label Grid.Row="0" Grid.Column="1"
-                                           Text="{Binding PrizeCurrency, StringFormat='Приз: {0} монет'}"
-                                           FontSize="12"
-                                           TextColor="#999"
-                                           HorizontalOptions="End" />
-                                    
-                                    <Label Grid.Row="1" Grid.Column="0"
-                                           Text="{Binding StartDate, StringFormat='Начало: {0:dd.MM.yyyy}'}"
-                                           FontSize="12"
-                                           TextColor="#999" />
-                                    
-                                    <Label Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding EndDate, StringFormat='Окончание: {0:dd.MM.yyyy}'}"
-                                           FontSize="12"
-                                           TextColor="#999"
-                                           HorizontalOptions="End" />
-                                </Grid>
-                                
-                                <Button Text="Результаты"
-                                        BackgroundColor="#888"
-                                        TextColor="White"
-                                        Clicked="OnViewResultsClicked"
-                                        CommandParameter="{Binding ContestId}" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                                        <Label Text="{Binding CreatedByName, StringFormat='👤 {0}'}"
+                                               FontSize="12"
+                                               BackgroundColor="#999"
+                                               TextColor="White"
+                                               Padding="8,4" />
+                                    </HorizontalStackLayout>
 
-            <!-- Мои заявки -->
-            <Label Text="Мои заявки"
-                   FontSize="20"
-                   TextColor="#333"
-                   FontAttributes="Bold" />
+                                    <Button Text="📊 Результаты"
+                                            BackgroundColor="#888"
+                                            TextColor="White"
+                                            Clicked="OnViewResultsClicked"
+                                            CommandParameter="{Binding ContestId}"
+                                            CornerRadius="8"
+                                            HeightRequest="40" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
 
-            <CollectionView x:Name="MySubmissionsCollectionView"
-                            ItemsSource="{Binding MySubmissions}"
-                            SelectionMode="Single">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Border Padding="15"
-                                Stroke="#4CAF50"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 10"
-                                Margin="0,5">
-                            <VerticalStackLayout Spacing="10">
-                                <Label Text="{Binding ContestName}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#4CAF50" />
-                                
-                                <Label Text="{Binding ProjectName}"
-                                       FontSize="14"
-                                       TextColor="#666" />
-                                
-                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                                    <Label Grid.Row="0" Grid.Column="0"
-                                           Text="{Binding SubmissionDate, StringFormat='Подано: {0:dd.MM.yyyy HH:mm}'}"
-                                           FontSize="12"
-                                           TextColor="#888" />
-                                    
-                                    <Label Grid.Row="0" Grid.Column="1"
-                                           Text="{Binding Status}"
-                                           FontSize="12"
-                                           TextColor="#888"
-                                           HorizontalOptions="End" />
-                                    
-                                    <Label Grid.Row="1" Grid.Column="0"
-                                           Text="{Binding TeacherScore, StringFormat='Оценка: {0}'}"
-                                           FontSize="12"
-                                           TextColor="#888" />
-                                    
-                                    <Label Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding TeacherComment}"
-                                           FontSize="12"
-                                           TextColor="#888"
-                                           HorizontalOptions="End" />
-                                </Grid>
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                <!-- Мои заявки -->
+                <Label x:Name="MySubmissionsLabel"
+                       Text="Мои заявки"
+                       FontSize="20"
+                       TextColor="{DynamicResource TextColor}"
+                       FontAttributes="Bold" />
 
-            <!-- Кнопка создания заявки -->
-            <Button x:Name="CreateSubmissionButton"
-                    Text="Подать заявку"
-                    BackgroundColor="#4CAF50"
-                    TextColor="White"
-                    HeightRequest="50"
-                    Clicked="OnCreateSubmissionClicked" />
-        </VerticalStackLayout>
-    </ScrollView>
+                <CollectionView x:Name="MySubmissionsCollectionView"
+                                ItemsSource="{Binding MySubmissions}"
+                                SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout HorizontalOptions="Center" 
+                                             VerticalOptions="Center" 
+                                             Spacing="10"
+                                             Padding="20">
+                            <Label Text="📝" 
+                                   FontSize="48" 
+                                   HorizontalOptions="Center" 
+                                   TextColor="#999" />
+                            <Label Text="Нет отправленных заявок"
+                                   FontSize="16"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="15"
+                                    Stroke="{DynamicResource AccentColor}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 15"
+                                    Margin="0,5"
+                                    BackgroundColor="{DynamicResource BackgroundColor}">
+                                <VerticalStackLayout Spacing="8">
+                                    <Label Text="{Binding ContestName}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource AccentColor}" />
+
+                                    <Label Text="{Binding ProjectName}"
+                                           FontSize="14"
+                                           TextColor="{DynamicResource TextColor}" />
+
+                                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding SubmissionDate, StringFormat='📅 {0:dd.MM.yyyy}'}"
+                                               FontSize="11"
+                                               TextColor="#666" />
+
+                                        <Label Grid.Column="1"
+                                               Text="{Binding StatusDisplay}"
+                                               FontSize="11"
+                                               TextColor="{Binding TeacherScore, Converter={StaticResource ScoreToColorConverter}}"
+                                               HorizontalOptions="End" />
+                                    </Grid>
+
+                                    <Border BackgroundColor="#E8F5E9"
+                                            Stroke="#4CAF50"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="8"
+                                            IsVisible="{Binding TeacherScore, Converter={StaticResource GreaterThanZeroConverter}}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding TeacherScore, StringFormat='Оценка: {0} баллов'}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold"
+                                                   TextColor="#2E7D32" />
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding GradedByName, StringFormat='👤 {0}'}"
+                                                   FontSize="10"
+                                                   TextColor="#666" />
+                                        </Grid>
+                                    </Border>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Кнопка подачи заявки (для студентов) -->
+                <Button x:Name="CreateSubmissionButton"
+                        Text="📝 Подать заявку"
+                        BackgroundColor="{DynamicResource AccentColor}"
+                        TextColor="White"
+                        HeightRequest="55"
+                        CornerRadius="27"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        Clicked="OnCreateSubmissionClicked"
+                        Margin="0,10,0,20"
+                        IsVisible="{Binding IsStudent}" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>
-

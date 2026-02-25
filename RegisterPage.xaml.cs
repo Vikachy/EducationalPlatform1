@@ -29,7 +29,6 @@ public partial class RegisterPage : ContentPage
 
     private async void OnRegisterClicked(object sender, EventArgs e)
     {
-        // Проверяем все поля
         if (FirstNameEntry == null || string.IsNullOrWhiteSpace(FirstNameEntry.Text) ||
             LastNameEntry == null || string.IsNullOrWhiteSpace(LastNameEntry.Text) ||
             UsernameEntry == null || string.IsNullOrWhiteSpace(UsernameEntry.Text) ||
@@ -59,7 +58,6 @@ public partial class RegisterPage : ContentPage
             return;
         }
 
-        // Показываем индикатор загрузки
         if (LoadingIndicator != null)
             LoadingIndicator.IsVisible = true;
         if (RegisterButton != null)
@@ -76,11 +74,14 @@ public partial class RegisterPage : ContentPage
 
             if (success)
             {
-                // ПОСЛЕ УСПЕШНОЙ РЕГИСТРАЦИИ ПЕРЕНАПРАВЛЯЕМ НА СОГЛАСИЕ
                 var newUser = await _dbService.LoginAsync(UsernameEntry.Text, PasswordEntry.Text);
                 if (newUser != null)
                 {
                     await DisplayAlert("Успех", "Аккаунт успешно создан!", "OK");
+
+                    // Сразу сохраняем согласие из регистрации
+                    await _dbService.UpdatePrivacyConsentAsync(newUser.UserId, true);
+
                     await Navigation.PushAsync(new PrivacyConsentPage(newUser, _dbService, _settingsService));
                 }
             }

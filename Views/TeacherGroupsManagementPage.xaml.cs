@@ -24,37 +24,40 @@ namespace EducationalPlatform.Views
             Groups = new ObservableCollection<TeacherGroupInfo>();
             BindingContext = this;
 
-            LoadTeacherGroups();
+            LoadTeacherGroupsAsync();
             LoadCourses();
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            LoadTeacherGroups();
+            LoadTeacherGroupsAsync();
         }
 
-        private async void LoadTeacherGroups()
+        private async Task LoadTeacherGroupsAsync()
         {
             try
             {
                 var groups = await _dbService.GetTeacherStudyGroupsAsync(_currentUser.UserId);
-                Groups.Clear();
-                foreach (var group in groups)
+
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    var courseName = await GetCourseNameForGroup(group.GroupId);
-
-                    Groups.Add(new TeacherGroupInfo
+                    Groups.Clear();
+                    foreach (var group in groups)
                     {
-                        GroupId = group.GroupId,
-                        GroupName = group.GroupName,
-                        CourseName = courseName ?? "Без курса",
-                        StudentCount = group.StudentCount,
-                        IsActive = group.IsActive
-                    });
-                }
+                        Groups.Add(new TeacherGroupInfo
+                        {
+                            GroupId = group.GroupId,
+                            GroupName = group.GroupName,
+                            CourseName = group.CourseName ?? "Без курса",
+                            StudentCount = group.StudentCount,
+                            IsActive = group.IsActive,
+                            GroupAvatarUrl = group.AvatarUrl ?? $"group_{group.GroupId}.png"
+                        });
+                    }
 
-                NoGroupsLabel.IsVisible = !Groups.Any();
+                    NoGroupsLabel.IsVisible = !Groups.Any();
+                });
             }
             catch (Exception ex)
             {
@@ -100,6 +103,100 @@ namespace EducationalPlatform.Views
             }
         }
 
+        // Добавьте этот метод в класс TeacherGroupsManagementPage
+        private async void OnChangeGroupAvatarClicked(object sender, EventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is TeacherGroupInfo group)
+            {
+                try
+                {
+                    var result = await FilePicker.PickAsync(new PickOptions
+                    {
+                        PickerTitle = "Выберите аватар для группы",
+                        FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    { DevicePlatform.WinUI, new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" } },
+                    { DevicePlatform.Android, new[] { "image/jpeg", "image/png", "image/gif", "image/bmp" } },
+                    { DevicePlatform.iOS, new[] { "public.image" } },
+                })
+                    });
+
+                    if (result != null)
+                    {
+                        // Показываем индикатор загрузки
+                        var loadingOverlay = this.FindByName<Grid>("LoadingOverlay");
+                        if (loadingOverlay != null) loadingOverlay.IsVisible = true;
+
+                        using var stream = await result.OpenReadAsync();
+
+                        // Сохраняем аватар в БД (он будет доступен и учителю, и студентам)
+                        string? avatarUrl = await _dbService.SaveGroupAvatarAsync(
+                            group.GroupId,
+                            stream,
+                            result.FileName,
+                            _currentUser.UserId);
+
+                        if (avatarUrl != null)
+                        {
+                            // Обновляем отображение
+                            await LoadTeacherGroupsAsync();
+                            await DisplayAlert("Успех", "Аватар группы обновлен. Теперь он будет виден всем участникам группы!", "OK");
+                        }
+                        else
+                        {
+                            await DisplayAlert("Ошибка", "Не удалось сохранить аватар", "OK");
+                        }
+
+                        if (loadingOverlay != null) loadingOverlay.IsVisible = false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось загрузить аватар: {ex.Message}", "OK");
+
+                    var loadingOverlay = this.FindByName<Grid>("LoadingOverlay");
+                    if (loadingOverlay != null) loadingOverlay.IsVisible = false;
+                }
+            }
+        }
+
+        // Метод для сохранения аватара в БД
+        private async Task<bool> SaveGroupAvatarToDatabaseAsync(int groupId, string avatarPath)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_dbService.ConnectionString);
+                await connection.OpenAsync();
+
+                // Проверяем, существует ли колонка AvatarUrl
+                var checkColumnQuery = @"
+            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                          WHERE TABLE_NAME = 'StudyGroups' AND COLUMN_NAME = 'AvatarUrl')
+            BEGIN
+                ALTER TABLE StudyGroups ADD AvatarUrl NVARCHAR(MAX) NULL
+            END";
+
+                using var checkCmd = new SqlCommand(checkColumnQuery, connection);
+                await checkCmd.ExecuteNonQueryAsync();
+
+                // Обновляем аватар
+                var updateQuery = "UPDATE StudyGroups SET AvatarUrl = @AvatarUrl WHERE GroupId = @GroupId";
+                using var updateCmd = new SqlCommand(updateQuery, connection);
+                updateCmd.Parameters.AddWithValue("@AvatarUrl", avatarPath);
+                updateCmd.Parameters.AddWithValue("@GroupId", groupId);
+
+                var result = await updateCmd.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения аватара группы: {ex.Message}");
+                return false;
+            }
+        }
+
+       
+
         // СОЗДАНИЕ ГРУППЫ
         private async void OnCreateGroupClicked(object sender, EventArgs e)
         {
@@ -119,9 +216,12 @@ namespace EducationalPlatform.Views
             {
                 var course = (TeacherCourse)CoursePicker.SelectedItem;
 
-                if (!await CheckCourseExists(course.CourseId))
+                // Проверяем, не существует ли уже группа с таким названием для этого курса
+                var existingGroups = await _dbService.GetTeacherStudyGroupsAsync(_currentUser.UserId);
+                if (existingGroups.Any(g => g.GroupName.Equals(NewGroupNameEntry.Text, StringComparison.OrdinalIgnoreCase)
+                                          && g.CourseId == course.CourseId))
                 {
-                    await DisplayAlert("Ошибка", "Выбранный курс не существует или не опубликован", "OK");
+                    await DisplayAlert("Ошибка", "Группа с таким названием уже существует для этого курса", "OK");
                     return;
                 }
 
@@ -153,7 +253,7 @@ namespace EducationalPlatform.Views
                     await DisplayAlert("Успех", "Группа создана!", "OK");
                     NewGroupNameEntry.Text = string.Empty;
                     CoursePicker.SelectedItem = null;
-                    LoadTeacherGroups();
+                    LoadTeacherGroupsAsync();
                 }
                 else
                 {
@@ -223,7 +323,7 @@ namespace EducationalPlatform.Views
                         if (success)
                         {
                             await DisplayAlert("Успех", "Название группы обновлено", "OK");
-                            LoadTeacherGroups();
+                            LoadTeacherGroupsAsync();
                         }
                         else
                         {
@@ -276,7 +376,7 @@ namespace EducationalPlatform.Views
                         if (success)
                         {
                             await DisplayAlert("Успех", "Группа удалена", "OK");
-                            LoadTeacherGroups();
+                            LoadTeacherGroupsAsync();
                         }
                         else
                         {
@@ -390,7 +490,7 @@ namespace EducationalPlatform.Views
                         await _dbService.AddSystemMessageToGroupAsync(group.GroupId, systemMessage);
 
                         await DisplayAlert("Успех", $"Студент {username} добавлен в группу", "OK");
-                        LoadTeacherGroups();
+                        LoadTeacherGroupsAsync();
                     }
                     else
                     {
@@ -438,7 +538,7 @@ namespace EducationalPlatform.Views
                             await _dbService.AddSystemMessageToGroupAsync(group.GroupId, systemMessage);
 
                             await DisplayAlert("Успех", "Студент удален из группы", "OK");
-                            LoadTeacherGroups();
+                            LoadTeacherGroupsAsync();
                         }
                     }
                 }
@@ -493,8 +593,16 @@ namespace EducationalPlatform.Views
             {
                 try
                 {
-                    // Вместо ChatPage используем TeacherChatsPage
-                    await Navigation.PushAsync(new TeacherChatsPage(_currentUser, _dbService, _settingsService));
+                    // Загружаем полную информацию о группе
+                    var fullGroup = await _dbService.GetStudyGroupByIdAsync(group.GroupId);
+                    if (fullGroup != null)
+                    {
+                        await Navigation.PushAsync(new GroupChatPage(fullGroup, _currentUser, _dbService, _settingsService));
+                    }
+                    else
+                    {
+                        await DisplayAlert("Ошибка", "Не удалось загрузить информацию о группе", "OK");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -502,6 +610,54 @@ namespace EducationalPlatform.Views
                 }
             }
         }
+  
+        // Добавьте этот метод для добавления студентов прямо из чата
+        private async void OnAddStudentFromChatClicked(object sender, EventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is TeacherGroupInfo group)
+            {
+                try
+                {
+                    var username = await DisplayPromptAsync("Добавить студента в чат",
+                        "Введите логин студента:");
+
+                    if (!string.IsNullOrWhiteSpace(username))
+                    {
+                        var user = await _dbService.GetUserByUsernameAsync(username.Trim());
+                        if (user != null && user.RoleId == 1) // Проверяем что это студент
+                        {
+                            // Проверяем, не добавлен ли уже студент
+                            var isInGroup = await _dbService.IsStudentInGroupAsync(user.UserId, group.GroupId);
+
+                            if (!isInGroup)
+                            {
+                                // Добавляем студента в группу
+                                await _dbService.EnrollStudentToGroupAsync(group.GroupId, user.UserId);
+                            }
+
+                            // Добавляем студента в чат (если уже есть - ничего не произойдет)
+                            await _dbService.SimpleAddToGroupChat(group.GroupId, user.UserId);
+
+                            // Отправляем системное сообщение в чат
+                            var systemMessage = $"🎓 Студент {user.FirstName} {user.LastName} (@{user.Username}) присоединился к чату";
+                            await _dbService.AddSystemMessageToGroupAsync(group.GroupId, systemMessage);
+
+                            await DisplayAlert("Успех", $"Студент {username} добавлен в чат", "OK");
+                            LoadTeacherGroupsAsync();
+                        }
+                        else
+                        {
+                            await DisplayAlert("Ошибка", "Студент не найден", "OK");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert("Ошибка", $"Не удалось добавить студента: {ex.Message}", "OK");
+                }
+            }
+        }
+
 
         // НАЗАД
         private async void OnBackClicked(object sender, EventArgs e)
@@ -517,5 +673,6 @@ namespace EducationalPlatform.Views
         public string CourseName { get; set; } = string.Empty;
         public int StudentCount { get; set; }
         public bool IsActive { get; set; }
+        public string GroupAvatarUrl { get; set; } = "default_group.png";
     }
 }

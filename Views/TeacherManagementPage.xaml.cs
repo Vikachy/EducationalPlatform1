@@ -2,37 +2,36 @@ using EducationalPlatform.Models;
 using EducationalPlatform.Services;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
+using System.Data.SqlClient;
+using Dapper;
 
 namespace EducationalPlatform.Views
 {
     public partial class TeacherManagementPage : ContentPage
     {
-        private User _currentUser;
-        private DatabaseService _dbService;
-        private SettingsService _settingsService;
+        private readonly User _currentUser;
+        private readonly DatabaseService _dbService;
+        private readonly SettingsService _settingsService;
 
-        public ObservableCollection<TeacherCourse> MyCourses { get; set; }
-        public ObservableCollection<PendingReview> PendingReviews { get; set; }
+        public ObservableCollection<TeacherCourse> MyCourses { get; set; } = new();
+        public ObservableCollection<PracticeSubmission> PendingReviews { get; set; } = new();
 
         public TeacherManagementPage(User user, DatabaseService dbService, SettingsService settingsService)
         {
             InitializeComponent();
 
-            _currentUser = user;
-            _dbService = dbService;
-            _settingsService = settingsService;
+            _currentUser = user ?? throw new ArgumentNullException(nameof(user));
+            _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
+            _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
 
-            MyCourses = new ObservableCollection<TeacherCourse>();
-            PendingReviews = new ObservableCollection<PendingReview>();
-
-            // Инициализация конвертеров
+            // Конвертеры для UI
             Resources.Add("PublishedConverter", new PublishedToTextConverter());
             Resources.Add("PublishButtonConverter", new PublishButtonTextConverter());
             Resources.Add("PublishButtonColorConverter", new PublishButtonColorConverter());
 
             BindingContext = this;
 
-            // Загружаем данные без await, так как это конструктор
             _ = LoadTeacherDataAsync();
         }
 
@@ -40,65 +39,52 @@ namespace EducationalPlatform.Views
         {
             try
             {
+                // 1. Курсы преподавателя
                 var courses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
                 MyCourses.Clear();
-                foreach (var course in courses)
+                foreach (var course in courses ?? Enumerable.Empty<TeacherCourse>())
                 {
                     MyCourses.Add(course);
                 }
 
-                MyCoursesCollectionView.ItemsSource = MyCourses;
+                // 2. Реальные работы на проверку
+                await LoadPendingReviewsAsync();
 
-                // Загрузка работ на проверку
-                LoadPendingReviews();
-
-                // Загрузка списков
-                await LoadPickersDataAsync();
+                // 3. Списки для создания курса
+                LanguagePicker.ItemsSource = await _dbService.GetProgrammingLanguagesAsync();
+                DifficultyPicker.ItemsSource = await _dbService.GetCourseDifficultiesAsync();
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить данные: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка загрузки", ex.Message, "OK");
             }
         }
 
-        private void LoadPendingReviews()
+        private async Task LoadPendingReviewsAsync()
         {
-            try
-            {
-                PendingReviews.Clear();
+            PendingReviews.Clear();
 
-                // Заглушка для демонстрации работ на проверку
-                PendingReviews.Add(new PendingReview
+            var pending = await _dbService.GetPendingPracticeSubmissionsForTeacherAsync(_currentUser.UserId);
+
+            if (pending == null || !pending.Any())
+            {
+                PendingReviews.Add(new PracticeSubmission
                 {
-                    AttemptId = 1,
-                    StudentName = "Иван Иванов",
-                    CourseName = "C# для начинающих",
-                    TestTitle = "Тест по ООП",
-                    Score = 75
+                    StudentName = "Нет работ на проверку",
+                    CourseName = "",
+                    LessonTitle = "Пока никто не отправил практику",
+                    SubmissionDate = DateTime.Now
                 });
-
-                PendingReviewsCollectionView.ItemsSource = PendingReviews;
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Ошибка загрузки работ на проверку: {ex.Message}");
+                foreach (var submission in pending)
+                {
+                    PendingReviews.Add(submission);
+                }
             }
-        }
 
-        private async Task LoadPickersDataAsync()
-        {
-            try
-            {
-                var languages = await _dbService.GetProgrammingLanguagesAsync();
-                LanguagePicker.ItemsSource = languages;
-
-                var difficulties = await _dbService.GetCourseDifficultiesAsync();
-                DifficultyPicker.ItemsSource = difficulties;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка загрузки списков для выбора: {ex.Message}");
-            }
+            PendingReviewsCollectionView.ItemsSource = PendingReviews;
         }
 
         private async void OnCreateCourseClicked(object sender, EventArgs e)
@@ -111,35 +97,32 @@ namespace EducationalPlatform.Views
 
             if (LanguagePicker.SelectedItem == null || DifficultyPicker.SelectedItem == null)
             {
-                await DisplayAlert("Ошибка", "Выберите язык программирования и сложность", "OK");
+                await DisplayAlert("Ошибка", "Выберите язык и сложность", "OK");
                 return;
             }
 
             try
             {
-                var selectedLanguage = (ProgrammingLanguage)LanguagePicker.SelectedItem;
-                var selectedDifficulty = (CourseDifficulty)DifficultyPicker.SelectedItem;
+                var lang = (ProgrammingLanguage)LanguagePicker.SelectedItem;
+                var diff = (CourseDifficulty)DifficultyPicker.SelectedItem;
 
                 bool success = await _dbService.CreateCourseAsync(
-                    NewCourseNameEntry.Text,
-                    NewCourseDescriptionEditor.Text ?? string.Empty,
-                    selectedLanguage.LanguageId,
-                    selectedDifficulty.DifficultyId,
+                    NewCourseNameEntry.Text.Trim(),
+                    NewCourseDescriptionEditor.Text?.Trim() ?? "",
+                    lang.LanguageId,
+                    diff.DifficultyId,
                     _currentUser.UserId,
                     IsGroupCourseCheckBox.IsChecked);
 
                 if (success)
                 {
-                    await DisplayAlert("Успех", "Курс создан успешно!", "OK");
-
-                    // Очистка полей
+                    await DisplayAlert("Успех", "Курс успешно создан!", "OK");
                     NewCourseNameEntry.Text = "";
                     NewCourseDescriptionEditor.Text = "";
                     LanguagePicker.SelectedItem = null;
                     DifficultyPicker.SelectedItem = null;
                     IsGroupCourseCheckBox.IsChecked = false;
 
-                    // Обновление списка курсов
                     await LoadTeacherDataAsync();
                 }
                 else
@@ -149,133 +132,113 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка создания курса: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка создания курса", ex.Message, "OK");
             }
         }
 
-        // Публикация курса
         private async void OnPublishCourseClicked(object sender, EventArgs e)
         {
-            if (sender is Button button && button.BindingContext is TeacherCourse course)
+            if (sender is Button btn && btn.CommandParameter is TeacherCourse course)
             {
                 try
                 {
-                    bool success = await _dbService.PublishCourseAsync(course.CourseId, _currentUser.UserId);
+                    bool newStatus = !course.IsPublished;
+                    bool success = await _dbService.PublishCourseAsync(course.CourseId, newStatus ? 1 : 0);
+
                     if (success)
                     {
-                        await DisplayAlert("Успех",
-                            course.IsPublished ? "Курс снят с публикации!" : "Курс опубликован!",
-                            "OK");
-                        await LoadTeacherDataAsync();
+                        course.IsPublished = newStatus;
+                        await DisplayAlert("Успех", newStatus ? "Курс опубликован" : "Публикация снята", "OK");
+
+                        MyCoursesCollectionView.ItemsSource = null;
+                        MyCoursesCollectionView.ItemsSource = MyCourses;
                     }
                     else
                     {
-                        await DisplayAlert("Ошибка", "Не удалось изменить статус курса", "OK");
+                        await DisplayAlert("Ошибка", "Не удалось изменить статус", "OK");
                     }
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Ошибка", $"Ошибка: {ex.Message}", "OK");
+                    await DisplayAlert("Ошибка публикации", ex.Message, "OK");
+                }
+            }
+        }
+
+        private async void OnReviewWorkClicked(object sender, EventArgs e)
+        {
+            if (sender is Button btn && btn.CommandParameter is int submissionId)
+            {
+                var submission = PendingReviews.FirstOrDefault(s => s.SubmissionId == submissionId);
+                if (submission != null)
+                {
+                    string preview = submission.SubmissionText;
+                    if (string.IsNullOrEmpty(preview) && !string.IsNullOrEmpty(submission.SubmissionFileUrl))
+                    {
+                        preview = $"Файл: {Path.GetFileName(submission.SubmissionFileUrl)}";
+                    }
+                    else if (string.IsNullOrEmpty(preview))
+                    {
+                        preview = "Нет ответа";
+                    }
+
+                    await DisplayAlert("Проверка работы",
+                        $"Студент: {submission.StudentName}\n" +
+                        $"Курс: {submission.CourseName}\n" +
+                        $"Урок: {submission.LessonTitle}\n" +
+                        $"Дата: {submission.SubmissionDate:dd.MM.yy HH:mm}\n\n" +
+                        $"Ответ:\n{preview}",
+                        "Закрыть");
                 }
             }
         }
 
         private async void OnManageGroupsClicked(object sender, EventArgs e)
         {
-            if (sender is Button button && button.BindingContext is TeacherCourse course)
+            if (sender is Button btn && btn.CommandParameter is TeacherCourse course)
             {
-                try
-                {
-                    // Теперь передаем 4 аргумента
-                    await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService, course));
-                }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Ошибка", $"Не удалось открыть группы: {ex.Message}", "OK");
-                }
-            }
-        }
-
-        private async void OnGroupsClicked(object sender, EventArgs e)
-        {
-            try
-            {
-                // Переходим на общую страницу управления группами (3 аргумента)
-                await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService));
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", $"Не удалось открыть группы: {ex.Message}", "OK");
+                await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService, course));
             }
         }
 
         private async void OnCourseStatsClicked(object sender, EventArgs e)
         {
-            if (sender is Button button && button.BindingContext is TeacherCourse course)
+            if (sender is Button btn && btn.CommandParameter is int courseId)
             {
-                try
+                var course = MyCourses.FirstOrDefault(c => c.CourseId == courseId);
+                if (course != null)
                 {
-                    await Navigation.PushAsync(new CourseStudentsPage(_currentUser, _dbService, _settingsService, course.CourseId, course.CourseName));
-                }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Ошибка", $"Не удалось открыть статистику: {ex.Message}", "OK");
+                    await Navigation.PushAsync(new CourseStudentsPage(_currentUser, _dbService, _settingsService, courseId, course.CourseName));
                 }
             }
         }
 
         private async void OnManageContentClicked(object sender, EventArgs e)
         {
-            if (sender is Button button && button.BindingContext is TeacherCourse course)
+            if (sender is Button btn && btn.CommandParameter is TeacherCourse course)
             {
-                try
-                {
-                    await Navigation.PushAsync(new TeacherContentManagementPage(_currentUser, _dbService, _settingsService, course.CourseId, course.CourseName));
-                }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Ошибка", $"Не удалось открыть управление контентом: {ex.Message}", "OK");
-                }
+                await Navigation.PushAsync(new TeacherContentManagementPage(_currentUser, _dbService, _settingsService, course.CourseId, course.CourseName));
             }
         }
 
-        // Просмотр работы
-        private async void OnReviewWorkClicked(object sender, EventArgs e)
-        {
-            if (sender is Button button && button.BindingContext is PendingReview review)
-            {
-                await DisplayAlert("Проверка", $"Проверка работы: {review.StudentName}", "OK");
-            }
-        }
-
-        // Отчеты
         private async void OnReportsClicked(object sender, EventArgs e)
         {
-            await DisplayAlert("Отчеты", "Экспорт отчетов в Word/Excel", "OK");
+            await DisplayAlert("Отчёты", "Функция в разработке", "OK");
         }
 
         private async void OnTestsClicked(object sender, EventArgs e)
         {
-            try
-            {
-                await Navigation.PushAsync(new TeacherTestsPage(_currentUser, _dbService, _settingsService));
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", $"Не удалось открыть тесты: {ex.Message}", "OK");
-            }
+            await Navigation.PushAsync(new TeacherTestsPage(_currentUser, _dbService, _settingsService));
+        }
+
+        private async void OnGroupsClicked(object sender, EventArgs e)
+        {
+            await Navigation.PushAsync(new TeacherGroupsPage(_currentUser, _dbService, _settingsService));
         }
 
         private async void OnChatsClicked(object sender, EventArgs e)
         {
-            try
-            {
-                await Navigation.PushAsync(new TeacherChatsPage(_currentUser, _dbService, _settingsService));
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", $"Не удалось открыть чаты: {ex.Message}", "OK");
-            }
+            await Navigation.PushAsync(new TeacherChatsPage(_currentUser, _dbService, _settingsService));
         }
 
         private async void OnBackClicked(object sender, EventArgs e)
@@ -290,53 +253,28 @@ namespace EducationalPlatform.Views
         }
     }
 
-    // Вспомогательные классы
-    public class PendingReview
-    {
-        public int AttemptId { get; set; }
-        public string StudentName { get; set; } = string.Empty;
-        public string CourseName { get; set; } = string.Empty;
-        public string TestTitle { get; set; } = string.Empty;
-        public int Score { get; set; }
-    }
-
-    // Конвертеры (только уникальные для этой страницы)
+    // Конвертеры
     public class PublishedToTextConverter : IValueConverter
     {
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            return value is bool published && published ? "Опубликован" : "Черновик";
-        }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => value is bool p && p ? "Опубликован" : "Черновик";
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 
     public class PublishButtonTextConverter : IValueConverter
     {
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            return value is bool published && published ? "Снять" : "Опубликовать";
-        }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => value is bool p && p ? "Снять публикацию" : "Опубликовать";
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 
     public class PublishButtonColorConverter : IValueConverter
     {
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            return value is bool published && published ? Color.FromArgb("#FF9800") : Color.FromArgb("#4CAF50");
-        }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => value is bool p && p ? Colors.Orange : Colors.Green;
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 }

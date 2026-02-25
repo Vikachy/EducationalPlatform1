@@ -28,4 +28,7 @@ namespace EducationalPlatform.Models
         public int TimeLimitMinutes { get; set; }
         public string? Description { get; set; }
     }
-}
+
+    
+
+    }

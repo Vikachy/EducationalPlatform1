@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.NewsDetailPage"
+             Title="{Binding Title}"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+
+            <!-- Заголовок -->
+            <Border BackgroundColor="{DynamicResource PrimaryColor}"
+                    Padding="20,15">
+                <Label Text="{Binding Title}"
+                       FontSize="24"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+            </Border>
+
+            <!-- Изображение (если есть) -->
+            <Border
+                    HeightRequest="200"
+                    IsVisible="{Binding ImageUrl, Converter={StaticResource NotNullConverter}}">
+                <Image Source="{Binding ImageUrl}"
+                       Aspect="AspectFill"
+                       HorizontalOptions="Fill"
+                       VerticalOptions="Fill" />
+            </Border>
+
+            <!-- Метаданные -->
+            <Grid ColumnDefinitions="*,Auto,Auto" BackgroundColor="#F5F5F5"
+                  Padding="15" >
+                <Label Grid.Column="0"
+                       Text="{Binding AuthorName, StringFormat='👤 {0}'}"
+                       FontSize="12"
+                       TextColor="#666" />
+
+                <Label Grid.Column="1"
+                       Text="{Binding FormattedDate, StringFormat='📅 {0}'}"
+                       FontSize="12"
+                       TextColor="#666"
+                       Margin="10,0" />
+
+                <Label Grid.Column="2"
+                       Text="{Binding ViewsCount, StringFormat='👁️ {0}'}"
+                       FontSize="12"
+                       TextColor="#666" />
+            </Grid>
+
+            <!-- Категория -->
+            <Border BackgroundColor="{DynamicResource AccentColor}"
+                    Padding="10,5"
+                    HorizontalOptions="Start">
+                <Label Text="{Binding CategoryDisplay}"
+                       FontSize="12"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+            </Border>
+
+            <!-- Краткое описание (если есть) -->
+            <Border BackgroundColor="#F0F0F0"
+                    Padding="15"
+                    IsVisible="{Binding Summary, Converter={StaticResource NotNullConverter}}">
+                <Label Text="{Binding Summary}"
+                       FontSize="16"
+                       TextColor="{DynamicResource PrimaryColor}"
+                       FontAttributes="Italic" />
+            </Border>
+
+            <!-- Полный текст -->
+            <Border BackgroundColor="White"
+                    Padding="20"
+                    Stroke="#E0E0E0"
+                    StrokeThickness="1">
+                <Label Text="{Binding Content}"
+                       FontSize="15"
+                       TextColor="{DynamicResource TextColor}" />
+            </Border>
+
+            <!-- Кнопка назад -->
+            <Button Text="← Назад к новостям"
+                    Clicked="OnBackClicked"
+                    BackgroundColor="{DynamicResource PrimaryColor}"
+                    TextColor="White"
+                    CornerRadius="25"
+                    HeightRequest="50"
+                    FontSize="16"
+                    Margin="0,20,0,0" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

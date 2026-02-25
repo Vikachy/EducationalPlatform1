@@ -71,14 +71,23 @@ namespace EducationalPlatform.Views
             {
                 try
                 {
-                    // Создаем группу для приватного чата со студентом
-                    var privateGroup = new StudyGroup
+                    // Загружаем полную информацию о студенте из базы данных
+                    var studentUser = await _dbService.GetUserByIdAsync(student.StudentId);
+
+                    if (studentUser != null)
                     {
-                        GroupId = -student.StudentId, // Отрицательный ID для приватных чатов
-                        GroupName = $"Чат с {student.StudentName}",
-                        StudentCount = 2
-                    };
-                    await Navigation.PushAsync(new ChatPage(privateGroup, _currentUser, _dbService, _settingsService));
+                        // Загружаем экипировку студента (эмодзи, рамку)
+                        var equipped = await _dbService.GetEquippedItemsAsync(student.StudentId);
+                        studentUser.UserEmoji = equipped.EmojiIcon;
+                        studentUser.FrameColor = equipped.FrameColor;
+
+                        // Переходим в личный чат с этим студентом
+                        await Navigation.PushAsync(new ChatPage(_currentUser, studentUser, _dbService, _settingsService));
+                    }
+                    else
+                    {
+                        await DisplayAlert("Ошибка", "Не удалось загрузить информацию о студенте", "OK");
+                    }
                 }
                 catch (Exception ex)
                 {

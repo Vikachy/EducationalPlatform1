@@ -21,33 +21,40 @@
 
                 <!-- АВАТАР -->
                 <Border Grid.Column="0"
-                    BackgroundColor="White"
-                    Stroke="{DynamicResource AccentColor}"
-                    StrokeThickness="2"
-                    StrokeShape="RoundRectangle 25"
-                    WidthRequest="{OnIdiom Default='45', Desktop='50'}"
-                    HeightRequest="{OnIdiom Default='45', Desktop='50'}"
-                    VerticalOptions="Center">
+                        x:Name="AvatarFrameBorder"
+                        BackgroundColor="White"
+                        Stroke="{DynamicResource AccentColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 25"
+                        WidthRequest="{OnIdiom Default='45', Desktop='50'}"
+                        HeightRequest="{OnIdiom Default='45', Desktop='50'}"
+                        VerticalOptions="Center">
                     <Image x:Name="AvatarImage"
-                        Source="default_avatar.png"
-                        Aspect="AspectFill"
-                        HorizontalOptions="Center"
-                        VerticalOptions="Center"
-                        WidthRequest="{OnIdiom Default='41', Desktop='46'}"
-                        HeightRequest="{OnIdiom Default='41', Desktop='46'}" />
+                           Source="default_avatar.png"
+                           Aspect="AspectFill"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           WidthRequest="{OnIdiom Default='41', Desktop='46'}"
+                           HeightRequest="{OnIdiom Default='41', Desktop='46'}" />
                 </Border>
 
-                <!-- ПРИВЕТСТВИЕ -->
+                <!-- ПРИВЕТСТВИЕ С ЭМОДЗИ -->
                 <VerticalStackLayout Grid.Column="1"
                                     Spacing="{OnIdiom Default='1', Desktop='2'}"
                                     Padding="{OnIdiom Default='8,0', Desktop='15,0'}"
                                     VerticalOptions="Center">
-                    <Label x:Name="WelcomeLabel"
-                           Text="Добро пожаловать!"
-                           FontSize="{OnIdiom Default='13', Desktop='16'}"
-                           TextColor="White"
-                           FontAttributes="Bold"
-                           LineBreakMode="TailTruncation" />
+                    <HorizontalStackLayout Spacing="5">
+                        <Label x:Name="WelcomeLabel"
+                               Text="Добро пожаловать!"
+                               FontSize="{OnIdiom Default='13', Desktop='16'}"
+                               TextColor="White"
+                               FontAttributes="Bold"
+                               LineBreakMode="TailTruncation" />
+                        <Label x:Name="UserEmojiLabel"
+                               FontSize="{OnIdiom Default='13', Desktop='16'}"
+                               TextColor="White"
+                               IsVisible="False" />
+                    </HorizontalStackLayout>
                     <Label x:Name="StatsLabel"
                            Text="Серия: 0 дней 🔥 | Валюта: 0"
                            FontSize="{OnIdiom Default='9', Desktop='12'}"
@@ -93,10 +100,9 @@
             </Grid>
         </Border>
 
-        <!-- ОСНОВНОЙ КОНТЕНТ (без изменений из предыдущей версии) -->
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Spacing="20" Padding="20">
-
 
                 <!-- МОИ АКТИВНЫЕ КУРСЫ -->
                 <Border BackgroundColor="{DynamicResource BackgroundColor}"
@@ -109,7 +115,8 @@
                                 StrokeThickness="0"
                                 Padding="20,15">
                             <VerticalStackLayout Spacing="10">
-                                <Label Text="Мои активные курсы"
+                                <Label x:Name="MyCoursesLabel"
+                                       Text="Мои активные курсы"
                                        FontSize="{OnIdiom Default='16', Desktop='18'}"
                                        TextColor="White"
                                        FontAttributes="Bold"
@@ -195,7 +202,8 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <Label Text="Быстрый доступ"
+                <Label x:Name="QuickActionsLabel"
+                       Text="Быстрый доступ"
                        FontSize="20"
                        TextColor="{DynamicResource TextColor}"
                        FontAttributes="Bold" />
@@ -321,13 +329,14 @@
                                 StrokeThickness="0"
                                 Padding="20,15">
                             <HorizontalStackLayout>
-                                <Label Text="Сегодняшние задачи"
+                                <Label x:Name="TodayTasksLabel"
+                                       Text="Сегодняшние задачи"
                                        FontSize="18"
                                        TextColor="White"
                                        FontAttributes="Bold"
                                        VerticalOptions="Center" />
                                 <Label x:Name="TodayTasksCountLabel"
-                                       Text="2/5 завершено"
+                                       Text="0/2 завершено"
                                        FontSize="14"
                                        TextColor="White"
                                        Margin="20,0,0,0"
@@ -376,45 +385,54 @@
                         </CollectionView>
                     </VerticalStackLayout>
                 </Border>
-                <!-- ПАНЕЛЬ УЧИТЕЛЯ (ТОЛЬКО ДЛЯ УЧИТЕЛЕЙ) -->
+
+                <!-- ПАНЕЛЬ УЧИТЕЛЯ -->
+                <!-- ПАНЕЛЬ УЧИТЕЛЯ -->
                 <Border x:Name="TeacherPanel"
-                BackgroundColor="{DynamicResource BackgroundColor}"
-                Stroke="{DynamicResource AccentColor}"
-                StrokeThickness="2"
-                StrokeShape="RoundRectangle 15"
-                IsVisible="False"
-                Padding="20">
-                    
+        BackgroundColor="{DynamicResource BackgroundColor}"
+        Stroke="{DynamicResource AccentColor}"
+        StrokeThickness="2"
+        StrokeShape="RoundRectangle 15"
+        IsVisible="False"
+        Padding="20">
                     <VerticalStackLayout Spacing="15">
                         <Label Text="Панель преподавателя"
-                   FontSize="18"
-                   FontAttributes="Bold"
-                   TextColor="{DynamicResource AccentColor}"
-                   HorizontalOptions="Center" />
-                        
-                        
+               FontSize="18"
+               FontAttributes="Bold"
+               TextColor="{DynamicResource AccentColor}"
+               HorizontalOptions="Center" />
+
+                        <!-- Кнопка для контент-менеджера -->
+                        <Button x:Name="ContentManagerButton"
+                Text="📰 Управление контентом" 
+                Clicked="OnContentManagerClicked"
+                BackgroundColor="#FF9800"
+                TextColor="White"
+                HeightRequest="40"
+                CornerRadius="20"
+                IsVisible="{Binding IsContentManager}" />
+
                         <Button Text="Управление контентом" 
-                    Clicked="OnManageCourseContentClicked"
-                    BackgroundColor="{DynamicResource PrimaryColor}"
-                    TextColor="White"
-                    HeightRequest="40"
-                    CornerRadius="20" />
-                        
+                Clicked="OnManageCourseContentClicked"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                TextColor="White"
+                HeightRequest="40"
+                CornerRadius="20" />
+
                         <Button Text="Управление курсами"
-        Clicked="OnTeacherManagementClicked"
-        BackgroundColor="{DynamicResource AccentColor}"
-        TextColor="White"
-        HeightRequest="40"
-        CornerRadius="20" />
+                Clicked="OnTeacherManagementClicked"
+                BackgroundColor="{DynamicResource AccentColor}"
+                TextColor="White"
+                HeightRequest="40"
+                CornerRadius="20" />
 
                         <Button Text="Учебные группы"
-        Clicked="OnTeacherGroupsClicked"
-        BackgroundColor="{DynamicResource PrimaryColor}"
-        TextColor="White"
-        HeightRequest="40"
-        CornerRadius="20" />
+                Clicked="OnTeacherGroupsClicked"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                TextColor="White"
+                HeightRequest="40"
+                CornerRadius="20" />
 
-                        <!-- ДОБАВЛЕННЫЕ КНОПКИ -->
                         <VerticalStackLayout Spacing="10" x:Name="TeacherButtonsLayout" IsVisible="False">
                             <Button Text="Создать тест" 
                     Clicked="OnCreateTestClicked"
@@ -422,14 +440,12 @@
                     TextColor="White"
                     HeightRequest="35"
                     CornerRadius="15"/>
-
                             <Button Text="Создать практику" 
                     Clicked="OnCreatePracticeClicked"
                     BackgroundColor="{DynamicResource SecondaryColor}"
                     TextColor="White"
                     HeightRequest="35"
                     CornerRadius="15"/>
-
                             <Button Text="Создать теорию" 
                     Clicked="OnCreateTheoryClicked"
                     BackgroundColor="{DynamicResource SecondaryColor}"
@@ -439,6 +455,7 @@
                         </VerticalStackLayout>
                     </VerticalStackLayout>
                 </Border>
+
                 <!-- ЛЕНТА НОВОСТЕЙ -->
                 <Border BackgroundColor="{DynamicResource BackgroundColor}"
                         Stroke="{DynamicResource PrimaryColor}"
@@ -452,6 +469,7 @@
                             <Grid ColumnDefinitions="{OnIdiom Default='*,Auto', Desktop='*,Auto'}"
                                   ColumnSpacing="{OnIdiom Default='10', Desktop='20'}">
                                 <Label Grid.Column="0"
+                                       x:Name="NewsLabel"
                                        Text="Последние новости"
                                        FontSize="{OnIdiom Default='16', Desktop='18'}"
                                        TextColor="White"
@@ -523,7 +541,6 @@
                                     TextColor="White"
                                     HeightRequest="50"
                                     CornerRadius="25" />
-
                             <Button Grid.Row="0" Grid.Column="1"
                                     Text="Новости"
                                     Clicked="OnNewsClicked"
@@ -531,7 +548,6 @@
                                     TextColor="White"
                                     HeightRequest="50"
                                     CornerRadius="25" />
-
                             <Button Grid.Row="1" Grid.Column="0"
                                     Text="Чат"
                                     Clicked="OnChatClicked"
@@ -539,7 +555,6 @@
                                     TextColor="White"
                                     HeightRequest="50"
                                     CornerRadius="25" />
-
                             <Button Grid.Row="1" Grid.Column="1"
                                     Text="Поддержка"
                                     Clicked="OnSupportClicked"

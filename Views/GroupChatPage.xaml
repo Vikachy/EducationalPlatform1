@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="EducationalPlatform.Views.GroupChatPage"
-             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:converters="clr-namespace:EducationalPlatform.Converters"
-             Title="Чат группы">
+             xmlns:models="clr-namespace:EducationalPlatform.Models"
+             x:Class="EducationalPlatform.Views.GroupChatPage"
+             Title="{Binding Title}"
+             BackgroundColor="{DynamicResource BackgroundColor}">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -11,286 +13,402 @@
             <converters:FileTypeToIconConverter x:Key="FileTypeToIconConverter" />
             <converters:NotNullConverter x:Key="NotNullConverter" />
             <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
+            <converters:MessageStatusColorConverter x:Key="MessageStatusColorConverter" />
+            <converters:OnlineStatusColorConverter x:Key="OnlineStatusColorConverter" />
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+            <converters:MoscowTimeConverter x:Key="MoscowTimeConverter" />
+            <converters:ColorConverter x:Key="ColorConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Header как в Telegram -->
+        <!-- Индикатор загрузки -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.RowSpan="3"
+              BackgroundColor="#80000000"
+              IsVisible="False">
+            <VerticalStackLayout Spacing="20"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center">
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="White"
+                                   HeightRequest="50"
+                                   WidthRequest="50"/>
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка сообщений..."
+                       TextColor="White"
+                       FontSize="16"/>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Header -->
         <Border Grid.Row="0" 
-                BackgroundColor="#2E86AB"
+                BackgroundColor="{DynamicResource PrimaryColor}"
                 StrokeThickness="0"
                 Padding="10">
-            <Grid ColumnDefinitions="Auto,*,Auto" 
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" 
                   VerticalOptions="Center"
-                  HeightRequest="50">
+                  HeightRequest="70">
 
                 <Button Grid.Column="0" 
                         Text="←" 
                         Clicked="OnBackClicked"
                         BackgroundColor="Transparent"
                         TextColor="White"
-                        FontSize="18"
-                        WidthRequest="40"
-                        HeightRequest="40"/>
+                        FontSize="20"
+                        WidthRequest="44"
+                        HeightRequest="44"/>
 
-                <VerticalStackLayout Grid.Column="1" 
-                                   Spacing="2"
-                                   HorizontalOptions="Start">
-                    <Label Text="{Binding Title}"
-                           FontSize="16"
-                           FontAttributes="Bold"
-                           TextColor="White" />
-                    <Label Text="онлайн"
-                           FontSize="12"
-                           TextColor="LightGray" />
-                </VerticalStackLayout>
+                <HorizontalStackLayout Grid.Column="1" 
+                                      Spacing="10"
+                                      HorizontalOptions="Start"
+                                      VerticalOptions="Center">
+
+                    <Border WidthRequest="50"
+                            HeightRequest="50"
+                            Stroke="White"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 25"
+                            BackgroundColor="White">
+                        <Image Source="{Binding GroupAvatarUrl, Converter={StaticResource AvatarConverter}}"
+                               Aspect="AspectFill"
+                               WidthRequest="46"
+                               HeightRequest="46" />
+                    </Border>
+
+                    <Button Text="✏️"
+                            Clicked="OnChangeGroupAvatarClicked"
+                            BackgroundColor="Transparent"
+                            TextColor="White"
+                            FontSize="14"
+                            WidthRequest="30"
+                            HeightRequest="30"
+                            IsVisible="{Binding IsTeacher}" />
+
+                    <VerticalStackLayout Spacing="2"
+                                       VerticalOptions="Center">
+                        <Label x:Name="ChatNameLabel"
+                               Text="{Binding GroupName}"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="White"
+                               LineBreakMode="TailTruncation" />
+                        <Label x:Name="OnlineStatusLabel"
+                               Text="{Binding OnlineStatus}"
+                               FontSize="11"
+                               TextColor="LightGray" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
 
                 <Button Grid.Column="2" 
+                        Text="🔍"
+                        Clicked="OnSearchClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="18"
+                        WidthRequest="44"
+                        HeightRequest="44"/>
+
+                <Button Grid.Column="3" 
                         Text="👥"
                         Clicked="OnMembersClicked"
                         BackgroundColor="Transparent"
                         TextColor="White"
-                        FontSize="16"
-                        WidthRequest="40"
-                        HeightRequest="40"/>
+                        FontSize="18"
+                        WidthRequest="44"
+                        HeightRequest="44"/>
             </Grid>
         </Border>
 
-        <!-- Messages -->
+        <!-- Messages Area -->
         <Grid Grid.Row="1">
-            <ActivityIndicator x:Name="LoadingIndicator"
-                              IsVisible="False"
-                              IsRunning="False"
-                              Color="{DynamicResource PrimaryColor}"
-                              VerticalOptions="Center"
-                              HorizontalOptions="Center" />
-            
-            <ScrollView>
-                <CollectionView x:Name="MessagesCollectionView"
-                                ItemsSource="{Binding Messages}"
-                                SelectionMode="None"
-                                VerticalScrollBarVisibility="Always">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Grid Padding="10,5"
-                          ColumnDefinitions="Auto,*,Auto">
-
-                        <!-- Other user's message -->
-                        <Frame Grid.Column="0"
-                               Grid.ColumnSpan="2"
-                               IsVisible="{Binding IsMyMessage, Converter={StaticResource InverseBoolConverter}}"
-                               BackgroundColor="#FFFFFF"
-                               Padding="12"
-                               HorizontalOptions="Start"
-                               MaximumWidthRequest="{OnPlatform WinUI=400, Default=280}"
-                               HasShadow="False"
-                               CornerRadius="18"
-                               BorderColor="#E0E0E0">
-                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" 
-                                  ColumnSpacing="8" RowSpacing="4">
-
-                                <!-- Avatar -->
-                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
-                                        BackgroundColor="LightGray"
-                                        Stroke="LightGray"
-                                        StrokeThickness="1"
-                                        StrokeShape="RoundRectangle 20"
-                                        WidthRequest="36"
-                                        HeightRequest="36"
-                                        VerticalOptions="Start">
-                                    <Image Source="{Binding SenderAvatar, Converter={StaticResource AvatarConverter}}"
-                                           Aspect="AspectFill"
-                                           HorizontalOptions="Center"
-                                           VerticalOptions="Center"
-                                           WidthRequest="32"
-                                           HeightRequest="32" />
-                                </Border>
-
-                                <!-- Sender Name with Emoji -->
-                                <HorizontalStackLayout Grid.Row="0" Grid.Column="1"
-                                                       Spacing="4"
-                                                       VerticalOptions="End">
-                                    <Label Text="{Binding SenderName}"
-                                           FontSize="12"
-                                           TextColor="#2E86AB"
-                                           FontAttributes="Bold" />
-                                    <Label Text="{Binding UserEmoji}"
-                                           FontSize="14"
-                                           IsVisible="{Binding UserEmoji, Converter={StaticResource NotNullConverter}}"
-                                           VerticalOptions="Center" />
-                                </HorizontalStackLayout>
-
-                                <!-- Message Text or File -->
-                                <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
-                                    <!-- Text Message -->
-                                    <Label Text="{Binding MessageText}"
-                                           TextColor="{DynamicResource TextColor}"
-                                           FontSize="14"
-                                           LineBreakMode="WordWrap"
-                                           IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
-
-                                    <!-- File Message -->
-                                    <Border BackgroundColor="#E8F4F8"
-                                            Stroke="#2E86AB"
-                                            StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 8"
-                                            Padding="10"
-                                            IsVisible="{Binding IsFileMessage}">
-                                        <Border.GestureRecognizers>
-                                            <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
-                                        </Border.GestureRecognizers>
-                                        <Grid ColumnDefinitions="Auto,*" 
-                                              ColumnSpacing="8">
-                                            <Label Grid.Column="0"
-                                                   Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
-                                                   FontSize="20"
-                                                   VerticalOptions="Center" />
-                                            <VerticalStackLayout Grid.Column="1">
-                                                <Label Text="{Binding FileName}"
-                                                       FontSize="13"
-                                                       FontAttributes="Bold"
-                                                       LineBreakMode="TailTruncation"
-                                                       TextColor="#2E86AB" />
-                                                <Label Text="{Binding FileSize}"
-                                                       FontSize="11"
-                                                       TextColor="Gray" />
-                                            </VerticalStackLayout>
-                                        </Grid>
+            <ScrollView x:Name="MessagesScrollView"
+                       Scrolled="OnMessagesScrolled">
+                <VerticalStackLayout>
+                    <CollectionView x:Name="MessagesCollectionView"
+                                    ItemsSource="{Binding GroupedMessages}"
+                                    SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:GroupedGroupMessages">
+                                <VerticalStackLayout>
+                                    <Border HorizontalOptions="Center"
+                                            BackgroundColor="#E0E0E0"
+                                            Padding="10,5"
+                                            Margin="0,10"
+                                            StrokeShape="RoundRectangle 15">
+                                        <Label Text="{Binding Date}"
+                                               FontSize="11"
+                                               TextColor="#666"
+                                               FontAttributes="Bold" />
                                     </Border>
+
+                                    <CollectionView ItemsSource="{Binding Messages}"
+                                                    SelectionMode="None">
+                                        <CollectionView.ItemTemplate>
+                                            <DataTemplate x:DataType="models:GroupChatMessage">
+                                                <Grid Padding="10,5"
+                                                      ColumnDefinitions="Auto,*,Auto">
+
+                                                    <!-- Other user's message -->
+                                                    <Frame Grid.Column="0"
+                                                           Grid.ColumnSpan="2"
+                                                           IsVisible="{Binding IsMyMessage, Converter={StaticResource InverseBoolConverter}}"
+                                                           BackgroundColor="#FFFFFF"
+                                                           Padding="12"
+                                                           HorizontalOptions="Start"
+                                                           MaximumWidthRequest="300"
+                                                           HasShadow="False"
+                                                           CornerRadius="18"
+                                                           BorderColor="#E0E0E0">
+                                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" 
+                                                              ColumnSpacing="8" RowSpacing="2">
+
+                                                            <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="0"
+                                                                    BackgroundColor="White"
+                                                                    Stroke="{Binding SenderFrameColor, Converter={StaticResource ColorConverter}}"
+                                                                    StrokeThickness="2"
+                                                                    StrokeShape="RoundRectangle 20"
+                                                                    WidthRequest="40"
+                                                                    HeightRequest="40"
+                                                                    VerticalOptions="Start">
+                                                                <Image Source="{Binding SenderAvatar, Converter={StaticResource AvatarConverter}}"
+                                                                       Aspect="AspectFill"
+                                                                       WidthRequest="36"
+                                                                       HeightRequest="36" />
+                                                            </Border>
+
+                                                            <HorizontalStackLayout Grid.Row="0" Grid.Column="1"
+                                                                                   Spacing="4"
+                                                                                   VerticalOptions="End">
+                                                                <Label Text="{Binding SenderName}"
+                                                                       FontSize="12"
+                                                                       TextColor="#2E86AB"
+                                                                       FontAttributes="Bold" />
+                                                                <Label Text="{Binding UserEmoji}"
+                                                                       FontSize="14"
+                                                                       IsVisible="{Binding UserEmoji, Converter={StaticResource NotNullConverter}}" />
+                                                            </HorizontalStackLayout>
+
+                                                            <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="2">
+                                                                <Label Text="{Binding MessageText}"
+                                                                       TextColor="#000000"
+                                                                       FontSize="14"
+                                                                       LineBreakMode="WordWrap"
+                                                                       IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
+
+                                                                <Border BackgroundColor="#E8F4F8"
+                                                                        Stroke="#2E86AB"
+                                                                        StrokeThickness="1"
+                                                                        StrokeShape="RoundRectangle 8"
+                                                                        Padding="10"
+                                                                        IsVisible="{Binding IsFileMessage}">
+                                                                    <Border.GestureRecognizers>
+                                                                        <TapGestureRecognizer Tapped="OnFileMessageTapped" 
+                                                                                             CommandParameter="{Binding .}" />
+                                                                    </Border.GestureRecognizers>
+                                                                    <Grid ColumnDefinitions="Auto,*" 
+                                                                          ColumnSpacing="8">
+                                                                        <Label Grid.Column="0"
+                                                                               Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
+                                                                               FontSize="20"
+                                                                               VerticalOptions="Center" />
+                                                                        <VerticalStackLayout Grid.Column="1">
+                                                                            <Label Text="{Binding FileName}"
+                                                                                   FontSize="13"
+                                                                                   FontAttributes="Bold"
+                                                                                   LineBreakMode="TailTruncation"
+                                                                                   TextColor="#2E86AB" />
+                                                                            <Label Text="{Binding FileSize}"
+                                                                                   FontSize="11"
+                                                                                   TextColor="Gray" />
+                                                                        </VerticalStackLayout>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </VerticalStackLayout>
+
+                                                            <HorizontalStackLayout Grid.Row="2" Grid.Column="1"
+                                                                                  HorizontalOptions="End"
+                                                                                  Spacing="4"
+                                                                                  VerticalOptions="End">
+                                                                <Label Text="{Binding SentAt, Converter={StaticResource MoscowTimeConverter}}"
+                                                                       FontSize="10"
+                                                                       TextColor="Gray" />
+                                                            </HorizontalStackLayout>
+                                                        </Grid>
+                                                    </Frame>
+
+                                                    <!-- My message -->
+                                                    <Frame Grid.Column="1"
+                                                           Grid.ColumnSpan="2"
+                                                           IsVisible="{Binding IsMyMessage}"
+                                                           BackgroundColor="#DCF8C6"
+                                                           Padding="12"
+                                                           HorizontalOptions="End"
+                                                           MaximumWidthRequest="300"
+                                                           HasShadow="False"
+                                                           CornerRadius="18">
+                                                        <Grid RowDefinitions="Auto,Auto" 
+                                                              ColumnDefinitions="*,Auto"
+                                                              RowSpacing="4">
+
+                                                            <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
+                                                                <Label Text="{Binding MessageText}"
+                                                                       TextColor="#000000"
+                                                                       FontSize="14"
+                                                                       LineBreakMode="WordWrap"
+                                                                       IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
+
+                                                                <Border BackgroundColor="#E8F4F8"
+                                                                        Stroke="#2E86AB"
+                                                                        StrokeThickness="1"
+                                                                        StrokeShape="RoundRectangle 8"
+                                                                        Padding="10"
+                                                                        IsVisible="{Binding IsFileMessage}">
+                                                                    <Border.GestureRecognizers>
+                                                                        <TapGestureRecognizer Tapped="OnFileMessageTapped" 
+                                                                                             CommandParameter="{Binding .}" />
+                                                                    </Border.GestureRecognizers>
+                                                                    <Grid ColumnDefinitions="Auto,*" 
+                                                                          ColumnSpacing="8">
+                                                                        <Label Grid.Column="0"
+                                                                               Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
+                                                                               FontSize="20"
+                                                                               VerticalOptions="Center" />
+                                                                        <VerticalStackLayout Grid.Column="1">
+                                                                            <Label Text="{Binding FileName}"
+                                                                                   FontSize="13"
+                                                                                   FontAttributes="Bold"
+                                                                                   LineBreakMode="TailTruncation"
+                                                                                   TextColor="#2E86AB" />
+                                                                            <Label Text="{Binding FileSize}"
+                                                                                   FontSize="11"
+                                                                                   TextColor="#666666" />
+                                                                        </VerticalStackLayout>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </VerticalStackLayout>
+
+                                                            <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                                                  HorizontalOptions="End"
+                                                                                  Spacing="4"
+                                                                                  VerticalOptions="End">
+                                                                <Label Text="{Binding SentAt, Converter={StaticResource MoscowTimeConverter}}"
+                                                                       FontSize="10"
+                                                                       TextColor="#666666" />
+                                                                <Label Text="{Binding MessageStatus}"
+                                                                       FontSize="10"
+                                                                       TextColor="{Binding StatusColor}"
+                                                                       FontAttributes="Bold" />
+                                                            </HorizontalStackLayout>
+                                                        </Grid>
+                                                    </Frame>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </CollectionView.ItemTemplate>
+                                    </CollectionView>
                                 </VerticalStackLayout>
-
-                                <!-- Time -->
-                                <Label Grid.Row="1" Grid.Column="1"
-                                       Text="{Binding SentDate, StringFormat='{0:HH:mm}'}"
-                                       FontSize="10"
-                                       TextColor="Gray"
-                                       HorizontalOptions="End"
-                                       VerticalOptions="End" />
-                            </Grid>
-                        </Frame>
-
-                        <!-- My message -->
-                        <Frame Grid.Column="1"
-                               Grid.ColumnSpan="2"
-                               IsVisible="{Binding IsMyMessage}"
-                               BackgroundColor="#DCF8C6"
-                               Padding="12"
-                               HorizontalOptions="End"
-                               MaximumWidthRequest="{OnPlatform WinUI=400, Default=280}"
-                               HasShadow="False"
-                               CornerRadius="18">
-                            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto"
-                                  RowSpacing="4">
-
-                                <!-- Message Text or File -->
-                                <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="4">
-                                    <!-- Text Message -->
-                                    <Label Text="{Binding MessageText}"
-                                           TextColor="#000000"
-                                           FontSize="14"
-                                           LineBreakMode="WordWrap"
-                                           IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
-
-                                    <!-- File Message -->
-                                    <Border BackgroundColor="#E8F4F8"
-                                            Stroke="#2E86AB"
-                                            StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 8"
-                                            Padding="10"
-                                            IsVisible="{Binding IsFileMessage}">
-                                        <Border.GestureRecognizers>
-                                            <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
-                                        </Border.GestureRecognizers>
-                                        <Grid ColumnDefinitions="Auto,*" 
-                                              ColumnSpacing="8">
-                                            <Label Grid.Column="0"
-                                                   Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}"
-                                                   FontSize="20"
-                                                   VerticalOptions="Center" />
-                                            <VerticalStackLayout Grid.Column="1">
-                                                <Label Text="{Binding FileName}"
-                                                       FontSize="13"
-                                                       FontAttributes="Bold"
-                                                       LineBreakMode="TailTruncation"
-                                                       TextColor="#2E86AB" />
-                                                <Label Text="{Binding FileSize}"
-                                                       FontSize="11"
-                                                       TextColor="#666666" />
-                                            </VerticalStackLayout>
-                                        </Grid>
-                                    </Border>
-                                </VerticalStackLayout>
-
-                                <!-- Time and Status -->
-                                <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                                      HorizontalOptions="End"
-                                                      Spacing="4"
-                                                      VerticalOptions="End">
-                                    <Label Text="{Binding SentDate, StringFormat='{0:HH:mm}'}"
-                                           FontSize="10"
-                                           TextColor="#666666" />
-                                    <Label Text="✓✓"
-                                           FontSize="10"
-                                           TextColor="#34B7F1"
-                                           IsVisible="{Binding IsDelivered}" />
-                                </HorizontalStackLayout>
-                            </Grid>
-                        </Frame>
-                    </Grid>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-            </CollectionView>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
             </ScrollView>
+
+            <Border x:Name="ScrollToBottomButton"
+                    BackgroundColor="{DynamicResource PrimaryColor}"
+                    WidthRequest="44"
+                    HeightRequest="44"
+                    StrokeShape="RoundRectangle 22"
+                    HorizontalOptions="End"
+                    VerticalOptions="End"
+                    Margin="0,0,20,20"
+                    IsVisible="False">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnScrollToBottomClicked" />
+                </Border.GestureRecognizers>
+                <Label Text="⬇️"
+                       FontSize="20"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Border>
         </Grid>
 
-        <!-- Message Input как в Telegram -->
+        <Border x:Name="TypingIndicator"
+                Grid.Row="2"
+                BackgroundColor="#F0F0F0"
+                Padding="10,5"
+                IsVisible="False">
+            <HorizontalStackLayout Spacing="5">
+                <Label Text="✏️"
+                       FontSize="14" />
+                <Label x:Name="TypingLabel"
+                       Text="Кто-то печатает..."
+                       FontSize="12"
+                       TextColor="Gray" />
+            </HorizontalStackLayout>
+        </Border>
+
         <Border Grid.Row="2"
                 BackgroundColor="White"
                 Stroke="#E0E0E0"
                 StrokeThickness="1"
                 Padding="10">
-            <Grid ColumnDefinitions="*,Auto,Auto" 
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" 
                   ColumnSpacing="8"
                   VerticalOptions="Center">
 
-                <!-- Поле ввода -->
-                <Frame Grid.Column="0"
-                       BackgroundColor="#F1F1F1"
-                       Padding="12"
-                       HasShadow="False"
-                       CornerRadius="20">
-                    <Entry x:Name="MessageEntry"
-                           Placeholder="Сообщение..."
-                           Completed="OnMessageSent"
-                           BackgroundColor="Transparent" />
-                </Frame>
-
-                <Button Grid.Column="1"
-                        Text="📎"
-                        Clicked="OnAttachFileClicked"
+                <Button Grid.Column="0"
+                        Text="➕"
+                        Clicked="OnAttachMenuClicked"
                         BackgroundColor="Transparent"
-                        TextColor="#2E86AB"
+                        TextColor="{DynamicResource PrimaryColor}"
                         MinimumWidthRequest="44"
                         MinimumHeightRequest="44"
                         WidthRequest="44"
                         HeightRequest="44"
-                        FontSize="16" />
+                        FontSize="18" />
+
+                <Frame Grid.Column="1"
+                       BackgroundColor="#F1F1F1"
+                       Padding="0"
+                       HasShadow="False"
+                       HeightRequest="44">
+                    <Entry x:Name="MessageEntry"
+                           Placeholder="Сообщение..."
+                           TextChanged="OnMessageTextChanged"
+                           Completed="OnMessageSent"
+                           BackgroundColor="Transparent"
+                           Margin="15,0"
+                           FontSize="14"
+                           HorizontalOptions="Fill"
+                           VerticalOptions="Center" />
+                </Frame>
 
                 <Button Grid.Column="2"
+                        Text="😊"
+                        Clicked="OnEmojiClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        MinimumWidthRequest="44"
+                        MinimumHeightRequest="44"
+                        WidthRequest="44"
+                        HeightRequest="44"
+                        FontSize="18" />
+
+                <Button Grid.Column="3"
                         Text="➤"
                         Clicked="OnSendMessageClicked"
-                        BackgroundColor="#2E86AB"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
                         TextColor="White"
                         MinimumWidthRequest="44"
                         MinimumHeightRequest="44"
                         WidthRequest="44"
                         HeightRequest="44"
-                        CornerRadius="22"
                         FontSize="16"
                         FontAttributes="Bold" />
             </Grid>
         </Border>
-
     </Grid>
 </ContentPage>

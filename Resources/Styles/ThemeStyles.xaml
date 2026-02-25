@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                    x:Class="EducationalPlatform.Resources.Styles.ThemeStyles">
+
+    <!-- Базовые цвета (будут переопределяться динамически) -->
+    <Color x:Key="PrimaryColor">#457b9d</Color>
+    <Color x:Key="SecondaryColor">#1d3557</Color>
+    <Color x:Key="BackgroundColor">#f1faee</Color>
+    <Color x:Key="AccentColor">#e63946</Color>
+    <Color x:Key="DangerColor">#e63946</Color>
+    <Color x:Key="TextColor">#1d3557</Color>
+    <Color x:Key="LightTextColor">#f1faee</Color>
+
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+
+    <Style x:Key="SecondaryButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource SecondaryColor}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <Style x:Key="AccentButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource AccentColor}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <!-- Базовые цвета которые могут использоваться -->
+    <Color x:Key="White">#FFFFFF</Color>
+    <Color x:Key="Black">#000000</Color>
+    <Color x:Key="Gray100">#F5F5F5</Color>
+    <Color x:Key="Gray300">#E0E0E0</Color>
+    <Color x:Key="Gray600">#757575</Color>
+
+    <Style x:Key="LabelStyle" TargetType="Label">
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+    </Style>
+
+    <Style x:Key="EntryStyle" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="{DynamicResource White}" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource Gray600}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="HeightRequest" Value="45" />
+    </Style>
+
+    <Style x:Key="ButtonStyle" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="TextColor" Value="{DynamicResource LightTextColor}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="45" />
+    </Style>
+
+    <Style x:Key="FrameStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundColor}" />
+        <Setter Property="Stroke" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="10" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PickerStyle" TargetType="Picker">
+        <Setter Property="BackgroundColor" Value="{DynamicResource White}" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="TitleColor" Value="{DynamicResource Gray600}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="HeightRequest" Value="45" />
+    </Style>
+
+    <Style x:Key="EditorStyle" TargetType="Editor">
+        <Setter Property="BackgroundColor" Value="{DynamicResource White}" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource Gray600}" />
+        <Setter Property="FontFamily" Value="OpenSans-Regular" />
+        <Setter Property="AutoSize" Value="TextChanges" />
+    </Style>
+
+
+    <!-- Стили для лейблов -->
+    <Style x:Key="TitleLabel" TargetType="Label">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{DynamicResource TextColor}" />
+    </Style>
+
+    <Style x:Key="SubtitleLabel" TargetType="Label">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{DynamicResource SecondaryColor}" />
+    </Style>
+
+    <!-- Стили для рамок -->
+    <Style x:Key="CardBorder" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundColor}" />
+        <Setter Property="Stroke" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 15" />
+    </Style>
+
+</ResourceDictionary>

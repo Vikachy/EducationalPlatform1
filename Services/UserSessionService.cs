@@ -47,6 +47,13 @@ namespace EducationalPlatform.Services
                 AvatarData = avatarData
             });
         }
+
+        // ИСПРАВЛЕНО: используем RaiseAvatarChanged вместо OnAvatarChanged
+        // или можно сделать так:
+        public static void OnAvatarChanged(int userId, string? avatarData)
+        {
+            RaiseAvatarChanged(userId, avatarData);
+        }
     }
 
     /// <summary>
@@ -56,7 +63,14 @@ namespace EducationalPlatform.Services
     {
         public int UserId { get; init; }
         public string? AvatarData { get; init; }
+
+        // Добавляем конструктор для обратной совместимости
+        public AvatarChangedEventArgs() { }
+
+        public AvatarChangedEventArgs(int userId, string? avatarData)
+        {
+            UserId = userId;
+            AvatarData = avatarData;
+        }
     }
 }
-
-

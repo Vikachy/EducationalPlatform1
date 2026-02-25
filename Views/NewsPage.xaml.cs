@@ -1,63 +1,175 @@
 using System.Collections.ObjectModel;
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace EducationalPlatform.Views
 {
-    public partial class NewsPage : ContentPage
+    public partial class NewsPage : ContentPage, INotifyPropertyChanged
     {
         private readonly User _currentUser;
         private readonly DatabaseService _dbService;
         private readonly SettingsService _settingsService;
         private readonly LocalizationService _localizationService;
         private string _currentFilter = "all";
+        private string _searchText = "";
+        private List<News> _allNews = new();
 
         public ObservableCollection<News> NewsItems { get; set; } = new();
 
+        private string _title;
+        public new string Title
+        {
+            get => _title;
+            set
+            {
+                if (_title != value)
+                {
+                    _title = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public bool CanManageNews => _currentUser.RoleId == 4 || _currentUser.RoleId == 3; // ContentManager or Admin
+
         public NewsPage(User currentUser, DatabaseService dbService, SettingsService settingsService)
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка инициализации NewsPage: {ex.Message}");
+            }
+
             _currentUser = currentUser;
             _dbService = dbService;
             _settingsService = settingsService;
-            _localizationService = ServiceHelper.GetService<LocalizationService>();
+            _localizationService = App.AppLocalization;
 
             BindingContext = this;
 
-            // Показываем кнопку создания новости только для контент-менеджеров
-            if (_currentUser.RoleName == "ContentManager")
+            // Показываем кнопку создания новости только для контент-менеджеров и админов
+            if (CanManageNews)
             {
                 CreateNewsButton.IsVisible = true;
             }
 
+            UpdateTexts();
             LoadNews();
+
+        }
+
+        private void UpdateTexts()
+        {
+            Title = _localizationService.GetText("News") ?? "Новости";
+
+            if (HeaderLabel != null)
+                HeaderLabel.Text = _localizationService.GetText("PlatformNews") ?? "Новости платформы";
+
+            if (SearchBar != null)
+                SearchBar.Placeholder = _localizationService.GetText("SearchNews") ?? "Поиск новостей...";
+
+            if (AllButton != null)
+                AllButton.Text = _localizationService.GetText("All") ?? "📰 Все";
+
+            if (CoursesButton != null)
+                CoursesButton.Text = _localizationService.GetText("Courses") ?? "📚 Курсы";
+
+            if (ContestsButton != null)
+                ContestsButton.Text = _localizationService.GetText("Contests") ?? "🏆 Конкурсы";
+
+            if (SystemButton != null)
+                SystemButton.Text = _localizationService.GetText("System") ?? "⚙️ Система";
+
+            if (LoadingLabel != null)
+                LoadingLabel.Text = _localizationService.GetText("Loading") ?? "Загрузка...";
         }
 
         private async void LoadNews()
         {
             try
             {
-                var languageCode = _currentUser.LanguagePref ?? "ru";
-                var news = await _dbService.GetNewsAsync(languageCode, _currentUser.InterfaceStyle == "teen");
-
-                // Фильтруем новости по категории
-                var filteredNews = _currentFilter switch
+                // Показываем индикатор загрузки
+                if (LoadingOverlay != null)
                 {
-                    "courses" => news.Where(n => n.Title.Contains("курс") || n.Title.Contains("course")).ToList(),
-                    "contests" => news.Where(n => n.Title.Contains("конкурс") || n.Title.Contains("contest")).ToList(),
-                    "system" => news.Where(n => n.Title.Contains("система") || n.Title.Contains("system")).ToList(),
-                    _ => news.ToList()
-                };
-
-                NewsItems.Clear();
-                foreach (var item in filteredNews)
-                {
-                    NewsItems.Add(item);
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        LoadingOverlay.IsVisible = true;
+                    });
                 }
+
+                var languageCode = _currentUser.LanguagePref ?? "ru";
+                var forTeens = _currentUser.InterfaceStyle == "teen";
+
+                // Загружаем все новости
+                _allNews = await _dbService.GetAllNewsAsync(languageCode, forTeens);
+
+                Console.WriteLine($"✅ Загружено {_allNews.Count} новостей");
+
+                ApplyFilters();
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка загрузки новостей: {ex.Message}", "OK");
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    await DisplayAlert(_localizationService.GetText("Error") ?? "Ошибка",
+                        $"{_localizationService.GetText("FailedToLoadNews") ?? "Ошибка загрузки новостей"}: {ex.Message}",
+                        _localizationService.GetText("OK") ?? "OK");
+                });
+            }
+            finally
+            {
+                if (LoadingOverlay != null)
+                {
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        LoadingOverlay.IsVisible = false;
+                    });
+                }
+            }
+        }
+
+        private void ApplyFilters()
+        {
+            try
+            {
+                // Сначала фильтруем по категории
+                var filtered = _currentFilter switch
+                {
+                    "courses" => _allNews.Where(n => n.Category == "courses").ToList(),
+                    "contests" => _allNews.Where(n => n.Category == "contests").ToList(),
+                    "system" => _allNews.Where(n => n.Category == "system").ToList(),
+                    _ => _allNews.ToList()
+                };
+
+                // Затем по поисковому запросу
+                if (!string.IsNullOrWhiteSpace(_searchText))
+                {
+                    var searchLower = _searchText.ToLower();
+                    filtered = filtered.Where(n =>
+                        n.Title.ToLower().Contains(searchLower) ||
+                        n.Content.ToLower().Contains(searchLower) ||
+                        (n.Summary != null && n.Summary.ToLower().Contains(searchLower))
+                    ).ToList();
+                }
+
+                // Обновляем коллекцию
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    NewsItems.Clear();
+                    foreach (var item in filtered)
+                    {
+                        NewsItems.Add(item);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка применения фильтров: {ex.Message}");
             }
         }
 
@@ -65,8 +177,30 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button button && button.CommandParameter is int newsId)
             {
-                // Временная заглушка
-                await DisplayAlert("Новость", "Детальная страница новости будет добавлена позже", "OK");
+                try
+                {
+                    if (LoadingOverlay != null)
+                        LoadingOverlay.IsVisible = true;
+
+                    var news = await _dbService.GetNewsByIdAsync(newsId);
+
+                    if (news != null)
+                    {
+                        // Открываем детальную страницу новости
+                        await Navigation.PushAsync(new NewsDetailPage(news, _currentUser, _dbService, _settingsService));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert(_localizationService.GetText("Error") ?? "Ошибка",
+                        ex.Message,
+                        _localizationService.GetText("OK") ?? "OK");
+                }
+                finally
+                {
+                    if (LoadingOverlay != null)
+                        LoadingOverlay.IsVisible = false;
+                }
             }
         }
 
@@ -77,8 +211,85 @@ namespace EducationalPlatform.Views
 
         private async void OnCreateNewsClicked(object sender, EventArgs e)
         {
-            // Временная заглушка
-            await DisplayAlert("Создание новости", "Функция создания новостей будет добавлена позже", "OK");
+            try
+            {
+                await Navigation.PushAsync(new CreateNewsPage(_currentUser, _dbService, _settingsService));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert(_localizationService.GetText("Error") ?? "Ошибка",
+                    ex.Message,
+                    _localizationService.GetText("OK") ?? "OK");
+            }
+        }
+
+        private async void OnEditNewsClicked(object sender, EventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is int newsId)
+            {
+                try
+                {
+                    var news = _allNews.FirstOrDefault(n => n.NewsId == newsId);
+                    if (news != null)
+                    {
+                        await Navigation.PushAsync(new EditNewsPage(news, _currentUser, _dbService, _settingsService));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert(_localizationService.GetText("Error") ?? "Ошибка",
+                        ex.Message,
+                        _localizationService.GetText("OK") ?? "OK");
+                }
+            }
+        }
+
+        private async void OnDeleteNewsClicked(object sender, EventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is int newsId)
+            {
+                try
+                {
+                    bool confirm = await DisplayAlert(
+                        _localizationService.GetText("Confirm") ?? "Подтверждение",
+                        _localizationService.GetText("ConfirmDeleteNews") ?? "Вы уверены, что хотите удалить эту новость?",
+                        _localizationService.GetText("Yes") ?? "Да",
+                        _localizationService.GetText("No") ?? "Нет");
+
+                    if (confirm)
+                    {
+                        if (LoadingOverlay != null)
+                            LoadingOverlay.IsVisible = true;
+
+                        bool success = await _dbService.DeleteNewsAsync(newsId);
+
+                        if (success)
+                        {
+                            await DisplayAlert(_localizationService.GetText("Success") ?? "Успех",
+                                _localizationService.GetText("NewsDeleted") ?? "Новость удалена",
+                                _localizationService.GetText("OK") ?? "OK");
+                            LoadNews();
+                        }
+                        else
+                        {
+                            await DisplayAlert(_localizationService.GetText("Error") ?? "Ошибка",
+                                _localizationService.GetText("FailedToDeleteNews") ?? "Не удалось удалить новость",
+                                _localizationService.GetText("OK") ?? "OK");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlert(_localizationService.GetText("Error") ?? "Ошибка",
+                        ex.Message,
+                        _localizationService.GetText("OK") ?? "OK");
+                }
+                finally
+                {
+                    if (LoadingOverlay != null)
+                        LoadingOverlay.IsVisible = false;
+                }
+            }
         }
 
         private void OnFilterClicked(object sender, EventArgs e)
@@ -86,50 +297,71 @@ namespace EducationalPlatform.Views
             if (sender is Button button)
             {
                 // Сбрасываем все кнопки
-                AllButton.BackgroundColor = Color.FromArgb("#F5F5F5");
-                AllButton.TextColor = Color.FromArgb("#2E86AB");
-                AllButton.BorderColor = Color.FromArgb("#2E86AB");
-                AllButton.BorderWidth = 1;
-
-                CoursesButton.BackgroundColor = Color.FromArgb("#F5F5F5");
-                CoursesButton.TextColor = Color.FromArgb("#2E86AB");
-                CoursesButton.BorderColor = Color.FromArgb("#2E86AB");
-                CoursesButton.BorderWidth = 1;
-
-                ContestsButton.BackgroundColor = Color.FromArgb("#F5F5F5");
-                ContestsButton.TextColor = Color.FromArgb("#2E86AB");
-                ContestsButton.BorderColor = Color.FromArgb("#2E86AB");
-                ContestsButton.BorderWidth = 1;
-
-                SystemButton.BackgroundColor = Color.FromArgb("#F5F5F5");
-                SystemButton.TextColor = Color.FromArgb("#2E86AB");
-                SystemButton.BorderColor = Color.FromArgb("#2E86AB");
-                SystemButton.BorderWidth = 1;
+                ResetFilterButtons();
 
                 // Выделяем выбранную кнопку
-                button.BackgroundColor = Color.FromArgb("#2E86AB");
+                button.BackgroundColor = (Color)Application.Current.Resources["PrimaryColor"];
                 button.TextColor = Colors.White;
-                button.BorderColor = Color.FromArgb("#2E86AB");
+                button.BorderColor = (Color)Application.Current.Resources["PrimaryColor"];
                 button.BorderWidth = 0;
 
                 // Устанавливаем фильтр
-                _currentFilter = button.Text.ToLower() switch
+                _currentFilter = button.Text switch
                 {
-                    "все" => "all",
-                    "курсы" => "courses",
-                    "конкурсы" => "contests",
-                    "система" => "system",
+                    string s when s.Contains("Курсы") || s.Contains("Courses") => "courses",
+                    string s when s.Contains("Конкурсы") || s.Contains("Contests") => "contests",
+                    string s when s.Contains("Система") || s.Contains("System") => "system",
                     _ => "all"
                 };
 
-                LoadNews();
+                ApplyFilters();
             }
+        }
+
+        private void ResetFilterButtons()
+        {
+            AllButton.BackgroundColor = Colors.Transparent;
+            AllButton.TextColor = (Color)Application.Current.Resources["PrimaryColor"];
+            AllButton.BorderColor = (Color)Application.Current.Resources["PrimaryColor"];
+            AllButton.BorderWidth = 1;
+
+            CoursesButton.BackgroundColor = Colors.Transparent;
+            CoursesButton.TextColor = (Color)Application.Current.Resources["PrimaryColor"];
+            CoursesButton.BorderColor = (Color)Application.Current.Resources["PrimaryColor"];
+            CoursesButton.BorderWidth = 1;
+
+            ContestsButton.BackgroundColor = Colors.Transparent;
+            ContestsButton.TextColor = (Color)Application.Current.Resources["PrimaryColor"];
+            ContestsButton.BorderColor = (Color)Application.Current.Resources["PrimaryColor"];
+            ContestsButton.BorderWidth = 1;
+
+            SystemButton.BackgroundColor = Colors.Transparent;
+            SystemButton.TextColor = (Color)Application.Current.Resources["PrimaryColor"];
+            SystemButton.BorderColor = (Color)Application.Current.Resources["PrimaryColor"];
+            SystemButton.BorderWidth = 1;
+        }
+
+        private void OnSearchButtonPressed(object sender, EventArgs e)
+        {
+            _searchText = SearchBar.Text ?? "";
+            ApplyFilters();
+        }
+
+        private async void OnBackClicked(object sender, EventArgs e)
+        {
+            await Navigation.PopAsync();
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
             LoadNews();
+        }
+
+        public new event PropertyChangedEventHandler? PropertyChanged;
+        protected new void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

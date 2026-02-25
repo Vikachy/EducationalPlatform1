@@ -6,12 +6,16 @@ namespace EducationalPlatform.Converters
     {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            return value is bool boolValue ? !boolValue : value;
+            if (value is bool boolValue)
+                return !boolValue;
+            return true;
         }
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            return value is bool boolValue ? !boolValue : value;
+            if (value is bool boolValue)
+                return !boolValue;
+            return true;
         }
     }
 }

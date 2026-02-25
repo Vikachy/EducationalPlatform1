@@ -30,14 +30,18 @@ namespace EducationalPlatform.Models
     {
         public int GroupId { get; set; }
         public string GroupName { get; set; } = string.Empty;
-        public int TeacherId { get; set; }
         public int CourseId { get; set; }
+        public string? CourseName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public bool IsActive { get; set; } = true;
-        public int MaxStudents { get; set; }
-        public int StudentCount { get; set; }
-        public string CourseName { get; set; } = string.Empty; 
+        public int StudentCount { get; set; } = 0; // Обычный int, не nullable
+        public int? TeacherId { get; set; }
+        public User? Teacher { get; set; }
+        public string? AvatarUrl { get; set; }
 
+
+        // Для UI
+        public string DisplayAvatar => !string.IsNullOrEmpty(AvatarUrl) ? AvatarUrl : "default_group.png";
     }
 }

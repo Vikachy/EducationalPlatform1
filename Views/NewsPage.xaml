@@ -2,135 +2,304 @@
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:converters="clr-namespace:EducationalPlatform.Converters"
     x:Class="EducationalPlatform.Views.NewsPage"
-    Title="Новости"
+    x:Name="NewsPageRoot"
+    Title="{Binding Title}"
     BackgroundColor="{DynamicResource BackgroundColor}">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="20">
-            <!-- Заголовок -->
-            <Label Text="Новости платформы"
-                   FontSize="28"
-                   HorizontalOptions="Center"
-                   TextColor="#2E86AB"
-                   FontAttributes="Bold" />
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
-            <!-- Поиск -->
-            <SearchBar x:Name="SearchBar"
-                       Placeholder="Поиск новостей..." />
+    <Grid RowDefinitions="Auto,*">
+        <!-- Индикатор загрузки -->
+        <Grid x:Name="LoadingOverlay" 
+              Grid.RowSpan="2" 
+              IsVisible="False" 
+              BackgroundColor="#80000000">
+            <VerticalStackLayout HorizontalOptions="Center" 
+                                 VerticalOptions="Center" 
+                                 Spacing="20">
+                <ActivityIndicator IsRunning="True" 
+                                  Color="White" 
+                                  WidthRequest="60" 
+                                  HeightRequest="60" />
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка..." 
+                       TextColor="White" 
+                       FontSize="16" />
+            </VerticalStackLayout>
+        </Grid>
 
-            <!-- Фильтры -->
-            <HorizontalStackLayout Spacing="10">
-                <Button Text="Все"
-                        x:Name="AllButton"
-                        BackgroundColor="#2E86AB"
+        <!-- Заголовок -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
                         TextColor="White"
-                        Clicked="OnFilterClicked" />
-                
-                <Button Text="Курсы"
-                        x:Name="CoursesButton"
-                        BackgroundColor="Transparent"
-                        TextColor="#2E86AB"
-                        BorderColor="#2E86AB"
-                        BorderWidth="1"
-                        Clicked="OnFilterClicked" />
-                
-                <Button Text="Конкурсы"
-                        x:Name="ContestsButton"
-                        BackgroundColor="Transparent"
-                        TextColor="#2E86AB"
-                        BorderColor="#2E86AB"
-                        BorderWidth="1"
-                        Clicked="OnFilterClicked" />
-                
-                <Button Text="Система"
-                        x:Name="SystemButton"
-                        BackgroundColor="Transparent"
-                        TextColor="#2E86AB"
-                        BorderColor="#2E86AB"
-                        BorderWidth="1"
-                        Clicked="OnFilterClicked" />
-            </HorizontalStackLayout>
+                        FontSize="24"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
 
-            <!-- Список новостей -->
-            <CollectionView x:Name="NewsCollectionView"
-                            ItemsSource="{Binding NewsItems}"
-                            SelectionMode="Single">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Border Padding="15"
-                                Stroke="#E0E0E0"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 10"
-                                Margin="0,5">
-                            <VerticalStackLayout Spacing="10">
-                                <!-- Заголовок новости -->
-                                <Label Text="{Binding Title}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       TextColor="#333"
-                                       LineBreakMode="WordWrap" />
-                                
-                                <!-- Краткое описание -->
-                                <Label Text="{Binding Content}"
-                                       FontSize="14"
-                                       TextColor="#666"
-                                       LineBreakMode="WordWrap"
-                                       MaxLines="3" />
-                                
-                                <!-- Метаданные -->
-                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                                    <Label Grid.Row="0" Grid.Column="0"
-                                           Text="{Binding Author.FirstName}"
-                                           FontSize="12"
-                                           TextColor="#888" />
-                                    
-                                    <Label Grid.Row="0" Grid.Column="1"
-                                           Text="{Binding PublishedDate, StringFormat='{0:dd.MM.yyyy HH:mm}'}"
-                                           FontSize="12"
-                                           TextColor="#888" />
-                                    
-                                    <Label Grid.Row="1" Grid.Column="0"
-                                           Text="{Binding Category}"
-                                           FontSize="12"
-                                           TextColor="#2E86AB" />
-                                    
-                                    <Label Grid.Row="1" Grid.Column="1"
-                                           Text=""
-                                           FontSize="12"
-                                           TextColor="#888" />
-                                </Grid>
-                                
-                                <!-- Кнопка "Читать далее" -->
-                                <Button Text="Читать далее"
-                                        BackgroundColor="Transparent"
-                                        TextColor="#2E86AB"
-                                        BorderColor="#2E86AB"
-                                        BorderWidth="1"
-                                        Clicked="OnReadMoreClicked"
-                                        CommandParameter="{Binding NewsId}" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                <Label Grid.Column="1"
+                       x:Name="HeaderLabel"
+                       Text="Новости платформы"
+                       FontSize="22"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
 
-            <!-- Кнопка обновления -->
-            <Button Text="Обновить"
-                    BackgroundColor="#4CAF50"
-                    TextColor="White"
-                    HeightRequest="50"
-                    Clicked="OnRefreshClicked" />
+                <!-- Кнопка создания новости (только для контент-менеджеров) -->
+                <Button Grid.Column="2"
+                        x:Name="CreateNewsButton"
+                        Text="➕"
+                        Clicked="OnCreateNewsClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="24"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22"
+                        IsVisible="False" />
 
-            <!-- Кнопка создания новости (только для контент-менеджеров) -->
-            <Button x:Name="CreateNewsButton"
-                    Text="Создать новость"
-                    BackgroundColor="#FF9800"
-                    TextColor="White"
-                    HeightRequest="50"
-                    Clicked="OnCreateNewsClicked"
-                    IsVisible="False" />
-        </VerticalStackLayout>
-    </ScrollView>
+                <!-- Кнопка обновления -->
+                <Button Grid.Column="3"
+                        Text="🔄"
+                        Clicked="OnRefreshClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="24"
+                        WidthRequest="45"
+                        HeightRequest="45"
+                        CornerRadius="22" />
+            </Grid>
+        </Border>
+
+        <!-- Основной контент -->
+        <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource BackgroundColor}">
+            <VerticalStackLayout Spacing="20" Padding="20">
+
+                <!-- Поиск -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 25"
+                        Padding="0">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <SearchBar Grid.Column="0"
+                                   x:Name="SearchBar"
+                                   Placeholder="Поиск новостей..."
+                                   BackgroundColor="Transparent"
+                                   PlaceholderColor="#999"
+                                   TextColor="{DynamicResource TextColor}"
+                                   SearchButtonPressed="OnSearchButtonPressed"
+                                   HeightRequest="45"
+                                   Margin="10,0,0,0" />
+                        <Button Grid.Column="1"
+                                Text="🔍"
+                                Clicked="OnSearchButtonPressed"
+                                BackgroundColor="Transparent"
+                                TextColor="{DynamicResource PrimaryColor}"
+                                FontSize="20"
+                                WidthRequest="45"
+                                HeightRequest="45" />
+                    </Grid>
+                </Border>
+
+                <!-- Фильтры -->
+                <HorizontalStackLayout Spacing="10">
+                    <Button x:Name="AllButton"
+                            Text="📰 Все"
+                            BackgroundColor="{DynamicResource PrimaryColor}"
+                            TextColor="White"
+                            Clicked="OnFilterClicked"
+                            CornerRadius="20"
+                            HeightRequest="35"
+                            FontSize="13" />
+
+                    <Button x:Name="CoursesButton"
+                            Text="📚 Курсы"
+                            BackgroundColor="Transparent"
+                            TextColor="{DynamicResource PrimaryColor}"
+                            BorderColor="{DynamicResource PrimaryColor}"
+                            BorderWidth="1"
+                            Clicked="OnFilterClicked"
+                            CornerRadius="20"
+                            HeightRequest="35"
+                            FontSize="13" />
+
+                    <Button x:Name="ContestsButton"
+                            Text="🏆 Конкурсы"
+                            BackgroundColor="Transparent"
+                            TextColor="{DynamicResource PrimaryColor}"
+                            BorderColor="{DynamicResource PrimaryColor}"
+                            BorderWidth="1"
+                            Clicked="OnFilterClicked"
+                            CornerRadius="20"
+                            HeightRequest="35"
+                            FontSize="13" />
+
+                    <Button x:Name="SystemButton"
+                            Text="⚙️ Система"
+                            BackgroundColor="Transparent"
+                            TextColor="{DynamicResource PrimaryColor}"
+                            BorderColor="{DynamicResource PrimaryColor}"
+                            BorderWidth="1"
+                            Clicked="OnFilterClicked"
+                            CornerRadius="20"
+                            HeightRequest="35"
+                            FontSize="13" />
+                </HorizontalStackLayout>
+
+                <!-- Список новостей -->
+                <CollectionView x:Name="NewsCollectionView"
+                                ItemsSource="{Binding NewsItems}"
+                                SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout HorizontalOptions="Center" 
+                                             VerticalOptions="Center" 
+                                             Spacing="20"
+                                             Padding="20">
+                            <Label Text="📰" 
+                                   FontSize="64" 
+                                   HorizontalOptions="Center" 
+                                   TextColor="#999" />
+                            <Label Text="Новостей не найдено"
+                                   FontSize="18"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center" />
+                            <Label Text="Попробуйте изменить параметры поиска"
+                                   FontSize="14"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="15"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 15"
+                                    Margin="0,5"
+                                    BackgroundColor="White">
+                                <VerticalStackLayout Spacing="10">
+                                    <!-- Заголовок с категорией -->
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <Border Grid.Column="0"
+                                                BackgroundColor="{DynamicResource AccentColor}"
+                                                Padding="8,4"
+                                                Margin="0,0,10,0">
+                                            <Label Text="{Binding CategoryDisplay}"
+                                                   FontSize="10"
+                                                   TextColor="White"
+                                                   FontAttributes="Bold" />
+                                        </Border>
+
+                                        <Label Grid.Column="1"
+                                               Text="{Binding Title}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextColor}"
+                                               LineBreakMode="WordWrap" />
+
+                                        <!-- Кнопки управления для контент-менеджеров -->
+                                        <HorizontalStackLayout Grid.Column="2"
+                                                               Spacing="5"
+                                                               IsVisible="{Binding CanManageNews, Source={x:Reference NewsPageRoot}}">
+                                            <Button Text="✏️"
+                                                    Clicked="OnEditNewsClicked"
+                                                    CommandParameter="{Binding NewsId}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="{DynamicResource SecondaryColor}"
+                                                    FontSize="14"
+                                                    WidthRequest="30"
+                                                    HeightRequest="30" />
+                                            <Button Text="🗑️"
+                                                    Clicked="OnDeleteNewsClicked"
+                                                    CommandParameter="{Binding NewsId}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="{DynamicResource DangerColor}"
+                                                    FontSize="14"
+                                                    WidthRequest="30"
+                                                    HeightRequest="30" />
+                                        </HorizontalStackLayout>
+                                    </Grid>
+
+                                    <!-- Изображение (если есть) -->
+                                    <Border BackgroundColor="#F5F5F5"
+                                            HeightRequest="150"
+                                            IsVisible="{Binding ImageUrl, Converter={StaticResource NotNullConverter}}">
+                                        <Image Source="{Binding ImageUrl}"
+                                               Aspect="AspectFill"
+                                               HorizontalOptions="Fill"
+                                               VerticalOptions="Fill" />
+                                    </Border>
+
+                                    <!-- Краткое описание -->
+                                    <Label Text="{Binding Summary}"
+                                           FontSize="14"
+                                           TextColor="#666"
+                                           LineBreakMode="WordWrap"
+                                           MaxLines="3"
+                                           IsVisible="{Binding Summary, Converter={StaticResource NotNullConverter}}" />
+
+                                    <!-- Полный текст (если нет краткого) -->
+                                    <Label Text="{Binding Content}"
+                                           FontSize="14"
+                                           TextColor="#666"
+                                           LineBreakMode="WordWrap"
+                                           MaxLines="3"
+                                           IsVisible="{Binding Summary, Converter={StaticResource NotNullConverter}, ConverterParameter=invert}" />
+
+                                    <!-- Метаданные -->
+                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding AuthorName, StringFormat='👤 {0}'}"
+                                               FontSize="11"
+                                               TextColor="#888" />
+
+                                        <Label Grid.Column="1"
+                                               Text="{Binding FormattedDate, StringFormat='📅 {0}'}"
+                                               FontSize="11"
+                                               TextColor="#888"
+                                               Margin="10,0" />
+
+                                        <Label Grid.Column="2"
+                                               Text="{Binding ViewsCount, StringFormat='👁️ {0}'}"
+                                               FontSize="11"
+                                               TextColor="#888" />
+                                    </Grid>
+
+                                    <!-- Кнопка "Читать далее" -->
+                                    <Button Text="📖 Читать далее"
+                                            BackgroundColor="Transparent"
+                                            TextColor="{DynamicResource PrimaryColor}"
+                                            BorderColor="{DynamicResource PrimaryColor}"
+                                            BorderWidth="1"
+                                            Clicked="OnReadMoreClicked"
+                                            CommandParameter="{Binding NewsId}"
+                                            CornerRadius="20"
+                                            HeightRequest="35"
+                                            FontSize="12" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>
-

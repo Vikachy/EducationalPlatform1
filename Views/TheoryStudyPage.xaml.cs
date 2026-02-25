@@ -1,8 +1,16 @@
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
 using System.Collections.ObjectModel;
+using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.ApplicationModel;
+using System.IO;
+using System.Threading.Tasks;
+
+#if ANDROID
+using Android.Content;
+using Android.OS;
+#endif
 
 namespace EducationalPlatform.Views
 {
@@ -22,17 +30,19 @@ namespace EducationalPlatform.Views
         public TheoryStudyPage(User user, DatabaseService dbService, SettingsService settingsService, int lessonId)
         {
             InitializeComponent();
-            _currentUser = user;
-            _dbService = dbService;
-            _settingsService = settingsService;
+
+            _currentUser = user ?? throw new ArgumentNullException(nameof(user));
+            _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
+            _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             _fileService = new FileService();
             _lessonId = lessonId;
 
             BindingContext = this;
-            
-            // Устанавливаем ItemsSource для CollectionView
             AttachmentsCollection.ItemsSource = Attachments;
-            
+
+            // Устанавливаем заголовок страницы сразу
+            Title = "Изучение теории";
+
             LoadTheoryContent();
         }
 
@@ -40,116 +50,220 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Загружаем содержимое урока
-                ContentLabel.Text = "Загрузка...";
+                LoadingIndicator.IsRunning = true;
+                ContentLabel.Text = "Загрузка теории...";
 
-                // Получаем ID курса
-                var courseId = await _dbService.GetCourseIdByLessonAsync(_lessonId);
-                if (courseId.HasValue)
+                var courseIdResult = await _dbService.GetCourseIdByLessonAsync(_lessonId);
+                if (!courseIdResult.HasValue)
                 {
-                    _courseId = courseId.Value;
-
-                    // Загружаем все уроки курса
-                    _allLessons = await _dbService.GetCourseLessonsAsync(_courseId);
-                    var currentLesson = _allLessons.FirstOrDefault(l => l.LessonId == _lessonId);
-
-                    if (currentLesson != null)
-                    {
-                        TitleLabel.Text = currentLesson.Title;
-
-                        // Загружаем текстовое содержимое урока
-                        var lessonContent = await _dbService.GetLessonContentAsync(_lessonId);
-                        ContentLabel.Text = lessonContent ?? "Содержимое урока не найдено.";
-
-                        // Загружаем прикрепленные файлы
-                        await LoadAttachments();
-
-                        _currentLessonIndex = _allLessons.FindIndex(l => l.LessonId == _lessonId);
-                        UpdateNavigationButtons();
-                    }
-                    else
-                    {
-                        ContentLabel.Text = "Урок не найден.";
-                    }
+                    ContentLabel.Text = "Курс не найден.";
+                    return;
                 }
-                else
+
+                _courseId = courseIdResult.Value;
+                _allLessons = await _dbService.GetCourseLessonsAsync(_courseId);
+
+                var currentLesson = _allLessons.FirstOrDefault(l => l.LessonId == _lessonId);
+                if (currentLesson == null)
                 {
                     ContentLabel.Text = "Урок не найден.";
+                    return;
                 }
+
+                // Обновляем заголовок страницы и лейбл внутри страницы
+                Title = currentLesson.Title;
+                TitleLabel.Text = currentLesson.Title;
+
+                var lessonContent = await _dbService.GetLessonContentAsync(_lessonId);
+                ContentLabel.Text = lessonContent ?? "Содержимое урока отсутствует.";
+
+                await LoadAttachments();
+
+                _currentLessonIndex = _allLessons.FindIndex(l => l.LessonId == _lessonId);
+                UpdateNavigationButtons();
             }
             catch (Exception ex)
             {
-                ContentLabel.Text = $"Ошибка загрузки: {ex.Message}";
+                Console.WriteLine($"Ошибка загрузки теории: {ex.Message}\n{ex.StackTrace}");
                 await DisplayAlert("Ошибка", $"Не удалось загрузить урок: {ex.Message}", "OK");
+                ContentLabel.Text = "Ошибка загрузки контента";
+            }
+            finally
+            {
+                LoadingIndicator.IsRunning = false;
             }
         }
-
-        // В TheoryStudyPage.xaml.cs замените метод LoadAttachments на этот:
 
         private async Task LoadAttachments()
         {
             try
             {
-                Console.WriteLine($"🔄 Загружаем вложения для урока {_lessonId}");
+                var attachments = await _dbService.GetLessonAttachmentsAsync(_lessonId);
+                Attachments.Clear();
 
-                var attachments = await GetLessonAttachmentsAsync(_lessonId);
-
-                await MainThread.InvokeOnMainThreadAsync(() =>
+                if (attachments?.Any() == true)
                 {
-                    Attachments.Clear();
-
-                    if (attachments != null && attachments.Any())
+                    foreach (var att in attachments)
                     {
-                        Console.WriteLine($"📎 Найдено {attachments.Count} вложений");
-
-                        foreach (var attachment in attachments)
+                        Attachments.Add(new AttachmentViewModel
                         {
-                            // ИСПРАВЛЕНО: Правильно заполняем модель
-                            Attachments.Add(new AttachmentViewModel
-                            {
-                                AttachmentId = attachment.AttachmentId,
-                                FileName = attachment.FileName,
-                                FileSize = attachment.FileSize, // Уже отформатированная строка из БД
-                                FilePath = attachment.FilePath,
-                                FileIcon = _fileService.GetFileIcon(attachment.FileType)
-                            });
-                        }
-
-                        AttachmentsSection.IsVisible = true;
-                        AttachmentsCollection.ItemsSource = null;
-                        AttachmentsCollection.ItemsSource = Attachments;
-
-                        Console.WriteLine($"✅ Вложения загружены и отображены");
+                            AttachmentId = att.AttachmentId,
+                            FileName = att.FileName,
+                            FileSize = att.FileSize,
+                            FilePath = att.FilePath,
+                            FileIcon = _fileService.GetFileIcon(att.FileType),
+                            FileType = att.FileType ?? string.Empty
+                        });
                     }
-                    else
-                    {
-                        Console.WriteLine($"ℹ️ Вложения не найдены");
-                        AttachmentsSection.IsVisible = false;
-                    }
-                });
+                    AttachmentsSection.IsVisible = true;
+                }
+                else
+                {
+                    AttachmentsSection.IsVisible = false;
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Ошибка загрузки вложений: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    AttachmentsSection.IsVisible = false;
-                });
+                Console.WriteLine($"Ошибка загрузки вложений: {ex.Message}");
+                AttachmentsSection.IsVisible = false;
             }
         }
 
-        // Получаем вложения из базы данных
-        private async Task<List<LessonAttachment>> GetLessonAttachmentsAsync(int lessonId)
+        private async void OnAttachmentTapped(object sender, TappedEventArgs e)
+        {
+            if (e.Parameter is AttachmentViewModel vm)
+            {
+                await HandleAttachmentAction(vm);
+            }
+        }
+
+        private async void OnOpenAttachmentClicked(object sender, EventArgs e)
+        {
+            if (sender is Button btn && btn.CommandParameter is AttachmentViewModel vm)
+            {
+                await DownloadToDownloadsFolder(vm);
+            }
+        }
+
+        private async Task HandleAttachmentAction(AttachmentViewModel vm)
+        {
+            var choice = await DisplayActionSheet(
+                vm.FileName,
+                "Отмена",
+                null,
+                "📥 Скачать в Загрузки",
+                "📄 Открыть файл"
+            );
+
+            if (choice == "📥 Скачать в Загрузки")
+            {
+                await DownloadToDownloadsFolder(vm);
+            }
+            else if (choice == "📄 Открыть файл")
+            {
+                await TryOpenFile(vm);
+            }
+        }
+
+        private async Task DownloadToDownloadsFolder(AttachmentViewModel vm)
         {
             try
             {
-                return await _dbService.GetLessonAttachmentsAsync(lessonId);
+                string sourcePath = await _fileService.ResolveFilePath(vm.FilePath, vm.FileName, "TheoryFiles");
+                if (string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
+                {
+                    await DisplayAlert("Ошибка", "Исходный файл не найден на устройстве", "OK");
+                    return;
+                }
+
+                string destinationPath = await GetDownloadsPath(vm.FileName);
+                if (string.IsNullOrEmpty(destinationPath))
+                {
+                    await DisplayAlert("Ошибка", "Не удалось определить папку «Загрузки»", "OK");
+                    return;
+                }
+
+                // Копируем файл
+                File.Copy(sourcePath, destinationPath, overwrite: true);
+
+                // На Android уведомляем систему
+#if ANDROID
+                var mediaScanIntent = new Intent(Intent.ActionMediaScannerScanFile);
+                mediaScanIntent.SetData(Android.Net.Uri.FromFile(new Java.IO.File(destinationPath)));
+                Microsoft.Maui.ApplicationModel.Platform.CurrentActivity?.SendBroadcast(mediaScanIntent);
+#endif
+
+                await DisplayAlert("Успех",
+                    $"Файл сохранён в папку «Загрузки»:\n{Path.GetFileName(destinationPath)}",
+                    "OK");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка получения вложений урока: {ex.Message}");
-                return new List<LessonAttachment>();
+                Console.WriteLine($"Ошибка при сохранении файла: {ex.Message}\n{ex.StackTrace}");
+                await DisplayAlert("Ошибка сохранения", ex.Message, "OK");
+            }
+        }
+
+        private async Task<string?> GetDownloadsPath(string fileName)
+        {
+            string downloadsFolder;
+
+#if ANDROID
+            downloadsFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads)?.AbsolutePath
+                           ?? Path.Combine(Android.OS.Environment.ExternalStorageDirectory?.AbsolutePath ?? "", "Download");
+#elif WINDOWS
+            downloadsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+#elif IOS || MACCATALYST
+            downloadsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "..", "Downloads");
+#else
+            downloadsFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+#endif
+
+            if (string.IsNullOrEmpty(downloadsFolder) || !Directory.Exists(downloadsFolder))
+            {
+                try
+                {
+                    Directory.CreateDirectory(downloadsFolder);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            // Уникальное имя файла при конфликте
+            string baseName = Path.GetFileNameWithoutExtension(fileName);
+            string extension = Path.GetExtension(fileName);
+            string fullPath = Path.Combine(downloadsFolder, fileName);
+            int counter = 1;
+
+            while (File.Exists(fullPath))
+            {
+                fullPath = Path.Combine(downloadsFolder, $"{baseName} ({counter++}){extension}");
+            }
+
+            return fullPath;
+        }
+
+        private async Task TryOpenFile(AttachmentViewModel vm)
+        {
+            try
+            {
+                var path = await _fileService.ResolveFilePath(vm.FilePath, vm.FileName, "TheoryFiles");
+                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                {
+                    await DisplayAlert("Ошибка", "Файл не найден", "OK");
+                    return;
+                }
+
+                await Launcher.Default.OpenAsync(new OpenFileRequest
+                {
+                    File = new ReadOnlyFile(path)
+                });
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Не удалось открыть файл", ex.Message, "OK");
             }
         }
 
@@ -157,140 +271,6 @@ namespace EducationalPlatform.Views
         {
             PrevButton.IsVisible = _currentLessonIndex > 0;
             NextButton.IsVisible = _currentLessonIndex < _allLessons.Count - 1;
-        }
-
-        private async void OnAttachmentTapped(object sender, TappedEventArgs e)
-        {
-            if (e.Parameter is AttachmentViewModel attachment)
-            {
-                await HandleAttachmentAction(attachment);
-            }
-        }
-
-        private async void OnOpenAttachmentClicked(object sender, EventArgs e)
-        {
-            // Кнопка 📥 теперь сразу скачивает файл в «Загрузки»,
-            // без дополнительных вопросов, чтобы поведение было предсказуемым.
-            if (sender is Button btn && btn.CommandParameter is AttachmentViewModel attachment)
-            {
-                var success = await DownloadAttachmentToDownloads(attachment.FilePath, attachment.FileName);
-                if (success)
-                {
-                    await DisplayAlert("Успех", $"Файл {attachment.FileName} скачан в папку Загрузки", "OK");
-                }
-                else
-                {
-                    await DisplayAlert("Ошибка", $"Не удалось скачать файл {attachment.FileName}", "OK");
-                }
-            }
-        }
-
-        private async Task HandleAttachmentAction(AttachmentViewModel attachment)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(attachment.FilePath))
-                {
-                    await DisplayAlert("Ошибка", "Файл не найден", "OK");
-                    return;
-                }
-
-                // Показываем опции: скачать или открыть
-                var action = await DisplayActionSheet(
-                    $"Файл: {attachment.FileName}",
-                    "Отмена",
-                    null,
-                    "📥 Скачать в папку Загрузки",
-                    "📁 Открыть файл");
-
-                if (action == "📥 Скачать в папку Загрузки")
-                {
-                    var success = await DownloadAttachmentToDownloads(attachment.FilePath, attachment.FileName);
-                    if (success)
-                    {
-                        await DisplayAlert("Успех", $"Файл {attachment.FileName} скачан в папку Загрузки", "OK");
-                    }
-                    else
-                    {
-                        await DisplayAlert("Ошибка", $"Не удалось скачать файл {attachment.FileName}", "OK");
-                    }
-                }
-                else if (action == "📁 Открыть файл")
-                {
-                    // Открываем файл
-                    var success = await OpenAttachmentFile(attachment.FilePath, attachment.FileName);
-                    if (!success)
-                    {
-                        await DisplayAlert("Ошибка", $"Не удалось открыть файл {attachment.FileName}", "OK");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                await DisplayAlert("Ошибка", $"Не удалось обработать файл: {ex.Message}", "OK");
-            }
-        }
-
-        private async Task<bool> DownloadAttachmentToDownloads(string filePath, string fileName)
-        {
-            try
-            {
-                Console.WriteLine($"📥 Начинаем скачивание файла: {fileName} из {filePath}");
-
-                var resolvedPath = await _fileService.ResolveFilePath(filePath, fileName, "TheoryFiles");
-
-                if (string.IsNullOrEmpty(resolvedPath) || !File.Exists(resolvedPath))
-                {
-                    Console.WriteLine($"❌ Файл не найден: {resolvedPath}");
-                    await DisplayAlert("Ошибка", $"Файл не найден: {fileName}", "OK");
-                    return false;
-                }
-
-                var success = await _fileService.DownloadFileAsync(resolvedPath, fileName);
-                
-                if (success)
-                {
-                    Console.WriteLine($"✅ Файл успешно скачан: {fileName}");
-                    return true;
-                }
-                else
-                {
-                    Console.WriteLine($"❌ Не удалось скачать файл: {fileName}");
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Ошибка скачивания файла: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                await DisplayAlert("Ошибка", $"Не удалось скачать файл: {ex.Message}", "OK");
-                return false;
-            }
-        }
-
-        private async Task<bool> OpenAttachmentFile(string filePath, string fileName)
-        {
-            try
-            {
-                var resolvedPath = await _fileService.ResolveFilePath(filePath, fileName, "TheoryFiles");
-
-                if (string.IsNullOrEmpty(resolvedPath) || !File.Exists(resolvedPath))
-                {
-                    return false;
-                }
-
-                await Launcher.Default.OpenAsync(new OpenFileRequest
-                {
-                    File = new ReadOnlyFile(resolvedPath)
-                });
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка открытия файла: {ex.Message}");
-                return false;
-            }
         }
 
         private async void OnPrevClicked(object sender, EventArgs e)
@@ -309,7 +289,6 @@ namespace EducationalPlatform.Views
             {
                 var nextLesson = _allLessons[_currentLessonIndex + 1];
 
-                // В зависимости от типа следующего урока переходим на соответствующую страницу
                 if (nextLesson.LessonType == "theory")
                 {
                     await Navigation.PushAsync(new TheoryStudyPage(_currentUser, _dbService, _settingsService, nextLesson.LessonId));
@@ -320,14 +299,14 @@ namespace EducationalPlatform.Views
                 }
                 else if (nextLesson.LessonType == "test")
                 {
-                     await Navigation.PushAsync(new TestStudyPage(_currentUser, _dbService, _settingsService, nextLesson.LessonId));
+                    await Navigation.PushAsync(new TestStudyPage(_currentUser, _dbService, _settingsService, nextLesson.LessonId));
                 }
 
                 Navigation.RemovePage(this);
             }
             else
             {
-                // Курс завершен
+                // Завершение курса
                 await _dbService.UpdateProgressAsync(_currentUser.UserId, _courseId, "completed");
                 await DisplayAlert("Поздравляем!", "Вы завершили изучение курса!", "OK");
                 await Navigation.PopAsync();
@@ -336,13 +315,30 @@ namespace EducationalPlatform.Views
 
         private async void OnBackClicked(object sender, EventArgs e)
         {
-            await Navigation.PopAsync();
+            try
+            {
+                // Безопасный возврат назад
+                if (Navigation.NavigationStack.Count > 1)
+                {
+                    await Navigation.PopAsync();
+                }
+                else
+                {
+                    // Если стек пустой — возвращаемся на главную через Shell или корневую страницу
+                    await Shell.Current.GoToAsync("//Dashboard");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при возврате назад: {ex.Message}");
+                await DisplayAlert("Ошибка", "Не удалось вернуться назад", "OK");
+            }
         }
 
         protected override async void OnDisappearing()
         {
             base.OnDisappearing();
-            // Обновляем прогресс для курса
+
             if (_courseId > 0)
             {
                 await _dbService.UpdateProgressAsync(_currentUser.UserId, _courseId, "in_progress");
@@ -350,7 +346,6 @@ namespace EducationalPlatform.Views
         }
     }
 
-    // ViewModel для отображения вложений
     public class AttachmentViewModel
     {
         public int AttachmentId { get; set; }
@@ -358,5 +353,6 @@ namespace EducationalPlatform.Views
         public string FileSize { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
         public string FileIcon { get; set; } = "📄";
+        public string FileType { get; set; } = string.Empty;
     }
 }

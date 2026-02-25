@@ -9,8 +9,8 @@ namespace EducationalPlatform.Views
         private User? _currentUser;
         private DatabaseService? _dbService;
         private SettingsService? _settingsService;
+        private LocalizationService? _localizationService;
 
-        // Свойство для биндинга статистики в XAML
         private UserStatistics? _userStatistics;
         public UserStatistics? UserStatistics
         {
@@ -30,26 +30,24 @@ namespace EducationalPlatform.Views
             InitializeComponent();
             ProgressItems = new ObservableCollection<ProgressItem>();
             RecentAchievements = new ObservableCollection<Achievement>();
-
             BindingContext = this;
         }
 
-        // Конструктор с параметрами для инициализации
         public ProgressPage(User user, DatabaseService dbService, SettingsService settingsService)
         {
             InitializeComponent();
             _currentUser = user;
             _dbService = dbService;
             _settingsService = settingsService;
+            _localizationService = App.AppLocalization;
 
             ProgressItems = new ObservableCollection<ProgressItem>();
             RecentAchievements = new ObservableCollection<Achievement>();
-
             BindingContext = this;
 
-            // Подписываемся на события смены темы и языка
-            SettingsService.GlobalThemeChanged += OnGlobalThemeChanged;
-            SettingsService.GlobalLanguageChanged += OnGlobalLanguageChanged;
+            // Подписываемся на события
+            _settingsService.ThemeChanged += OnThemeChanged;
+            _localizationService.LanguageChanged += OnLanguageChanged;
 
             LoadProgressData();
         }
@@ -57,18 +55,18 @@ namespace EducationalPlatform.Views
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
-            SettingsService.GlobalThemeChanged -= OnGlobalThemeChanged;
-            SettingsService.GlobalLanguageChanged -= OnGlobalLanguageChanged;
+            _settingsService.ThemeChanged -= OnThemeChanged;
+            _localizationService.LanguageChanged -= OnLanguageChanged;
         }
 
-        private void OnGlobalThemeChanged(object? sender, string theme)
+        private void OnThemeChanged(object? sender, string theme)
         {
             UpdatePageAppearance();
         }
 
-        private void OnGlobalLanguageChanged(object? sender, string language)
+        private void OnLanguageChanged(object? sender, string language)
         {
-            UpdatePageTexts();
+            MainThread.BeginInvokeOnMainThread(UpdatePageTexts);
         }
 
         private void UpdatePageAppearance()
@@ -78,23 +76,57 @@ namespace EducationalPlatform.Views
 
         private void UpdatePageTexts()
         {
-            if (_settingsService == null) return;
+            if (_localizationService == null) return;
 
-            // Фиксированные русские заголовки, как просил пользователь
-            Title = "Прогресс";
+            Title = _localizationService.GetText("Progress");
+
+            var titleLabel = this.FindByName<Label>("TitleLabel");
+            if (titleLabel != null)
+                titleLabel.Text = _localizationService.GetText("LearningProgress");
+
             var overallProgressLabel = this.FindByName<Label>("OverallProgressLabel");
             if (overallProgressLabel != null)
-                overallProgressLabel.Text = "Общий прогресс";
+                overallProgressLabel.Text = _localizationService.GetText("OverallProgress");
+
+            var completedCoursesText = this.FindByName<Label>("CompletedCoursesText");
+            if (completedCoursesText != null)
+                completedCoursesText.Text = _localizationService.GetText("CompletedCourses");
+
+            var averageScoreText = this.FindByName<Label>("AverageScoreText");
+            if (averageScoreText != null)
+                averageScoreText.Text = _localizationService.GetText("AverageScore");
+
+            var completionRateText = this.FindByName<Label>("CompletionRateText");
+            if (completionRateText != null)
+                completionRateText.Text = _localizationService.GetText("CompletionRate");
+
+            var currentStreakText = this.FindByName<Label>("CurrentStreakText");
+            if (currentStreakText != null)
+                currentStreakText.Text = _localizationService.GetText("CurrentStreak");
+
+            var totalLearningText = this.FindByName<Label>("TotalLearningText");
+            if (totalLearningText != null)
+                totalLearningText.Text = _localizationService.GetText("TotalDays");
 
             var recentAchievementsLabel = this.FindByName<Label>("RecentAchievementsLabel");
             if (recentAchievementsLabel != null)
-                recentAchievementsLabel.Text = "Последние достижения";
+                recentAchievementsLabel.Text = _localizationService.GetText("RecentAchievements");
 
             var courseProgressLabel = this.FindByName<Label>("CourseProgressLabel");
             if (courseProgressLabel != null)
-                courseProgressLabel.Text = "Прогресс по курсам";
+                courseProgressLabel.Text = _localizationService.GetText("CourseProgress");
 
-            // Элемент StatisticsLabel сейчас не используется в XAML, оставляем код на будущее
+            var noAchievementsLabel = this.FindByName<Label>("NoAchievementsLabel");
+            if (noAchievementsLabel != null)
+                noAchievementsLabel.Text = _localizationService.GetText("NoAchievements");
+
+            var noCoursesLabel = this.FindByName<Label>("NoCoursesLabel");
+            if (noCoursesLabel != null)
+                noCoursesLabel.Text = _localizationService.GetText("NoCourses");
+
+            var backButton = this.FindByName<Button>("BackButton");
+            if (backButton != null)
+                backButton.Text = _localizationService.GetText("BackToMain");
         }
 
         private async void LoadProgressData()
@@ -103,30 +135,80 @@ namespace EducationalPlatform.Views
             {
                 if (_currentUser == null || _dbService == null) return;
 
+                var loadingIndicator = this.FindByName<VerticalStackLayout>("LoadingIndicator");
+                var mainContent = this.FindByName<VerticalStackLayout>("MainContent");
+
+                if (loadingIndicator != null) loadingIndicator.IsVisible = true;
+                if (mainContent != null) mainContent.IsVisible = false;
+
                 UpdatePageTexts();
 
-                // Загружаем статистику пользователя
-                var statistics = await _dbService.GetUserStatisticsAsync(_currentUser.UserId);
-                UpdateStatistics(statistics);
+                var statistics = await CalculateUserStatistics(_currentUser.UserId);
+                UserStatistics = statistics;
 
-                // Загружаем прогресс по курсам
                 await LoadCourseProgress();
-
-                // Загружаем последние достижения
                 await LoadRecentAchievements();
+
+                if (loadingIndicator != null) loadingIndicator.IsVisible = false;
+                if (mainContent != null) mainContent.IsVisible = true;
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Error", $"Failed to load progress data: {ex.Message}", "OK");
+                await DisplayAlert(
+                    _localizationService?.GetText("Error") ?? "Error",
+                    $"Failed to load progress data: {ex.Message}",
+                    _localizationService?.GetText("OK") ?? "OK");
             }
         }
 
-        private void UpdateStatistics(UserStatistics? statistics)
+        private async Task<UserStatistics> CalculateUserStatistics(int userId)
         {
-            if (statistics == null) return;
+            var stats = new UserStatistics();
 
-            // Сохраняем статистику в свойство, к которому привязан XAML
-            UserStatistics = statistics;
+            try
+            {
+                var progressList = await _dbService.GetStudentProgressAsync(userId);
+
+                if (progressList != null && progressList.Any())
+                {
+                    stats.CompletedCourses = progressList.Count(p => p.Status == "completed");
+
+                    var completedScores = progressList
+                        .Where(p => p.Status == "completed" && p.Score > 0)
+                        .Select(p => (double)p.Score);
+
+                    if (completedScores.Any())
+                        stats.AverageScore = completedScores.Average();
+
+                    var totalProgress = progressList.Sum(p => p.Score);
+                    stats.CompletionRate = progressList.Count > 0
+                        ? (double)totalProgress / (progressList.Count * 100)
+                        : 0;
+                }
+
+                var achievements = await _dbService.GetUserAchievementsAsync(userId);
+                stats.AchievementsCount = achievements?.Count ?? 0;
+
+                stats.CurrentStreak = _currentUser?.StreakDays ?? 0;
+
+                if (_currentUser?.RegistrationDate != null)
+                {
+                    stats.TotalDays = (DateTime.Now - _currentUser.RegistrationDate).Days;
+                }
+
+                var tasks = await _dbService.GetUserTasksAsync(userId);
+                stats.TotalTasks = tasks?.Count ?? 0;
+                stats.PendingTasks = tasks?.Count(t => !t.IsCompleted) ?? 0;
+
+                var totalMinutes = await _dbService.GetTotalLearningMinutesAsync(userId);
+                stats.TotalHours = totalMinutes / 60;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка расчета статистики: {ex.Message}");
+            }
+
+            return stats;
         }
 
         private async Task LoadCourseProgress()
@@ -138,11 +220,14 @@ namespace EducationalPlatform.Views
                 ProgressItems.Clear();
 
                 var progress = await _dbService.GetStudentProgressAsync(_currentUser.UserId);
+
                 foreach (var item in progress)
                 {
+                    var course = await _dbService.GetCourseByIdAsync(item.CourseId);
+
                     ProgressItems.Add(new ProgressItem
                     {
-                        CourseName = item.CourseName,
+                        CourseName = course?.CourseName ?? item.CourseName,
                         Status = item.Status,
                         Score = item.Score ?? 0,
                         CompletionDate = item.CompletionDate,
@@ -150,9 +235,7 @@ namespace EducationalPlatform.Views
                     });
                 }
 
-                var courseProgressCollectionView = this.FindByName<CollectionView>("CourseProgressCollectionView");
-                if (courseProgressCollectionView != null)
-                    courseProgressCollectionView.ItemsSource = ProgressItems;
+                CourseProgressCollectionView.ItemsSource = ProgressItems;
             }
             catch (Exception ex)
             {
@@ -169,14 +252,13 @@ namespace EducationalPlatform.Views
                 RecentAchievements.Clear();
 
                 var achievements = await _dbService.GetRecentAchievementsAsync(_currentUser.UserId, 5);
+
                 foreach (var achievement in achievements)
                 {
                     RecentAchievements.Add(achievement);
                 }
 
-                var achievementsCollectionView = this.FindByName<CollectionView>("AchievementsCollectionView");
-                if (achievementsCollectionView != null)
-                    achievementsCollectionView.ItemsSource = RecentAchievements;
+                AchievementsCollectionView.ItemsSource = RecentAchievements;
             }
             catch (Exception ex)
             {
@@ -193,30 +275,38 @@ namespace EducationalPlatform.Views
         {
             if (e.CurrentSelection.FirstOrDefault() is Achievement selectedAchievement)
             {
-                var localizationService = new LocalizationService();
-                localizationService.SetLanguage(_settingsService?.CurrentLanguage ?? "en");
-                
+                string dateStr = selectedAchievement.EarnedDate.HasValue
+                    ? selectedAchievement.EarnedDate.Value.ToString("dd.MM.yyyy")
+                    : "—";
+
                 await DisplayAlert(
-                    selectedAchievement.Name ?? localizationService.GetText("achievement"),
-                    $"{selectedAchievement.Description}\n\n{localizationService.GetText("earned_date")}: {selectedAchievement.EarnedDate:dd.MM.yyyy}",
-                    "OK");
+                    selectedAchievement.Name,
+                    $"{selectedAchievement.Description}\n\n{_localizationService?.GetText("EarnedDate") ?? "Получено"}: {dateStr}",
+                    _localizationService?.GetText("OK") ?? "OK");
             }
-            var achievementsCollectionView = this.FindByName<CollectionView>("AchievementsCollectionView");
-            if (achievementsCollectionView != null)
-                achievementsCollectionView.SelectedItem = null;
+
+            if (AchievementsCollectionView != null)
+                AchievementsCollectionView.SelectedItem = null;
         }
 
         private async void OnCourseSelected(object sender, SelectionChangedEventArgs e)
         {
             if (e.CurrentSelection.FirstOrDefault() is ProgressItem selectedCourse)
             {
-                var localizationService = new LocalizationService();
-                localizationService.SetLanguage(_settingsService?.CurrentLanguage ?? "en");
-                await DisplayAlert(localizationService.GetText("course"), $"{localizationService.GetText("go_to_course")}: {selectedCourse.CourseName}", "OK");
+                bool continueLearning = await DisplayAlert(
+                    _localizationService?.GetText("Course") ?? "Курс",
+                    $"{_localizationService?.GetText("ContinueCourse") ?? "Продолжить"} {selectedCourse.CourseName}?",
+                    _localizationService?.GetText("Yes") ?? "Да",
+                    _localizationService?.GetText("No") ?? "Нет");
+
+                if (continueLearning && _currentUser != null && _dbService != null && _settingsService != null)
+                {
+                    // Найти CourseId по имени курса (нужно добавить в ProgressItem)
+                }
             }
-            var courseProgressCollectionView = this.FindByName<CollectionView>("CourseProgressCollectionView");
-            if (courseProgressCollectionView != null)
-                courseProgressCollectionView.SelectedItem = null;
+
+            if (CourseProgressCollectionView != null)
+                CourseProgressCollectionView.SelectedItem = null;
         }
 
         protected override void OnAppearing()
@@ -227,30 +317,5 @@ namespace EducationalPlatform.Views
                 LoadProgressData();
             }
         }
-    }
-
-    // Модель данных для отображения прогресса
-        public class ProgressItem
-    {
-        public string CourseName { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public int Score { get; set; }
-        public DateTime? CompletionDate { get; set; }
-        public int Attempts { get; set; }
-            public Color StatusColor => Status switch
-            {
-                "completed" => Color.FromArgb("#4CAF50"),
-                "in_progress" => Color.FromArgb("#2196F3"),
-                "not_started" => Color.FromArgb("#9E9E9E"),
-                _ => Color.FromArgb("#9E9E9E")
-            };
-        public string StatusText => Status switch
-        {
-            "completed" => "Завершено",
-            "in_progress" => "В процессе",
-            "not_started" => "Не начато",
-            _ => Status
-        };
-        public string FormattedCompletionDate => CompletionDate?.ToString("dd.MM.yyyy") ?? "Не завершено";
     }
 }

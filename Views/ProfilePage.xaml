@@ -311,9 +311,10 @@
                     </Border>
 
                     <CollectionView x:Name="ActiveCoursesCollectionView"
-                                  HeightRequest="150"
-                                  SelectionMode="None"
-                                  ItemsLayout="VerticalList">
+                        HeightRequest="150"
+                        SelectionMode="Single"
+                        SelectionChanged="OnCourseSelected"
+                        ItemsLayout="VerticalList">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Border Margin="0,5"

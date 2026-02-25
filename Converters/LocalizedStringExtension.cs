@@ -18,23 +18,21 @@ namespace EducationalPlatform.Converters
             // Инициализируем сервисы при первом использовании
             if (_localizationService == null)
             {
-                _localizationService = new LocalizationService();
+                _localizationService = App.AppLocalization;
             }
 
             if (_settingsService == null)
             {
-                _settingsService = new SettingsService();
+                _settingsService = App.AppSettings;
             }
 
-            // Устанавливаем язык и стиль из SettingsService
-            var currentLanguage = _settingsService.CurrentLanguage;
-            var currentTheme = _settingsService.CurrentTheme;
+            // Устанавливаем стиль из темы
+            var currentTheme = _settingsService?.CurrentTheme ?? "standard";
             var isTeenStyle = currentTheme == "teen";
 
-            _localizationService.SetLanguage(currentLanguage);
-            _localizationService.SetTeenStyle(isTeenStyle);
+            _localizationService?.SetTeenStyle(isTeenStyle);
 
-            return _localizationService.GetText(Key);
+            return _localizationService?.GetText(Key) ?? Key;
         }
 
         object IMarkupExtension.ProvideValue(IServiceProvider serviceProvider)
@@ -43,4 +41,3 @@ namespace EducationalPlatform.Converters
         }
     }
 }
-

@@ -115,57 +115,60 @@ namespace EducationalPlatform.Services
             return $"data:{mimeType};base64,{base64}";
         }
 
-        public async Task<bool> DownloadFileAsync(string filePath, string downloadFileName)
+        public async Task<bool> DownloadFileAsync(string filePath, string fileName)
         {
             try
             {
-                Console.WriteLine($"📥 DownloadFileAsync: {filePath} -> {downloadFileName}");
-
-                // РЕШАЕМ ПУТЬ К ФАЙЛУ ПЕРЕД СКАЧИВАНИЕМ
-                var resolvedPath = await ResolveFilePath(filePath, downloadFileName);
-
-                if (!File.Exists(resolvedPath))
+                if (!File.Exists(filePath))
                 {
-                    Console.WriteLine($"❌ Файл не существует: {resolvedPath}");
+                    Console.WriteLine($"❌ Файл не найден: {filePath}");
                     return false;
                 }
 
-                // Для всех платформ используем Share API для скачивания
-                try
-                {
-                    await Share.Default.RequestAsync(new ShareFileRequest
-                    {
-                        Title = "Скачать файл",
-                        File = new ShareFile(resolvedPath)
-                    });
-                    Console.WriteLine($"✅ Файл успешно предложен для скачивания: {downloadFileName}");
-                    return true;
-                }
-                catch (Exception shareEx)
-                {
-                    Console.WriteLine($"⚠️ Ошибка Share API: {shareEx.Message}");
+                string destinationPath;
 
-                    // Fallback: копируем в папку Downloads
-                    string downloadsPath;
-                    if (DeviceInfo.Platform == DevicePlatform.WinUI)
+                if (DeviceInfo.Platform == DevicePlatform.WinUI)
+                {
+                    // На Windows сохраняем в папку Downloads
+                    string downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    if (!Directory.Exists(downloadsPath))
                     {
-                        downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", downloadFileName);
+                        downloadsPath = FileSystem.AppDataDirectory;
                     }
-                    else
-                    {
-                        // Для Android/iOS используем AppDataDirectory
-                        downloadsPath = Path.Combine(_downloadsFolder, downloadFileName);
-                    }
+                    destinationPath = Path.Combine(downloadsPath, fileName);
 
-                    File.Copy(resolvedPath, downloadsPath, overwrite: true);
-                    Console.WriteLine($"✅ Файл скопирован в: {downloadsPath}");
-                    return true;
+                    // Если файл уже существует, добавляем номер
+                    int counter = 1;
+                    while (File.Exists(destinationPath))
+                    {
+                        string nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+                        string ext = Path.GetExtension(fileName);
+                        destinationPath = Path.Combine(downloadsPath, $"{nameWithoutExt} ({counter}){ext}");
+                        counter++;
+                    }
                 }
+                else
+                {
+                    // На других платформах
+                    destinationPath = Path.Combine(FileSystem.AppDataDirectory, "Downloads", fileName);
+                    Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                }
+
+                // Копируем файл
+                File.Copy(filePath, destinationPath, true);
+                Console.WriteLine($" Файл сохранен: {destinationPath}");
+
+                // Открываем папку с файлом (опционально)
+                await Launcher.OpenAsync(new OpenFileRequest
+                {
+                    File = new ReadOnlyFile(destinationPath)
+                });
+
+                return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Ошибка скачивания файла: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                Console.WriteLine($" Ошибка скачивания файла: {ex.Message}");
                 return false;
             }
         }
@@ -294,6 +297,8 @@ namespace EducationalPlatform.Services
                 return "Неизвестно";
             }
         }
+
+
 
         public string GetFileIcon(string fileType)
         {

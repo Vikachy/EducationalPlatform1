@@ -35,10 +35,10 @@
                                FontAttributes="Bold" />
                         <Picker x:Name="LanguagePicker"
                                 Title="Выберите язык..."
-                                SelectedIndexChanged="OnLanguageChanged">
+                                SelectedIndexChanged="OnLanguagePickerChanged">
                             <Picker.Items>
-                                <x:String>🇷🇺 Русский</x:String>
-                                <x:String>🇺🇸 English</x:String>
+                                <x:String>Русский</x:String>
+                                <x:String>English</x:String>
                             </Picker.Items>
                         </Picker>
                         <Label x:Name="CurrentLanguageLabel"
@@ -55,10 +55,10 @@
                                FontAttributes="Bold" />
                         <Picker x:Name="ThemePicker"
                                 Title="Выберите тему..."
-                                SelectedIndexChanged="OnThemeChanged">
+                                SelectedIndexChanged="OnThemePickerChanged">
                             <Picker.Items>
-                                <x:String>💙 Стандартная</x:String>
-                                <x:String>🔥 Для подростков</x:String>
+                                <x:String>Стандартная</x:String>
+                                <x:String>Для подростков</x:String>
                             </Picker.Items>
                         </Picker>
                         <Label x:Name="CurrentThemeLabel"

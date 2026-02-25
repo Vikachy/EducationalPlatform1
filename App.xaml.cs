@@ -5,15 +5,21 @@ namespace EducationalPlatform
     public partial class App : Application
     {
         public static SettingsService AppSettings { get; private set; }
+        public static LocalizationService AppLocalization { get; private set; }
 
         public App()
         {
+            LoadDefaultTheme();
+
             InitializeComponent();
 
-            // Инициализируем настройки
+            // Инициализируем сервисы
             AppSettings = new SettingsService();
+            AppLocalization = new LocalizationService();
 
-            // Инициализируем тему через SettingsService
+            // Инициализируем LocalizationService с SettingsService
+            AppLocalization.Initialize(AppSettings);
+
             AppSettings.InitializeTheme();
 
             // Настройка REAL EMAIL - ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ
@@ -24,16 +30,26 @@ namespace EducationalPlatform
                 password: "uexa rvjo zcrb kvvx"
             );
 
-            // Подписываемся на изменение темы
             AppSettings.ThemeChanged += (s, theme) => OnThemeChanged(theme);
+        }
 
-            Console.WriteLine($"🎨 Тема при запуске: {AppSettings.CurrentTheme}");
+        private void LoadDefaultTheme()
+        {
+            // Загружаем стандартную тему
+            var defaultColors = ThemeColorService.GetThemeColors("standard");
+
+            Resources["PrimaryColor"] = defaultColors.Primary;
+            Resources["SecondaryColor"] = defaultColors.Secondary;
+            Resources["BackgroundColor"] = defaultColors.Background;
+            Resources["AccentColor"] = defaultColors.Accent;
+            Resources["DangerColor"] = defaultColors.Danger;
+            Resources["TextColor"] = defaultColors.Text;
+            Resources["LightTextColor"] = defaultColors.LightText;
         }
 
         // ИСПРАВЛЕННЫЙ метод для обновления темы
         private void OnThemeChanged(string newTheme)
         {
-            // Просто вызываем метод из SettingsService
             AppSettings.ApplyTheme(newTheme);
         }
 
@@ -42,7 +58,6 @@ namespace EducationalPlatform
             return new Window(new AppShell());
         }
 
-        // Метод для настройки реального email
         public static void ConfigureRealEmailService(string smtpServer, int port, string username, string password)
         {
             Preferences.Set("SmtpServer", smtpServer);
@@ -53,12 +68,11 @@ namespace EducationalPlatform
             Preferences.Set("SenderName", "Educational Platform");
             Preferences.Set("EnableSsl", true);
 
-            Console.WriteLine($"✅ Email настроен: {username}");
+            Console.WriteLine($"Email настроен: {username}");
         }
 
         protected override void CleanUp()
         {
-            // Отписываемся от событий при закрытии приложения
             AppSettings.ThemeChanged -= (s, theme) => OnThemeChanged(theme);
             base.CleanUp();
         }

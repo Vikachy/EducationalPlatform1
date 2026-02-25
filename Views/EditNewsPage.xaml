@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.EditNewsPage"
+             Title="Редактирование новости"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       x:Name="HeaderLabel"
+                       Text="Редактирование новости"
+                       FontSize="22"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+                <Button Grid.Column="2"
+                        Text="🗑️"
+                        Clicked="OnDeleteClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+            </Grid>
+        </Border>
+
+        <!-- Форма редактирования -->
+        <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource BackgroundColor}">
+            <VerticalStackLayout Padding="20" Spacing="15">
+
+                <!-- Заголовок -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="0">
+                    <Entry x:Name="TitleEntry"
+                           Placeholder="Заголовок новости"
+                           BackgroundColor="Transparent"
+                           Margin="15,0"
+                           FontSize="16"
+                           HeightRequest="50" />
+                </Border>
+
+                <!-- Краткое описание -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="0">
+                    <Editor x:Name="SummaryEditor"
+                            Placeholder="Краткое описание (необязательно)"
+                            AutoSize="TextChanges"
+                            BackgroundColor="Transparent"
+                            Margin="15,10"
+                            FontSize="14"
+                            HeightRequest="80" />
+                </Border>
+
+                <!-- Полный текст -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="0">
+                    <Editor x:Name="ContentEditor"
+                            Placeholder="Полный текст новости"
+                            AutoSize="TextChanges"
+                            BackgroundColor="Transparent"
+                            Margin="15,10"
+                            FontSize="14"
+                            HeightRequest="150" />
+                </Border>
+
+                <!-- Категория -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="15">
+                    <Picker x:Name="CategoryPicker"
+                            Title="Выберите категорию"
+                            SelectedIndex="0"
+                            FontSize="16" />
+                </Border>
+
+                <!-- Язык -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="15">
+                    <Picker x:Name="LanguagePicker"
+                            Title="Выберите язык"
+                            SelectedIndex="0"
+                            FontSize="16" />
+                </Border>
+
+                <!-- Для подростков -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="15">
+                    <HorizontalStackLayout Spacing="15">
+                        <CheckBox x:Name="ForTeensCheckBox"
+                                  Color="{DynamicResource PrimaryColor}" />
+                        <Label x:Name="ForTeensLabel"
+                               Text="Для подростков"
+                               FontSize="16"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- Активна -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="15">
+                    <HorizontalStackLayout Spacing="15">
+                        <CheckBox x:Name="IsActiveCheckBox"
+                                  Color="{DynamicResource PrimaryColor}"
+                                  IsChecked="True" />
+                        <Label x:Name="IsActiveLabel"
+                               Text="Новость активна"
+                               FontSize="16"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- URL изображения -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="0">
+                    <Entry x:Name="ImageUrlEntry"
+                           Placeholder="URL изображения (необязательно)"
+                           BackgroundColor="Transparent"
+                           Margin="15,0"
+                           FontSize="14"
+                           HeightRequest="50" />
+                </Border>
+
+                <!-- Статистика -->
+                <Border BackgroundColor="#E3F2FD"
+                        Stroke="#2196F3"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="15">
+                    <Grid ColumnDefinitions="*,*">
+                        <VerticalStackLayout Grid.Column="0" Spacing="3">
+                            <Label Text="Просмотры"
+                                   FontSize="12"
+                                   TextColor="#0D47A1" />
+                            <Label x:Name="ViewsCountLabel"
+                                   Text="0"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#0D47A1" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="3">
+                            <Label Text="Дата создания"
+                                   FontSize="12"
+                                   TextColor="#0D47A1" />
+                            <Label x:Name="CreatedDateLabel"
+                                   Text=""
+                                   FontSize="12"
+                                   TextColor="#0D47A1" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Кнопки действий -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,20,0,0">
+                    <Button Grid.Column="0"
+                            x:Name="SaveButton"
+                            Text="💾 Сохранить"
+                            Clicked="OnSaveClicked"
+                            BackgroundColor="{DynamicResource PrimaryColor}"
+                            TextColor="White"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            FontSize="16"
+                            FontAttributes="Bold" />
+
+                    <Button Grid.Column="1"
+                            x:Name="CancelButton"
+                            Text="❌ Отмена"
+                            Clicked="OnCancelClicked"
+                            BackgroundColor="#9E9E9E"
+                            TextColor="White"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            FontSize="16"
+                            FontAttributes="Bold" />
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Индикатор загрузки -->
+        <Grid x:Name="LoadingOverlay" 
+              Grid.RowSpan="2" 
+              IsVisible="False" 
+              BackgroundColor="#80000000">
+            <VerticalStackLayout HorizontalOptions="Center" 
+                                 VerticalOptions="Center" 
+                                 Spacing="20">
+                <ActivityIndicator IsRunning="True" 
+                                  Color="White" 
+                                  WidthRequest="60" 
+                                  HeightRequest="60" />
+                <Label x:Name="LoadingLabel"
+                       Text="Сохранение..." 
+                       TextColor="White" 
+                       FontSize="16" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

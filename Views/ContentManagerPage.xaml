@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.ContentManagerPage"
+             Title="Панель контент-менеджера"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+            <converters:CategoryColorConverter x:Key="CategoryColorConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Индикатор загрузки -->
+        <Grid x:Name="LoadingOverlay" 
+              Grid.RowSpan="2" 
+              IsVisible="False" 
+              BackgroundColor="#80000000">
+            <VerticalStackLayout HorizontalOptions="Center" 
+                                 VerticalOptions="Center" 
+                                 Spacing="20">
+                <ActivityIndicator IsRunning="True" 
+                                  Color="White" 
+                                  WidthRequest="60" 
+                                  HeightRequest="60" />
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка..." 
+                       TextColor="White" 
+                       FontSize="16" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Заголовок -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Панель контент-менеджера"
+                       FontSize="20"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+                <Button Grid.Column="2"
+                        Text="📊"
+                        Clicked="OnStatsClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+            </Grid>
+        </Border>
+
+        <!-- Основной контент -->
+        <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource BackgroundColor}">
+            <VerticalStackLayout Spacing="20" Padding="20">
+
+                <!-- Приветствие -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="👋 Добро пожаловать, контент-менеджер!"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}" />
+                        <Label Text="Здесь вы можете управлять новостями и рассылками"
+                               FontSize="14"
+                               TextColor="#666" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Статистика новостей -->
+                <Border BackgroundColor="#E3F2FD"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="15">
+                    <Grid ColumnDefinitions="*,*">
+                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                            <Label x:Name="NewsCountLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource PrimaryColor}"
+                                   HorizontalOptions="Center" />
+                            <Label Text="Всего новостей"
+                                   FontSize="12"
+                                   TextColor="#666"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label x:Name="ActiveNewsLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="#4CAF50"
+                                   HorizontalOptions="Center" />
+                            <Label Text="Активных"
+                                   FontSize="12"
+                                   TextColor="#666"
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Управление новостями с выбором изображения -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="0">
+                    <VerticalStackLayout Spacing="0">
+                        <Border BackgroundColor="{DynamicResource PrimaryColor}"
+                                Padding="15">
+                            <Label Text="📰 Управление новостями"
+                                   FontSize="16"
+                                   TextColor="White"
+                                   FontAttributes="Bold" />
+                        </Border>
+
+                        <VerticalStackLayout Padding="15" Spacing="10">
+                            <!-- Заголовок -->
+                            <Entry x:Name="NewsTitleEntry"
+                                   Placeholder="Заголовок новости *"
+                                   BackgroundColor="#F5F5F5"
+                                   HeightRequest="45" />
+
+                            <!-- Краткое описание -->
+                            <Editor x:Name="NewsSummaryEditor"
+                                    Placeholder="Краткое описание (отображается в списке)"
+                                    BackgroundColor="#F5F5F5"
+                                    HeightRequest="60" />
+
+                            <!-- Полный текст -->
+                            <Editor x:Name="NewsContentEditor"
+                                    Placeholder="Полный текст новости *"
+                                    BackgroundColor="#F5F5F5"
+                                    HeightRequest="100" />
+
+                            <!-- Категория - расширенный выбор -->
+                            <Label Text="Категория новости:"
+                                   FontSize="13"
+                                   FontAttributes="Bold"
+                                   Margin="0,5,0,0" />
+
+                            <Picker x:Name="CategoryPicker"
+                                    Title="Выберите категорию"
+                                    BackgroundColor="#F5F5F5"
+                                    HeightRequest="65" />
+
+                            <!-- Выбор изображения с ПК -->
+                            <Label Text="Изображение (необязательно):"
+                                   FontSize="13"
+                                   FontAttributes="Bold"
+                                   Margin="0,10,0,0" />
+
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <Entry Grid.Column="0"
+                                       x:Name="ImagePathEntry"
+                                       Placeholder="Выберите изображение"
+                                       BackgroundColor="#F5F5F5"
+                                       HeightRequest="45"
+                                       IsReadOnly="True" />
+                                <Button Grid.Column="1"
+                                        Text="📁 Выбрать"
+                                        Clicked="OnPickImageClicked"
+                                        BackgroundColor="{DynamicResource SecondaryColor}"
+                                        TextColor="White"
+                                        HeightRequest="45"
+                                        WidthRequest="80" />
+                            </Grid>
+
+                            <!-- Предпросмотр изображения -->
+                            <Border x:Name="ImagePreviewBorder"
+                                    HeightRequest="150"
+                                    IsVisible="False">
+                                <Image x:Name="ImagePreview"
+                                       Aspect="AspectFill"
+                                       HorizontalOptions="Fill"
+                                       VerticalOptions="Fill" />
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnRemoveImageClicked" />
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                            <!-- Кнопка создания -->
+                            <Button Text="➕ Создать новость"
+                                    Clicked="OnCreateNewsClicked"
+                                    BackgroundColor="{DynamicResource PrimaryColor}"
+                                    TextColor="White"
+                                    HeightRequest="45"
+                                    CornerRadius="20"
+                                    Margin="0,10,0,0" />
+
+                            <!-- Кнопки управления -->
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <Button Grid.Column="0"
+                                        Text="📋 Все новости"
+                                        Clicked="OnAllNewsClicked"
+                                        BackgroundColor="{DynamicResource SecondaryColor}"
+                                        TextColor="White"
+                                        HeightRequest="40"
+                                        CornerRadius="15" />
+
+                                <Button Grid.Column="1"
+                                        Text="✏️ Редактировать"
+                                        Clicked="OnManageNewsClicked"
+                                        BackgroundColor="{DynamicResource AccentColor}"
+                                        TextColor="White"
+                                        HeightRequest="40"
+                                        CornerRadius="15" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Email рассылка с выбором пользователей -->
+                <Border BackgroundColor="White"
+                        Stroke="#FF9800"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="0">
+                    <VerticalStackLayout Spacing="0">
+                        <Border BackgroundColor="#FF9800"
+                                Padding="15">
+                            <Label Text="📧 Email рассылка"
+                                   FontSize="16"
+                                   TextColor="White"
+                                   FontAttributes="Bold" />
+                        </Border>
+
+                        <VerticalStackLayout Padding="15" Spacing="10">
+                            <Entry x:Name="NewsletterSubjectEntry"
+                                   Placeholder="Тема рассылки *"
+                                   BackgroundColor="#F5F5F5"
+                                   HeightRequest="45" />
+
+                            <Editor x:Name="NewsletterContentEditor"
+                                    Placeholder="Текст рассылки *"
+                                    BackgroundColor="#F5F5F5"
+                                    HeightRequest="120" />
+
+                            <!-- Выбор получателей -->
+                            <Label Text="Получатели:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#333"
+                                   Margin="0,10,0,5" />
+
+                            <!-- Кнопки выбора по ролям -->
+                            <HorizontalStackLayout Spacing="10" Margin="0,0,0,10" >
+                                <Button Text="👥 Все пользователи"
+                                        x:Name="AllUsersButton"
+                                        BackgroundColor="#4CAF50"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="15"
+                                        Clicked="OnSelectAllUsers"
+                                        FontSize="11" />
+
+                                <Button Text="🎓 Студенты"
+                                        x:Name="StudentsButton"
+                                        BackgroundColor="{DynamicResource SecondaryColor}"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="15"
+                                        Clicked="OnSelectStudents"
+                                        FontSize="11" />
+
+                                <Button Text="👨‍🏫 Преподаватели"
+                                        x:Name="TeachersButton"
+                                        BackgroundColor="{DynamicResource AccentColor}"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="15"
+                                        Clicked="OnSelectTeachers"
+                                        FontSize="11" />
+
+                                <Button Text="⚙️ Контент-менеджеры"
+                                        x:Name="ContentManagersButton"
+                                        BackgroundColor="#9C27B0"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="15"
+                                        Clicked="OnSelectContentManagers"
+                                        FontSize="11" />
+
+                                <Button Text="👥 Учебные группы"
+                                        x:Name="GroupsButton"
+                                        BackgroundColor="#FF9800"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="15"
+                                        Clicked="OnSelectGroups"
+                                        FontSize="11" />
+                            </HorizontalStackLayout>
+
+                            <!-- Список групп (если выбраны группы) -->
+                            <Border x:Name="GroupsSection"
+                                    IsVisible="False"
+                                    BackgroundColor="#F5F5F5"
+                                    Padding="10">
+                                <VerticalStackLayout Spacing="10">
+                                    <Label Text="Выберите учебные группы:"
+                                           FontSize="13"
+                                           FontAttributes="Bold" />
+
+                                    <CollectionView x:Name="GroupsCollection"
+                                                    HeightRequest="150"
+                                                    SelectionMode="Multiple"
+                                                    SelectionChanged="OnGroupsSelected">
+                                        <CollectionView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,2"
+                                                        Padding="10"
+                                                        BackgroundColor="White"
+                                                        Stroke="#E0E0E0"
+                                                        StrokeThickness="1"
+                                                        StrokeShape="RoundRectangle 5">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <VerticalStackLayout Grid.Column="0">
+                                                            <Label Text="{Binding GroupName}"
+                                                                   FontSize="13"
+                                                                   FontAttributes="Bold" />
+                                                            <Label Text="{Binding CourseName}"
+                                                                   FontSize="11"
+                                                                   TextColor="#666" />
+                                                            <Label Text="{Binding StudentCount, StringFormat='👥 {0} студентов'}"
+                                                                   FontSize="10"
+                                                                   TextColor="#888" />
+                                                        </VerticalStackLayout>
+                                                        <CheckBox Grid.Column="1"
+                                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                  Color="{DynamicResource PrimaryColor}"
+                                                                  VerticalOptions="Center" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </CollectionView.ItemTemplate>
+                                    </CollectionView>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <!-- Информация о выбранных получателях -->
+                            <Border BackgroundColor="#E8F5E9"
+                                    Padding="10">
+                                <Label x:Name="SelectedRecipientsLabel"
+                                       Text="Выбрано: 0 пользователей"
+                                       FontSize="13"
+                                       TextColor="#2E7D32" />
+                            </Border>
+
+                            <!-- Кнопки отправки -->
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10,0,0">
+                                <Button Grid.Column="0"
+                                        Text="📤 Отправить"
+                                        Clicked="OnSendEmailClicked"
+                                        BackgroundColor="#4CAF50"
+                                        TextColor="White"
+                                        HeightRequest="45"
+                                        CornerRadius="20" />
+
+                                <Button Grid.Column="1"
+                                        Text="🔄 Сбросить"
+                                        Clicked="OnResetSelectionClicked"
+                                        BackgroundColor="#9E9E9E"
+                                        TextColor="White"
+                                        HeightRequest="45"
+                                        CornerRadius="20" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Последние новости -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="0">
+                    <VerticalStackLayout Spacing="0">
+                        <Border BackgroundColor="#E0E0E0"
+                                Padding="15">
+                            <Label Text="📰 Последние новости"
+                                   FontSize="16"
+                                   TextColor="#333"
+                                   FontAttributes="Bold" />
+                        </Border>
+
+                        <CollectionView x:Name="RecentNewsCollection"
+                                        HeightRequest="200"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="10,5"
+                                            Padding="10"
+                                            BackgroundColor="#F9F9F9"
+                                            Stroke="#E0E0E0"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8">
+                                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                            <Label Grid.Row="0" Grid.Column="0"
+                                                   Text="{Binding Title}"
+                                                   FontSize="14"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{DynamicResource PrimaryColor}" />
+
+                                            <Label Grid.Row="1" Grid.Column="0"
+                                                   Text="{Binding Summary}"
+                                                   FontSize="11"
+                                                   TextColor="#888"
+                                                   LineBreakMode="TailTruncation"
+                                                   MaxLines="1" />
+
+                                            <Label Grid.Row="2" Grid.Column="0"
+                                                   Text="{Binding FormattedDate}"
+                                                   FontSize="10"
+                                                   TextColor="#666" />
+
+                                            <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1"
+                                                    BackgroundColor="{Binding Category, Converter={StaticResource CategoryColorConverter}}"
+                                                    Padding="5,2"
+                                                    VerticalOptions="Start">
+                                                <Label Text="{Binding CategoryDisplay}"
+                                                       FontSize="8"
+                                                       TextColor="White" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Кнопка перехода на главную -->
+                <Button Text="🏠 На главную"
+                        Clicked="OnHomeClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        HeightRequest="45"
+                        CornerRadius="20"
+                        Margin="0,10,0,0" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

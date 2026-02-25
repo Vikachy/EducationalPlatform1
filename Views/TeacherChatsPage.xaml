@@ -3,292 +3,170 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:converters="clr-namespace:EducationalPlatform.Converters"
              x:Class="EducationalPlatform.Views.TeacherChatsPage"
-             Title="Чаты групп">
+             Title="{Binding Title}"
+             BackgroundColor="{DynamicResource BackgroundColor}">
 
     <ContentPage.Resources>
         <ResourceDictionary>
-            <converters:MyMessageColorConverter x:Key="MyMessageColorConverter" />
-            <converters:MessageAlignmentConverter x:Key="MessageAlignmentConverter" />
-            <converters:BoolInverseConverter x:Key="BoolInverseConverter" />
-            <converters:IntToBoolConverter x:Key="IntToBoolConverter" />
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+            <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
+            <converters:MoscowTimeConverter x:Key="MoscowTimeConverter" />
+            <converters:ActiveStatusColorConverter x:Key="ActiveStatusColorConverter" />
+            <converters:ActiveStatusTextConverter x:Key="ActiveStatusTextConverter" />
+            <converters:ColorConverter x:Key="ColorConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <!-- Адаптивный макет: на мобильных - одна колонка, на десктопе - две -->
-    <Grid x:Name="MainGrid"
-          ColumnDefinitions="{OnIdiom Default='*', Desktop='300,*'}">
-        
-        <!-- Индикатор загрузки на весь экран -->
+    <Grid RowDefinitions="Auto,*">
         <Grid x:Name="LoadingOverlay"
-              Grid.ColumnSpan="2"
+              Grid.RowSpan="2"
               BackgroundColor="#80000000"
-              IsVisible="False"
-              VerticalOptions="Fill"
-              HorizontalOptions="Fill">
-            <VerticalStackLayout 
-                Spacing="20"
-                VerticalOptions="Center"
-                HorizontalOptions="Center">
+              IsVisible="False">
+            <VerticalStackLayout Spacing="20"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center">
                 <ActivityIndicator x:Name="LoadingIndicator"
                                    IsRunning="False"
                                    Color="White"
                                    HeightRequest="50"
                                    WidthRequest="50"/>
-                <Label Text="Загрузка чатов..."
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка чатов..."
                        TextColor="White"
-                       FontSize="16"
-                       HorizontalOptions="Center"/>
+                       FontSize="16"/>
             </VerticalStackLayout>
         </Grid>
 
-        <!-- Левая панель - список групп -->
-        <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto">
-
-            <!-- Заголовок -->
-            <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
-                <Label Text="Мои учебные группы" 
-                       FontSize="16" 
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
+                <Label Grid.Column="0" 
+                       x:Name="HeaderLabel"
+                       Text="👨‍🏫 Чаты групп" 
+                       FontSize="22" 
                        FontAttributes="Bold" 
-                       TextColor="White" 
-                       HorizontalOptions="Center" />
-            </Border>
-
-            <!-- Список групп -->
-            <CollectionView Grid.Row="1" x:Name="GroupsCollectionView"
-                            SelectionMode="Single"
-                            SelectionChanged="OnGroupSelected">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Padding="10" 
-                              BackgroundColor="White"
-                              Margin="5">
-
-                            <Frame BackgroundColor="#F8F9FA" 
-                                   BorderColor="#E9ECEF"
-                                   CornerRadius="10"
-                                   Padding="15"
-                                   HasShadow="True">
-
-                                <Grid ColumnDefinitions="Auto,*,Auto" 
-                                      RowDefinitions="Auto,Auto,Auto">
-
-                                    <!-- Иконка группы -->
-                                    <Label Grid.Row="0" Grid.Column="0" 
-                                           Grid.RowSpan="3"
-                                           Text="👥" 
-                                           FontSize="20" 
-                                           VerticalOptions="Center" 
-                                           Margin="0,0,10,0" />
-
-                                    <!-- Название группы и курса -->
-                                    <Label Grid.Row="0" Grid.Column="1"
-                                           Text="{Binding GroupName}" 
-                                           FontSize="14" 
-                                           FontAttributes="Bold" />
-
-                                    <Label Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding CourseName}" 
-                                           FontSize="12" 
-                                           TextColor="#666" />
-
-                                    <!-- Статус и студенты -->
-                                    <Label Grid.Row="2" Grid.Column="1"
-                                           Text="{Binding StudentCount, StringFormat='{0} студентов'}" 
-                                           FontSize="11" 
-                                           TextColor="#999" />
-
-                                    <!-- Бейдж непрочитанных сообщений -->
-                                    <Frame Grid.Row="0" Grid.Column="2"
-                                           Grid.RowSpan="3"
-                                           BackgroundColor="#FF3B30"
-                                           Padding="6,2"
-                                           HorizontalOptions="End"
-                                           VerticalOptions="Start"
-                                           CornerRadius="10"
-                                           IsVisible="{Binding UnreadMessages, Converter={x:StaticResource IntToBoolConverter}}">
-                                        <Label Text="{Binding UnreadMessages}" 
-                                               FontSize="10" 
-                                               FontAttributes="Bold" 
-                                               TextColor="White" 
-                                               HorizontalOptions="Center" 
-                                               VerticalOptions="Center"/>
-                                    </Frame>
-
-                                </Grid>
-                            </Frame>
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-
-            <!-- Кнопка управления группами -->
-            <Button Grid.Row="2"
-                    Text="Управление группами" 
-                    Clicked="OnManageGroupsClicked"
-                    BackgroundColor="#2E86AB"
-                    TextColor="White"
-                    Margin="10"
-                    CornerRadius="10" />
-
-        </Grid>
-
-        <!-- Правая панель - чат (скрыта на мобильных, показывается через навигацию) -->
-        <Grid Grid.Column="1" 
-              BackgroundColor="#F5F5F5"
-              IsVisible="{OnIdiom Default=False, Desktop=True}"
-              x:Name="ChatPanel">
-
-            <Grid RowDefinitions="Auto,*,Auto" 
-                  ColumnDefinitions="*">
-
-                <!-- Заголовок чата -->
-                <Border Grid.Row="0" 
+                       TextColor="White" />
+                <Button Grid.Column="1" 
+                        x:Name="ManageGroupsButton"
+                        Text="⚙️ Управление" 
+                        Clicked="OnManageGroupsClicked"
                         BackgroundColor="White" 
-                        Stroke="LightGray" 
-                        StrokeThickness="1"
-                        StrokeShape="Rectangle"
-                        Padding="15">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <VerticalStackLayout Grid.Column="0">
-                            <Label x:Name="ChatGroupNameLabel" 
-                                   Text="Название группы" 
-                                   FontSize="16" 
-                                   FontAttributes="Bold" />
-                            <Label x:Name="ChatOnlineLabel" 
-                                   Text="Online: 0" 
-                                   FontSize="12" 
-                                   TextColor="Gray" />
-                        </VerticalStackLayout>
-
-                        <Button Grid.Column="1"
-                                Text="Назад" 
-                                Clicked="OnBackClicked"
-                                BackgroundColor="Transparent"
-                                TextColor="#2E86AB"
-                                BorderColor="#2E86AB"
-                                BorderWidth="1"
-                                CornerRadius="5"
-                                Padding="10,5" />
-                    </Grid>
-                </Border>
-
-                <!-- Сообщения -->
-                <CollectionView Grid.Row="1" 
-                                x:Name="MessagesCollectionView"
-                                Margin="10">
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Padding="5">
-
-                                <!-- Системное сообщение -->
-                                <Frame BackgroundColor="#E3F2FD"
-                                        Padding="10"
-                                        HorizontalOptions="Center"
-                                        CornerRadius="15"
-                                        IsVisible="{Binding IsSystemMessage}">
-                                    <Label Text="{Binding MessageText}" 
-                                           FontSize="12"
-                                           TextColor="#1565C0"
-                                           HorizontalOptions="Center" />
-                                </Frame>
-
-                                <!-- Файловое сообщение -->
-                                <Frame BackgroundColor="{Binding IsMyMessage, Converter={x:StaticResource MyMessageColorConverter}}"
-                                        Padding="15"
-                                        HorizontalOptions="{Binding IsMyMessage, Converter={x:StaticResource MessageAlignmentConverter}}"
-                                        CornerRadius="15"
-                                        IsVisible="{Binding IsFileMessage}">
-                                    <Grid ColumnDefinitions="Auto,*" 
-                                          RowDefinitions="Auto,Auto">
-                                        <Label Grid.Row="0" Grid.Column="0"
-                                               Text="📎" 
-                                               FontSize="16"
-                                               VerticalOptions="Center"
-                                               Margin="0,0,10,0" />
-                                        <Label Grid.Row="0" Grid.Column="1"
-                                               Text="{Binding FileName}" 
-                                               FontSize="14"
-                                               FontAttributes="Bold" />
-                                        <Label Grid.Row="1" Grid.Column="1"
-                                               Text="{Binding FileSize}" 
-                                               FontSize="12"
-                                               TextColor="#666" />
-                                    </Grid>
-                                    <Frame.GestureRecognizers>
-                                        <TapGestureRecognizer 
-                                            Tapped="OnFileMessageTapped"
-                                            CommandParameter="{Binding .}" />
-                                    </Frame.GestureRecognizers>
-                                </Frame>
-
-                                <!-- Обычное сообщение -->
-                                <Frame BackgroundColor="{Binding IsMyMessage, Converter={x:StaticResource MyMessageColorConverter}}"
-                                        Padding="15"
-                                        HorizontalOptions="{Binding IsMyMessage, Converter={x:StaticResource MessageAlignmentConverter}}"
-                                        CornerRadius="15"
-                                        IsVisible="{Binding IsFileMessage, Converter={x:StaticResource BoolInverseConverter}}">
-                                    <VerticalStackLayout>
-                                        <Label Text="{Binding MessageText}" 
-                                               FontSize="14" />
-                                        <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}" 
-                                               FontSize="10" 
-                                               TextColor="#666"
-                                               HorizontalOptions="End" />
-                                    </VerticalStackLayout>
-                                </Frame>
-
-                            </Grid>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-
-                <!-- Панель ввода -->
-                <Grid Grid.Row="2" 
-                      BackgroundColor="White" 
-                      Padding="10"
-                      ColumnDefinitions="*,Auto,Auto">
-
-                    <Entry Grid.Column="0"
-                           x:Name="MessageEntry"
-                           Placeholder="Введите сообщение..."
-                           Completed="OnMessageSent"
-                           Margin="0,0,10,0" />
-
-                    <Button Grid.Column="1"
-                            Text="📎"
-                            Clicked="OnAttachFileClicked"
-                            BackgroundColor="Transparent"
-                            TextColor="#2E86AB"
-                            MinimumWidthRequest="44"
-                            MinimumHeightRequest="44"
-                            Margin="0,0,10,0" />
-
-                    <Button Grid.Column="2"
-                            Text="Отправить"
-                            Clicked="OnSendMessageClicked"
-                            BackgroundColor="#2E86AB"
-                            TextColor="White"
-                            MinimumWidthRequest="44"
-                            MinimumHeightRequest="44" />
-
-                </Grid>
-
+                        TextColor="{DynamicResource PrimaryColor}" 
+                        CornerRadius="20" 
+                        Padding="12,6"
+                        FontSize="12" />
             </Grid>
+        </Border>
 
-            <!-- Заглушка когда чат не выбран -->
-            <VerticalStackLayout HorizontalOptions="Center" 
-                                 VerticalOptions="Center"
-                                 IsVisible="{OnIdiom Default=True, Desktop=False}">
-                <Label Text="💬" 
-                       FontSize="40" 
-                       HorizontalOptions="Center" />
-                <Label Text="Выберите группу для начала общения" 
-                       FontSize="16" 
-                       TextColor="Gray" 
-                       HorizontalOptions="Center" />
-            </VerticalStackLayout>
+        <CollectionView Grid.Row="1"
+                        x:Name="GroupsCollectionView"
+                        ItemsSource="{Binding Groups}"
+                        SelectionMode="Single"
+                        SelectionChanged="OnGroupSelected"
+                        Margin="10">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout HorizontalOptions="Center" 
+                                     VerticalOptions="Center" 
+                                     Spacing="20"
+                                     Padding="20">
+                    <Label Text="👥" 
+                           FontSize="64" 
+                           HorizontalOptions="Center" 
+                           TextColor="#999" />
+                    <Label Text="У вас пока нет групп"
+                           FontSize="18"
+                           TextColor="#999"
+                           HorizontalOptions="Center" />
+                    <Label Text="Создайте группу в управлении"
+                           FontSize="14"
+                           TextColor="#999"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
 
-        </Grid>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="5,8"
+                            Padding="15"
+                            BackgroundColor="White"
+                            Stroke="{DynamicResource PrimaryColor}"
+                            StrokeThickness="{Binding HasUnreadMessages, Converter={StaticResource GreaterThanZeroConverter}}"
+                            StrokeShape="RoundRectangle 15">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto">
 
+                            <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="0"
+                                    WidthRequest="60"
+                                    HeightRequest="60"
+                                    Stroke="{DynamicResource PrimaryColor}"
+                                    StrokeThickness="2"
+                                    StrokeShape="RoundRectangle 30"
+                                    BackgroundColor="White"
+                                    Margin="0,0,15,0">
+                                <Image Source="{Binding GroupAvatarUrl, Converter={StaticResource AvatarConverter}}"
+                                       Aspect="AspectFill"
+                                       WidthRequest="56"
+                                       HeightRequest="56" />
+                            </Border>
+
+                            <Label Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding GroupName}"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextColor}"
+                                   LineBreakMode="TailTruncation"
+                                   VerticalOptions="End" />
+
+                            <Label Grid.Row="0" Grid.Column="2"
+                                   Text="{Binding LastMessageTime, Converter={StaticResource MoscowTimeConverter}}"
+                                   FontSize="11"
+                                   TextColor="Gray"
+                                   VerticalOptions="End" />
+
+                            <Label Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                   Text="{Binding CourseName}"
+                                   FontSize="13"
+                                   TextColor="{DynamicResource PrimaryColor}"
+                                   Margin="0,2,0,2" />
+
+                            <Label Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                   Text="{Binding LastMessage}"
+                                   FontSize="13"
+                                   TextColor="#666"
+                                   MaxLines="2"
+                                   LineBreakMode="TailTruncation" />
+
+                            <Border Grid.Row="1" Grid.Column="2"
+                                    BackgroundColor="#FF3B30"
+                                    Padding="8,4"
+                                    VerticalOptions="Start"
+                                    IsVisible="{Binding HasUnreadMessages}">
+                                <Label Text="{Binding UnreadMessages}"
+                                       FontSize="11"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+                            </Border>
+
+                            <HorizontalStackLayout Grid.Row="2" Grid.Column="2"
+                                                   Spacing="8"
+                                                   HorizontalOptions="End"
+                                                   VerticalOptions="End">
+                                <Label Text="{Binding StudentCount, StringFormat='👥 {0}'}"
+                                       FontSize="11"
+                                       TextColor="Gray" />
+                                <Label Text="{Binding IsActive, Converter={StaticResource ActiveStatusTextConverter}}"
+                                       FontSize="11"
+                                       TextColor="{Binding IsActive, Converter={StaticResource ActiveStatusColorConverter}}"
+                                       FontAttributes="Bold" />
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
     </Grid>
 </ContentPage>

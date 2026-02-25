@@ -2,132 +2,147 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.TheoryStudyPage"
-             Title="Изучение теории">
+             Title="{Binding TitleLabel.Text}"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
 
     <Grid RowDefinitions="Auto,*,Auto">
-
-        <!-- Заголовок -->
-        <Border Grid.Row="0" BackgroundColor="{DynamicResource PrimaryColor}" Padding="15">
+        <!-- Шапка -->
+        <Frame Grid.Row="0" 
+               BackgroundColor="{DynamicResource PrimaryColor}"
+               Padding="16"
+               CornerRadius="0"
+               HasShadow="True">
             <Grid ColumnDefinitions="*,Auto">
-                <Label x:Name="TitleLabel" 
-                       Text="Теория" 
-                       FontSize="20" 
-                       TextColor="White" 
+                <Label x:Name="TitleLabel"
+                       TextColor="White"
+                       FontSize="Title"
                        FontAttributes="Bold"
-                       VerticalOptions="Center" />
+                       VerticalOptions="Center"/>
                 <Button Grid.Column="1"
-                        Text="Назад" 
+                        Text="← Назад"
                         Clicked="OnBackClicked"
-                        BackgroundColor="Transparent"
                         TextColor="White"
-                        Padding="20,0" />
+                        FontAttributes="Bold"
+                        BackgroundColor="Transparent"
+                        BorderColor="White"
+                        BorderWidth="1"
+                        CornerRadius="8"
+                        Padding="16,8"/>
             </Grid>
-        </Border>
+        </Frame>
 
-        <!-- Содержание теории -->
+        <!-- Основной контент -->
         <ScrollView Grid.Row="1">
-            <VerticalStackLayout Padding="20" Spacing="15">
-                <Label x:Name="ContentLabel" 
-                       FontSize="16"
-                       LineBreakMode="WordWrap" />
+            <VerticalStackLayout Padding="20" Spacing="20">
 
-                <!-- Прикрепленные файлы -->
-                <Border x:Name="AttachmentsSection" 
-                        IsVisible="False"
-                        BackgroundColor="#F8F9FA"
-                        Padding="15"
-                        Stroke="#DEE2E6"
-                        StrokeThickness="1"
-                        StrokeShape="RoundRectangle 10">
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="Прикрепленные файлы:" 
-                               FontSize="16" 
+                <!-- Индикатор загрузки -->
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="{DynamicResource PrimaryColor}"
+                                   HorizontalOptions="Center"
+                                   HeightRequest="48"/>
+
+                <!-- Текст теории -->
+                <Label x:Name="ContentLabel"
+                       FontSize="Medium"
+                       LineBreakMode="WordWrap"
+                       TextColor="{DynamicResource TextColor}"/>
+
+                <!-- Блок вложений -->
+                <Frame x:Name="AttachmentsSection"
+                       IsVisible="False"
+                       BackgroundColor="{DynamicResource CardBackground}"
+                       Padding="16"
+                       CornerRadius="16"
+                       HasShadow="True"
+                       BorderColor="{DynamicResource PrimaryColorLight}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Прикреплённые материалы"
+                               FontSize="Large"
                                FontAttributes="Bold"
-                               TextColor="{DynamicResource PrimaryColor}" />
+                               TextColor="{DynamicResource PrimaryColor}"/>
 
-                        <CollectionView x:Name="AttachmentsCollection">
+                        <CollectionView x:Name="AttachmentsCollection"
+                                        ItemsSource="{Binding Attachments}"
+                                        VerticalOptions="FillAndExpand">
                             <CollectionView.ItemTemplate>
                                 <DataTemplate>
-                                    <!-- Интерактивная карточка файла -->
-                                    <Border BackgroundColor="White"
-                                            Stroke="{DynamicResource PrimaryColor}"
-                                            StrokeThickness="2"
-                                            StrokeShape="RoundRectangle 12"
-                                            Padding="15"
-                                            Margin="0,8">
-                                        <Border.GestureRecognizers>
-                                            <TapGestureRecognizer Tapped="OnAttachmentTapped" CommandParameter="{Binding .}" />
-                                        </Border.GestureRecognizers>
-                                        
-                                        <Grid ColumnDefinitions="Auto,*,Auto" 
-                                              ColumnSpacing="15"
-                                              RowDefinitions="Auto,Auto">
-                                            
-                                            <!-- Большая иконка файла -->
-                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
-                                                    BackgroundColor="{DynamicResource PrimaryColor}"
-                                                    StrokeThickness="0"
-                                                    StrokeShape="RoundRectangle 8"
-                                                    WidthRequest="50"
-                                                    HeightRequest="50"
-                                                    VerticalOptions="Center">
-                                                <Label Text="{Binding FileIcon}"
-                                                       FontSize="24"
-                                                       HorizontalOptions="Center"
-                                                       VerticalOptions="Center"
-                                                       TextColor="White"/>
-                                            </Border>
+                                    <Frame BackgroundColor="White"
+                                           CornerRadius="12"
+                                           Padding="12"
+                                           HasShadow="True"
+                                           Margin="0,6">
+                                        <Frame.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnAttachmentTapped" CommandParameter="{Binding .}"/>
+                                        </Frame.GestureRecognizers>
 
-                                            <!-- Информация о файле -->
-                                            <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="4">
-                                                <Label Text="{Binding FileName}" 
-                                                       FontSize="16"
+                                        <Grid ColumnDefinitions="60,*,Auto" ColumnSpacing="16">
+                                            <!-- Иконка -->
+                                            <Frame Grid.Column="0"
+                                                   BackgroundColor="{DynamicResource PrimaryColor}"
+                                                   WidthRequest="52"
+                                                   HeightRequest="52"
+                                                   CornerRadius="12"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="Center">
+                                                <Label Text="{Binding FileIcon}"
+                                                       FontSize="28"
+                                                       TextColor="White"
+                                                       HorizontalOptions="Center"
+                                                       VerticalOptions="Center"/>
+                                            </Frame>
+
+                                            <!-- Информация -->
+                                            <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                                <Label Text="{Binding FileName}"
+                                                       FontSize="Medium"
                                                        FontAttributes="Bold"
-                                                       LineBreakMode="TailTruncation"
-                                                       TextColor="{DynamicResource TextColor}"/>
-                                                <Label Text="{Binding FileSize}" 
-                                                       FontSize="13"
-                                                       TextColor="#666"/>
+                                                       MaxLines="2"
+                                                       LineBreakMode="TailTruncation"/>
+                                                <Label Text="{Binding FileSize}"
+                                                       FontSize="Caption"
+                                                       TextColor="Gray"/>
                                             </VerticalStackLayout>
 
-                                            <!-- Кнопка скачивания -->
-                                            <Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="2"
-                                                    Text="📥"
-                                                    FontSize="20"
-                                                    Clicked="OnOpenAttachmentClicked"
-                                                    CommandParameter="{Binding .}"
+                                            <!-- Кнопка скачать -->
+                                            <Button Grid.Column="2"
+                                                    Text="↓"
+                                                    FontSize="24"
+                                                    WidthRequest="52"
+                                                    HeightRequest="52"
+                                                    CornerRadius="26"
                                                     BackgroundColor="{DynamicResource AccentColor}"
                                                     TextColor="White"
-                                                    WidthRequest="50"
-                                                    HeightRequest="50"
-                                                    MinimumWidthRequest="50"
-                                                    MinimumHeightRequest="50"
-                                                    CornerRadius="25"
+                                                    Clicked="OnOpenAttachmentClicked"
+                                                    CommandParameter="{Binding .}"
                                                     VerticalOptions="Center"/>
                                         </Grid>
-                                    </Border>
+                                    </Frame>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
                         </CollectionView>
                     </VerticalStackLayout>
-                </Border>
+                </Frame>
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- Кнопки навигации -->
-        <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="10" Padding="15">
-            <Button x:Name="PrevButton" 
-                    Text="⬅️ Предыдущий" 
+        <!-- Нижняя панель навигации -->
+        <HorizontalStackLayout Grid.Row="2"
+                               Padding="16"
+                               Spacing="12"
+                               BackgroundColor="{DynamicResource CardBackground}"
+                               VerticalOptions="End">
+            <Button x:Name="PrevButton"
+                    Text="⬅ Предыдущий урок"
                     Clicked="OnPrevClicked"
                     IsVisible="False"
-                    Style="{DynamicResource StandardButtonStyle}"
-                    BackgroundColor="#6C757D"/>
-            <Button x:Name="NextButton" 
-                    Text="Следующий ➡️" 
+                    Style="{DynamicResource OutlineButtonStyle}"
+                    HorizontalOptions="FillAndExpand"/>
+            <Button x:Name="NextButton"
+                    Text="Следующий урок ➜"
                     Clicked="OnNextClicked"
-                    Style="{DynamicResource StandardButtonStyle}"
-                    BackgroundColor="{DynamicResource PrimaryColor}"/>
-        </Grid>
-
+                    Style="{DynamicResource PrimaryButtonStyle}"
+                    HorizontalOptions="FillAndExpand"/>
+        </HorizontalStackLayout>
     </Grid>
 </ContentPage>

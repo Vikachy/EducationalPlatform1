@@ -1,210 +1,172 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="EducationalPlatform.Views.StudentChatsPage"
-             Title="My Chats"
              xmlns:converters="clr-namespace:EducationalPlatform.Converters"
-             xmlns:models="clr-namespace:EducationalPlatform.Models"
+             x:Class="EducationalPlatform.Views.StudentChatsPage"
+             Title="{Binding Title}"
              BackgroundColor="{DynamicResource BackgroundColor}">
 
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
-            <converters:FileTypeToIconConverter x:Key="FileTypeToIconConverter" />
-            <converters:ChatTypeToColorConverter x:Key="ChatTypeToColorConverter" />
-            <converters:ChatTypeToIconConverter x:Key="ChatTypeToIconConverter" />
             <converters:NotNullConverter x:Key="NotNullConverter" />
             <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
+            <converters:OnlineStatusColorConverter x:Key="OnlineStatusColor" />
+            <converters:MoscowTimeConverter x:Key="MoscowTimeConverter" />
+            <converters:ColorConverter x:Key="ColorConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
-        <!-- Индикатор загрузки на весь экран -->
         <Grid x:Name="LoadingOverlay"
               Grid.RowSpan="2"
               BackgroundColor="#80000000"
-              IsVisible="False"
-              VerticalOptions="Fill"
-              HorizontalOptions="Fill">
-            <VerticalStackLayout 
-                Spacing="20"
-                VerticalOptions="Center"
-                HorizontalOptions="Center">
+              IsVisible="False">
+            <VerticalStackLayout Spacing="20"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center">
                 <ActivityIndicator x:Name="LoadingIndicator"
                                    IsRunning="False"
                                    Color="White"
                                    HeightRequest="50"
                                    WidthRequest="50"/>
-                <Label Text="Загрузка чатов..."
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка чатов..."
                        TextColor="White"
-                       FontSize="16"
-                       HorizontalOptions="Center"/>
+                       FontSize="16"/>
             </VerticalStackLayout>
         </Grid>
 
-        <!-- Заголовок -->
-        <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
             <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
-                <Label Grid.Column="0" Text="💬 Все мои чаты" FontSize="18" FontAttributes="Bold" TextColor="White" />
-                <Button Grid.Column="1" Text="📚 Курсы" BackgroundColor="White" TextColor="#2E86AB" CornerRadius="8" Padding="10,6" Clicked="OnMyCoursesClicked" />
+                <Label Grid.Column="0" 
+                       x:Name="HeaderLabel"
+                       Text="💬 Мои чаты" 
+                       FontSize="22" 
+                       FontAttributes="Bold" 
+                       TextColor="White" />
+                <Button Grid.Column="1" 
+                        x:Name="MyCoursesButton"
+                        Text="📚 Мои курсы" 
+                        Clicked="OnMyCoursesClicked"
+                        BackgroundColor="White" 
+                        TextColor="{DynamicResource PrimaryColor}" 
+                        CornerRadius="20" 
+                        Padding="12,6"
+                        FontSize="12" />
             </Grid>
         </Border>
 
-        <!-- Основная панель: на мобильных - одна колонка, на десктопе - две -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="ChatsColumn" Width="{OnPlatform WinUI=350, Default=*}" />
-                <ColumnDefinition x:Name="ChatColumn" Width="{OnPlatform WinUI=*, Default=0}" />
-            </Grid.ColumnDefinitions>
-            <!-- Список чатов слева -->
-            <CollectionView Grid.Column="0"
-                            x:Name="AllChatsCollectionView"
-                            ItemsSource="{Binding AllChats}"
-                            SelectionMode="Single"
-                            SelectionChanged="OnChatSelected">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Margin="10,5" BackgroundColor="White" Padding="15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+        <CollectionView Grid.Row="1"
+                        x:Name="ChatsCollectionView"
+                        ItemsSource="{Binding Chats}"
+                        SelectionMode="Single"
+                        SelectionChanged="OnChatSelected"
+                        Margin="10">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout HorizontalOptions="Center" 
+                                     VerticalOptions="Center" 
+                                     Spacing="20"
+                                     Padding="20">
+                    <Label Text="💬" 
+                           FontSize="64" 
+                           HorizontalOptions="Center" 
+                           TextColor="#999" />
+                    <Label Text="У вас пока нет чатов"
+                           FontSize="18"
+                           TextColor="#999"
+                           HorizontalOptions="Center" />
+                    <Label Text="Запишитесь на курсы, чтобы начать общение"
+                           FontSize="14"
+                           TextColor="#999"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
 
-                            <Frame Grid.Column="0" BackgroundColor="{Binding ChatType, Converter={StaticResource ChatTypeToColorConverter}}"
-                                   CornerRadius="20" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center">
-                                <Label Text="{Binding ChatType, Converter={StaticResource ChatTypeToIconConverter}}"
-                                       FontSize="16" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center" />
-                            </Frame>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="5,8"
+                            Padding="15"
+                            BackgroundColor="White"
+                            Stroke="{DynamicResource PrimaryColor}"
+                            StrokeThickness="{Binding HasUnreadMessages, Converter={StaticResource GreaterThanZeroConverter}}"
+                            StrokeShape="RoundRectangle 15">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto">
 
-                            <VerticalStackLayout Grid.Column="1" Margin="10,0" Spacing="4">
-                                <Label Text="{Binding ChatName}" FontSize="16" FontAttributes="Bold" LineBreakMode="TailTruncation" />
-                                <Label Text="{Binding Description}" FontSize="12" TextColor="#666" LineBreakMode="TailTruncation" />
-                                <Label Text="{Binding LastMessage}" FontSize="11" TextColor="#888" MaxLines="1" LineBreakMode="TailTruncation" />
-                            </VerticalStackLayout>
+                            <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="0"
+                                    WidthRequest="55"
+                                    HeightRequest="55"
+                                    Stroke="{Binding FrameColor, Converter={StaticResource ColorConverter}}"
+                                    StrokeThickness="2"
+                                    StrokeShape="RoundRectangle 27.5"
+                                    BackgroundColor="White"
+                                    Margin="0,0,15,0">
+                                <Image Source="{Binding Avatar, Converter={StaticResource AvatarConverter}}"
+                                       Aspect="AspectFill"
+                                       WidthRequest="51"
+                                       HeightRequest="51" />
+                            </Border>
 
-                            <VerticalStackLayout Grid.Column="2" HorizontalOptions="End" Spacing="4">
-                                <Label Text="{Binding LastMessageTime, StringFormat='{0:HH:mm}'}"
-                                       FontSize="10" TextColor="Gray" />
+                            <HorizontalStackLayout Grid.Row="0" Grid.Column="1"
+                                                   Spacing="4"
+                                                   VerticalOptions="End">
+                                <Label Text="{Binding ChatName}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextColor}"
+                                       LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding UserEmoji}"
+                                       FontSize="16"
+                                       IsVisible="{Binding UserEmoji, Converter={StaticResource NotNullConverter}}" />
+                            </HorizontalStackLayout>
 
-                                <Frame IsVisible="{Binding UnreadMessages, Converter={StaticResource GreaterThanZeroConverter}}"
-                                       BackgroundColor="Red" CornerRadius="10" Padding="6,2" HorizontalOptions="End">
-                                    <Label Text="{Binding UnreadMessages}" FontSize="10" TextColor="White" FontAttributes="Bold" />
-                                </Frame>
-                            </VerticalStackLayout>
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                            <Label Grid.Row="0" Grid.Column="2"
+                                   Text="{Binding LastMessageTime, Converter={StaticResource MoscowTimeConverter}}"
+                                   FontSize="11"
+                                   TextColor="Gray"
+                                   VerticalOptions="End" />
 
-            <!-- Панель текущего чата справа -->
-            <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" IsVisible="{Binding HasActiveChat}">
-                <Border Grid.Row="0" BackgroundColor="#2E86AB" Padding="15">
-                    <VerticalStackLayout>
-                        <Label x:Name="ChatTitleLabel" Text="Выберите чат" FontSize="18"
-                               FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
-                        <Label x:Name="ChatSubtitleLabel" Text="Start conversation" FontSize="12" TextColor="White" HorizontalOptions="Center" />
-                    </VerticalStackLayout>
-                </Border>
+                            <Label Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                   Text="{Binding LastMessage}"
+                                   FontSize="13"
+                                   TextColor="#666"
+                                   MaxLines="2"
+                                   LineBreakMode="TailTruncation"
+                                   Margin="0,2,0,2" />
 
-                <CollectionView Grid.Row="1"
-                                x:Name="MessagesCollectionView"
-                                ItemsSource="{Binding Messages}"
-                                SelectionMode="None"
-                                EmptyView="Нет еще сообщение">
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="models:ChatMessage">
-                            <Grid Padding="10,5" ColumnDefinitions="*,*">
-                                <!-- Сообщение другого пользователя -->
-                                <Frame Grid.Column="0" Grid.ColumnSpan="2"
-                                       IsVisible="{Binding IsMyMessage, Converter={StaticResource InverseBoolConverter}}"
-                                       BackgroundColor="#FFFFFF"
-                                       Padding="12"
-                                       HorizontalOptions="Start"
-                                       MaximumWidthRequest="300"
-                                       CornerRadius="18"
-                                       BorderColor="#E0E0E0">
-                                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
-                                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
-                                                BackgroundColor="LightGray" Stroke="LightGray" StrokeThickness="1"
-                                                StrokeShape="RoundRectangle 20" WidthRequest="36" HeightRequest="36"
-                                                VerticalOptions="Start">
-                                            <Image Source="{Binding SenderAvatar, Converter={StaticResource AvatarConverter}}" Aspect="AspectFill"
-                                                   HorizontalOptions="Center" VerticalOptions="Center"
-                                                   WidthRequest="32" HeightRequest="32" />
-                                        </Border>
-                                        <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="4" VerticalOptions="End">
-                                            <Label Text="{Binding SenderName}" FontSize="12" TextColor="#2E86AB" FontAttributes="Bold" />
-                                            <Label Text="{Binding UserEmoji}" FontSize="14" VerticalOptions="Center"
-                                                   IsVisible="{Binding UserEmoji, Converter={StaticResource NotNullConverter}}" />
-                                        </HorizontalStackLayout>
-                                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
-                                            <Label Text="{Binding MessageText}" TextColor="#333333" FontSize="14" LineBreakMode="WordWrap" IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
-                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsFileMessage}">
-                                                <Label Grid.Column="0" Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}" FontSize="16" VerticalOptions="Center" />
-                                                <VerticalStackLayout Grid.Column="1">
-                                                    <Label Text="{Binding FileName}" FontSize="13" FontAttributes="Bold" LineBreakMode="TailTruncation" />
-                                                    <Label Text="{Binding FileSize}" FontSize="11" TextColor="Gray" />
-                                                </VerticalStackLayout>
-                                                <Grid.GestureRecognizers>
-                                                    <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
-                                                </Grid.GestureRecognizers>
-                                            </Grid>
-                                        </VerticalStackLayout>
-                                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding SentAt, StringFormat='{0:HH:mm}'}" FontSize="10" TextColor="Gray" HorizontalOptions="End" VerticalOptions="End" />
-                                    </Grid>
-                                </Frame>
-
-                                <!-- Мое сообщение -->
-                                <Frame Grid.Column="1" Grid.ColumnSpan="2"
-                                       IsVisible="{Binding IsMyMessage}"
-                                       BackgroundColor="#DCF8C6"
-                                       Padding="12"
-                                       HorizontalOptions="End"
-                                       MaximumWidthRequest="300"
-                                       CornerRadius="18">
-                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="4">
-                                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="4">
-                                            <Label Text="{Binding MessageText}" TextColor="#000000" FontSize="14" LineBreakMode="WordWrap" IsVisible="{Binding IsFileMessage, Converter={StaticResource InverseBoolConverter}}" />
-                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsFileMessage}">
-                                                <Label Grid.Column="0" Text="{Binding FileType, Converter={StaticResource FileTypeToIconConverter}}" FontSize="16" VerticalOptions="Center" />
-                                                <VerticalStackLayout Grid.Column="1">
-                                                    <Label Text="{Binding FileName}" FontSize="13" FontAttributes="Bold" LineBreakMode="TailTruncation" />
-                                                    <Label Text="{Binding FileSize}" FontSize="11" TextColor="#666666" />
-                                                </VerticalStackLayout>
-                                                <Grid.GestureRecognizers>
-                                                    <TapGestureRecognizer Tapped="OnFileMessageTapped" CommandParameter="{Binding .}" />
-                                                </Grid.GestureRecognizers>
-                                            </Grid>
-                                        </VerticalStackLayout>
-                                        <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" HorizontalOptions="End" Spacing="4" VerticalOptions="End">
-                                            <Label Text="{Binding SentAt, StringFormat='{0:HH:mm}'}" FontSize="10" TextColor="#666666" />
-                                            <Label Text="✓✓" FontSize="10" TextColor="#34B7F1" IsVisible="{Binding IsDelivered}" />
-                                        </HorizontalStackLayout>
-                                    </Grid>
-                                </Frame>
-
+                            <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                  ColumnDefinitions="*,Auto">
+                                <Label Grid.Column="0"
+                                       Text="{Binding ChatTypeDisplay}"
+                                       FontSize="11"
+                                       TextColor="{DynamicResource PrimaryColor}" />
+                                <Border Grid.Column="1"
+                                        BackgroundColor="#FF3B30"
+                                        Padding="8,4"
+                                        IsVisible="{Binding HasUnreadMessages}">
+                                    <Label Text="{Binding UnreadMessages}"
+                                           FontSize="11"
+                                           FontAttributes="Bold"
+                                           TextColor="White" />
+                                </Border>
                             </Grid>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
 
-                <!-- Панель ввода сообщений -->
-                <Border Grid.Row="2" BackgroundColor="White" Stroke="#E0E0E0" StrokeThickness="1" Padding="10">
-                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                        <Entry Grid.Column="0" x:Name="MessageEntry" Placeholder="Введите сообщение..." Completed="OnMessageSent" ReturnType="Send" />
-                        <Button Grid.Column="1" Text="📎" BackgroundColor="Transparent" TextColor="#2E86AB" MinimumWidthRequest="44" MinimumHeightRequest="44" WidthRequest="44" HeightRequest="44" Clicked="OnAttachFileClicked" />
-                        <Button Grid.Column="2" Text="➤" BackgroundColor="#2E86AB" TextColor="White" MinimumWidthRequest="44" MinimumHeightRequest="44" WidthRequest="44" HeightRequest="44" Clicked="OnSendMessageClicked" />
-                    </Grid>
-                </Border>
-            </Grid>
-
-            <!-- Заглушка при отсутствии выбранного чата -->
-            <VerticalStackLayout Grid.Column="1" IsVisible="{Binding HasActiveChat, Converter={StaticResource InverseBoolConverter}}" HorizontalOptions="Center" VerticalOptions="Center" Spacing="20">
-                <Label Text="💬" FontSize="80" HorizontalOptions="Center" />
-                <Label Text="Выберите чат, чтобы начать разговор" FontSize="18" HorizontalOptions="Center" TextColor="Gray" />
-            </VerticalStackLayout>
-        </Grid>
+                            <Border Grid.Row="0" Grid.Column="1"
+                                    BackgroundColor="{Binding IsOnline, Converter={StaticResource OnlineStatusColor}}"
+                                    WidthRequest="12"
+                                    HeightRequest="12"
+                                    HorizontalOptions="Start"
+                                    Margin="0,0,0,0"
+                                    IsVisible="{Binding ShowOnlineIndicator}" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
     </Grid>
 </ContentPage>

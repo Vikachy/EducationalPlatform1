@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.CreateContestPage"
+             Title="Создание конкурса"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       x:Name="HeaderLabel"
+                       Text="Создание конкурса"
+                       FontSize="22"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+            </Grid>
+        </Border>
+
+        <!-- Форма создания -->
+        <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource BackgroundColor}">
+            <VerticalStackLayout Padding="20" Spacing="15">
+
+                <!-- Название конкурса -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="0">
+                    <Entry x:Name="ContestNameEntry"
+                           Placeholder="Название конкурса"
+                           BackgroundColor="Transparent"
+                           Margin="15,0"
+                           FontSize="16"
+                           HeightRequest="50" />
+                </Border>
+
+                <!-- Описание -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="0">
+                    <Editor x:Name="DescriptionEditor"
+                            Placeholder="Описание конкурса"
+                            AutoSize="TextChanges"
+                            BackgroundColor="Transparent"
+                            Margin="15,10"
+                            FontSize="14"
+                            HeightRequest="100" />
+                </Border>
+
+                <!-- Язык программирования -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="15">
+                    <Picker x:Name="LanguagePicker"
+                            Title="Выберите язык"
+                            SelectedIndex="0"
+                            FontSize="16" />
+                </Border>
+
+                <!-- Даты -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Border Grid.Column="0"
+                            BackgroundColor="White"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="10">
+                        <VerticalStackLayout>
+                            <Label x:Name="StartDateLabel"
+                                   Text="Дата начала"
+                                   FontSize="12"
+                                   TextColor="#666" />
+                            <DatePicker x:Name="StartDatePicker"
+                                        MinimumDate="{Binding Today}"
+                                        FontSize="14" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            BackgroundColor="White"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="10">
+                        <VerticalStackLayout>
+                            <Label x:Name="EndDateLabel"
+                                   Text="Дата окончания"
+                                   FontSize="12"
+                                   TextColor="#666" />
+                            <DatePicker x:Name="EndDatePicker"
+                                        MinimumDate="{Binding Today}"
+                                        FontSize="14" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Призовые монеты и максимальное количество участников -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Border Grid.Column="0"
+                            BackgroundColor="White"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="10">
+                        <VerticalStackLayout>
+                            <Label x:Name="PrizeLabel"
+                                   Text="Призовые монеты"
+                                   FontSize="12"
+                                   TextColor="#666" />
+                            <Entry x:Name="PrizeEntry"
+                                   Text="0"
+                                   Keyboard="Numeric"
+                                   FontSize="14" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            BackgroundColor="White"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="10">
+                        <VerticalStackLayout>
+                            <Label x:Name="MaxParticipantsLabel"
+                                   Text="Макс. участников"
+                                   FontSize="12"
+                                   TextColor="#666" />
+                            <Entry x:Name="MaxParticipantsEntry"
+                                   Placeholder="Не ограничено"
+                                   Keyboard="Numeric"
+                                   FontSize="14" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Только для групп -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 10"
+                        Padding="15">
+                    <HorizontalStackLayout Spacing="15">
+                        <CheckBox x:Name="OnlyForGroupsCheckBox"
+                                  Color="{DynamicResource PrimaryColor}" />
+                        <Label x:Name="OnlyForGroupsLabel"
+                               Text="Только для учебных групп"
+                               FontSize="16"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- Кнопка создания -->
+                <Button x:Name="CreateButton"
+                        Text="Создать конкурс"
+                        Clicked="OnCreateClicked"
+                        BackgroundColor="{DynamicResource PrimaryColor}"
+                        TextColor="White"
+                        CornerRadius="25"
+                        HeightRequest="50"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        Margin="0,20,0,0" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+        <Grid x:Name="LoadingOverlay" 
+      Grid.RowSpan="2" 
+      IsVisible="False" 
+      BackgroundColor="#80000000">
+            <VerticalStackLayout HorizontalOptions="Center" 
+                         VerticalOptions="Center" 
+                         Spacing="20">
+                <ActivityIndicator IsRunning="True" 
+                          Color="White" 
+                          WidthRequest="60" 
+                          HeightRequest="60" />
+                <Label Text="Создание конкурса..." 
+               TextColor="White" 
+               FontSize="16" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

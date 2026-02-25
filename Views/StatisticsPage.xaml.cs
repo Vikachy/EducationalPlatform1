@@ -10,8 +10,8 @@ namespace EducationalPlatform.Views
         private User _currentUser;
         private DatabaseService _dbService;
         private SettingsService _settingsService;
+        private LocalizationService _localizationService;
 
-        // Приватные поля для свойств
         private int _totalCourses;
         public int TotalCourses
         {
@@ -111,6 +111,7 @@ namespace EducationalPlatform.Views
             _currentUser = user;
             _dbService = dbService;
             _settingsService = settingsService;
+            _localizationService = App.AppLocalization;
 
             RecentAchievements = new ObservableCollection<Achievement>();
             BindingContext = this;
@@ -122,21 +123,25 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                IsBusy = true;
-
                 // Загружаем статистику из базы данных
                 var stats = await _dbService.GetUserStatisticsAsync(_currentUser.UserId);
 
                 if (stats != null)
                 {
-                    TotalCourses = stats.TotalCourses;
+                    // Получаем общее количество курсов отдельно
+                    var progressList = await _dbService.GetStudentProgressAsync(_currentUser.UserId);
+                    TotalCourses = progressList?.Count ?? 0;
+
                     CompletedCourses = stats.CompletedCourses;
-                    TotalTimeSpent = stats.TotalTimeSpent ?? 0;
-                    AverageScore = stats.AverageScore ?? 0.0;
-                    CompletionRate = stats.CompletionRate ?? 0.0;
-                    CurrentStreak = stats.CurrentStreak ?? 0;
-                    LongestStreak = stats.LongestStreak ?? 0;
-                    TotalDays = stats.TotalDays ?? 0;
+                    AverageScore = stats.AverageScore;
+                    CompletionRate = stats.CompletionRate;
+                    CurrentStreak = stats.CurrentStreak;
+                    LongestStreak = stats.CurrentStreak; // Используем CurrentStreak как LongestStreak
+                    TotalDays = stats.TotalDays;
+
+                    // Время в часах
+                    var totalMinutes = await _dbService.GetTotalLearningMinutesAsync(_currentUser.UserId);
+                    TotalTimeSpent = totalMinutes / 60;
                 }
                 else
                 {
@@ -164,21 +169,19 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить статистику: {ex.Message}", "OK");
+                await DisplayAlert(_localizationService?.GetText("Error") ?? "Ошибка",
+                    $"{_localizationService?.GetText("FailedToLoadStatistics") ?? "Не удалось загрузить статистику"}: {ex.Message}",
+                    _localizationService?.GetText("OK") ?? "OK");
                 Console.WriteLine($"Ошибка загрузки статистики: {ex}");
-            }
-            finally
-            {
-                IsBusy = false;
             }
         }
 
         private async void OnAllAchievementsClicked(object sender, EventArgs e)
         {
             await DisplayAlert(
-                _settingsService?.CurrentLanguage == "ru" ? "Достижения" : "Achievements",
-                _settingsService?.CurrentLanguage == "ru" ? "Откроется полный список достижений." : "Full achievements list will open.",
-                "OK");
+                _localizationService?.CurrentLanguage == "ru" ? "Достижения" : "Achievements",
+                _localizationService?.CurrentLanguage == "ru" ? "Откроется полный список достижений." : "Full achievements list will open.",
+                _localizationService?.GetText("OK") ?? "OK");
         }
 
         protected override void OnAppearing()
