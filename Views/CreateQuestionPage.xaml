@@ -2,133 +2,258 @@
 <ContentPage x:Class="EducationalPlatform.Views.CreateQuestionPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             Title="Создание вопроса">
+             Title="Создание вопроса"
+             BackgroundColor="{DynamicResource BackgroundColor}">
 
-    <ScrollView>
-        <StackLayout Padding="20" Spacing="15">
-
-            <!-- Заголовок -->
-            <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
-                <Label Text="Создание вопроса" 
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnCancelClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Создание вопроса" 
                        FontSize="20" 
-                       FontAttributes="Bold"
+                       FontAttributes="Bold" 
+                       TextColor="White" 
                        HorizontalOptions="Center"
-                       TextColor="{DynamicResource PrimaryColor}"/>
-            </Border>
+                       VerticalOptions="Center" />
+                <Label Grid.Column="2"
+                       Text="❓"
+                       FontSize="20"
+                       TextColor="White"
+                       VerticalOptions="Center"
+                       Margin="0,0,10,0" />
+            </Grid>
+        </Border>
 
-            <!-- Основные поля -->
-            <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
-                <VerticalStackLayout Spacing="15">
-                    <Label Text="Текст вопроса:" 
-                           Style="{DynamicResource StandardLabelStyle}"
-                           FontAttributes="Bold"/>
-                    <Editor x:Name="QuestionEditor" 
-                           HeightRequest="100" 
-                           Placeholder="Введите текст вопроса..."
-                           AutoSize="TextChanges"
-                           BackgroundColor="White"
-                           TextColor="{DynamicResource TextColor}"/>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="15">
 
-                    <!-- Исправленный Grid с явным указанием колонок -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
-                        <!-- Колонка 0: Тип вопроса -->
-                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                <!-- Текст вопроса -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Текст вопроса:" 
+                               FontSize="16" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}"/>
+                        <Border BackgroundColor="#F8F9FA"
+                                Stroke="#E0E0E0"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="0">
+                            <Editor x:Name="QuestionEditor" 
+                                   HeightRequest="100" 
+                                   Placeholder="Введите текст вопроса..."
+                                   BackgroundColor="Transparent"
+                                   Margin="15,10"
+                                   FontSize="14"
+                                   AutoSize="TextChanges"/>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Тип вопроса и баллы -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource SecondaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="15">
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="15" RowSpacing="10">
+                        <!-- Тип вопроса -->
+                        <VerticalStackLayout Grid.Column="0" Spacing="8">
                             <Label Text="Тип вопроса:" 
-                                   Style="{DynamicResource StandardLabelStyle}"
-                                   FontAttributes="Bold"/>
-                            <Picker x:Name="QuestionTypePicker"
-                                    Style="{DynamicResource StandardPickerStyle}">
-                                <Picker.Items>
-                                    <x:String>single</x:String>
-                                    <x:String>multiple</x:String>
-                                    <x:String>text</x:String>
-                                </Picker.Items>
-                            </Picker>
+                                   FontSize="14" 
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource SecondaryColor}"/>
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Picker x:Name="QuestionTypePicker"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,0"
+                                        FontSize="14"
+                                        HeightRequest="50"
+                                        Title="Выберите тип">
+                                    <Picker.Items>
+                                        <x:String>single</x:String>
+                                        <x:String>multiple</x:String>
+                                        <x:String>text</x:String>
+                                    </Picker.Items>
+                                </Picker>
+                            </Border>
                         </VerticalStackLayout>
 
-                        <!-- Колонка 1: Баллы -->
-                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                        <!-- Баллы -->
+                        <VerticalStackLayout Grid.Column="1" Spacing="8">
                             <Label Text="Баллы:" 
-                                   Style="{DynamicResource StandardLabelStyle}"
-                                   FontAttributes="Bold"/>
-                            <Entry x:Name="ScoreEntry" 
-                                  Keyboard="Numeric" 
-                                  Text="1"
-                                  Style="{DynamicResource StandardEntryStyle}"/>
+                                   FontSize="14" 
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource SecondaryColor}"/>
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="ScoreEntry" 
+                                      Keyboard="Numeric" 
+                                      Text="1"
+                                      BackgroundColor="Transparent"
+                                      Margin="15,0"
+                                      FontSize="14"
+                                      HeightRequest="50"
+                                      Placeholder="1"/>
+                            </Border>
                         </VerticalStackLayout>
                     </Grid>
-                </VerticalStackLayout>
-            </Border>
+                </Border>
 
-            <!-- Варианты ответов -->
-            <Border x:Name="AnswerOptionsSection" 
-                    Style="{DynamicResource StandardFrameStyle}" 
-                    Padding="15"
-                    IsVisible="True">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="Варианты ответов:" 
-                           FontSize="16" 
-                           FontAttributes="Bold"
-                           TextColor="{DynamicResource PrimaryColor}"/>
+                <!-- Варианты ответов (для single/multiple) -->
+                <Border x:Name="AnswerOptionsSection" 
+                        BackgroundColor="White"
+                        Stroke="{DynamicResource SuccessColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12" 
+                        Padding="15"
+                        IsVisible="True">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="📋 Варианты ответов" 
+                               FontSize="16" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource SuccessColor}"/>
 
-                    <CollectionView x:Name="AnswersCollection" HeightRequest="200">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Border BackgroundColor="#F8F9FA" 
-                                        Padding="10" 
-                                        Margin="0,5"
-                                        Stroke="#E9ECEF"
-                                        StrokeThickness="1"
-                                        StrokeShape="RoundRectangle 8">
-                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                                        <Entry Text="{Binding AnswerText}" 
-                                              Grid.Column="0"
-                                              Placeholder="Текст ответа"
-                                              BackgroundColor="White"
-                                              TextColor="{DynamicResource TextColor}"/>
-                                        <StackLayout Grid.Column="1" 
-                                                    Orientation="Horizontal"
-                                                    Spacing="5"
-                                                    VerticalOptions="Center">
-                                            <Label Text="Правильный:" 
-                                                   FontSize="12"
-                                                   TextColor="{DynamicResource TextColor}"/>
-                                            <CheckBox IsChecked="{Binding IsCorrect}" 
-                                                     Color="{DynamicResource PrimaryColor}"
-                                                     VerticalOptions="Center"/>
-                                        </StackLayout>
-                                        <Button Text="❌" 
-                                               Grid.Column="2"
-                                               Clicked="OnDeleteAnswerClicked"
-                                               CommandParameter="{Binding .}"
-                                               BackgroundColor="Transparent"
-                                               TextColor="{DynamicResource AccentColor}"
-                                               WidthRequest="40"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                        <CollectionView x:Name="AnswersCollection" 
+                                        HeightRequest="200"
+                                        ItemsSource="{Binding AnswerOptions}">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="#F8F9FA" 
+                                            Padding="12" 
+                                            Margin="0,5"
+                                            Stroke="#E0E0E0"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8">
+                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                            <Border Grid.Column="0"
+                                                    BackgroundColor="White"
+                                                    Stroke="#E0E0E0"
+                                                    StrokeThickness="1"
+                                                    StrokeShape="RoundRectangle 5"
+                                                    Padding="0">
+                                                <Entry Text="{Binding AnswerText}" 
+                                                      Placeholder="Текст ответа"
+                                                      BackgroundColor="Transparent"
+                                                      Margin="12,0"
+                                                      HeightRequest="45"
+                                                      FontSize="14"/>
+                                            </Border>
 
-                    <Button Text="➕ Добавить вариант ответа" 
-                           Clicked="OnAddAnswerClicked"
-                           Style="{DynamicResource StandardButtonStyle}"
-                           BackgroundColor="{DynamicResource SecondaryColor}"/>
-                </VerticalStackLayout>
-            </Border>
+                                            <HorizontalStackLayout Grid.Column="1" 
+                                                                  Spacing="5"
+                                                                  VerticalOptions="Center">
+                                                <CheckBox IsChecked="{Binding IsCorrect}" 
+                                                         Color="{DynamicResource SuccessColor}"
+                                                         VerticalOptions="Center"/>
+                                                <Label Text="✓" 
+                                                       FontSize="14"
+                                                       TextColor="{DynamicResource SuccessColor}"
+                                                       IsVisible="{Binding IsCorrect}"/>
+                                            </HorizontalStackLayout>
 
-            <!-- Кнопки действий -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                <Button Text="Отмена" 
-                       Clicked="OnCancelClicked"
-                       Style="{DynamicResource StandardButtonStyle}"
-                       BackgroundColor="#6C757D"/>
-                <Button Text="Сохранить" 
-                       Clicked="OnSaveClicked"
-                       Style="{DynamicResource StandardButtonStyle}"
-                       BackgroundColor="{DynamicResource PrimaryColor}"/>
-            </Grid>
+                                            <Button Grid.Column="2" 
+                                                    Text="🗑️"
+                                                    Clicked="OnDeleteAnswerClicked" 
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#FF6B6B"
+                                                    FontSize="18"
+                                                    WidthRequest="40"
+                                                    HeightRequest="40"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
 
-        </StackLayout>
-    </ScrollView>
+                        <Button Text="➕ Добавить вариант ответа" 
+                               Clicked="OnAddAnswerClicked"
+                               BackgroundColor="{DynamicResource SuccessColor}"
+                               TextColor="White"
+                               CornerRadius="8"
+                               HeightRequest="45"
+                               FontSize="14"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Текстовый ответ (для типа text) -->
+                <Border x:Name="TextAnswerSection" 
+                        BackgroundColor="White"
+                        Stroke="{DynamicResource AccentColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12" 
+                        Padding="15"
+                        IsVisible="False">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="✍️ Правильный ответ" 
+                               FontSize="16" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource AccentColor}"/>
+
+                        <Border BackgroundColor="#F8F9FA"
+                                Stroke="#E0E0E0"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="0">
+                            <Editor x:Name="TextCorrectAnswerEditor" 
+                                   HeightRequest="100"
+                                   Placeholder="Введите правильный ответ..."
+                                   BackgroundColor="Transparent"
+                                   Margin="15,10"
+                                   FontSize="14"/>
+                        </Border>
+
+                        <Label Text="* Студент должен ввести этот текст для получения баллов"
+                               FontSize="11"
+                               TextColor="Gray"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Кнопки действий -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,10">
+                    <Button Text="Отмена" 
+                           Clicked="OnCancelClicked"
+                           BackgroundColor="#6C757D"
+                           TextColor="White"
+                           CornerRadius="8"
+                           HeightRequest="50"
+                           FontSize="16"/>
+                    <Button Text="Сохранить" 
+                           Clicked="OnSaveClicked"
+                           BackgroundColor="{DynamicResource PrimaryColor}"
+                           TextColor="White"
+                           CornerRadius="8"
+                           HeightRequest="50"
+                           FontSize="16"
+                           FontAttributes="Bold"/>
+                </Grid>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

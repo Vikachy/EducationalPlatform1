@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.AdminUserEditPage"
+             Title="Редактирование пользователя"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:RoleToTextConverter x:Key="RoleToTextConverter" />
+            <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Индикатор загрузки -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.RowSpan="2"
+              BackgroundColor="#80000000"
+              IsVisible="False"
+              InputTransparent="True">
+            <VerticalStackLayout Spacing="20"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center">
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="White"
+                                   HeightRequest="50"
+                                   WidthRequest="50"/>
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка..."
+                       TextColor="White"
+                       FontSize="16"/>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       x:Name="TitleLabel"
+                       Text="Редактирование пользователя" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="2"
+                        x:Name="DeleteButton"
+                        Text="🗑️"
+                        Clicked="OnDeleteUserClicked"
+                        BackgroundColor="#F44336"
+                        TextColor="White"
+                        FontSize="18"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20"
+                        Margin="0,0,5,0"
+                        IsVisible="False" />
+                <Button Grid.Column="3"
+                        Text="💾"
+                        Clicked="OnSaveClicked"
+                        BackgroundColor="White"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- Аватар -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15" HorizontalOptions="Center">
+                        <Border WidthRequest="120"
+                                HeightRequest="120"
+                                Stroke="{DynamicResource PrimaryColor}"
+                                StrokeThickness="2"
+                                StrokeShape="RoundRectangle 60"
+                                BackgroundColor="#F5F5F5">
+                            <Image x:Name="AvatarImage"
+                                   Source="default_avatar.png"
+                                   Aspect="AspectFill"
+                                   WidthRequest="116"
+                                   HeightRequest="116" />
+                        </Border>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Button Grid.Column="0"
+                                    Text="Выбрать"
+                                    Clicked="OnSelectAvatarClicked"
+                                    BackgroundColor="{DynamicResource SecondaryColor}"
+                                    TextColor="White"
+                                    HeightRequest="40"
+                                    CornerRadius="8"
+                                    FontSize="13"/>
+                            <Button Grid.Column="1"
+                                    Text="Удалить"
+                                    Clicked="OnRemoveAvatarClicked"
+                                    BackgroundColor="#F44336"
+                                    TextColor="White"
+                                    HeightRequest="40"
+                                    CornerRadius="8"
+                                    FontSize="13"/>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Основная информация -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="Основная информация"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="15" ColumnSpacing="15">
+                            <!-- Имя пользователя -->
+                            <Label Grid.Row="0" Grid.Column="0"
+                                   Text="Логин:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="0" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="UsernameEntry"
+                                       Placeholder="Введите логин"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Email -->
+                            <Label Grid.Row="1" Grid.Column="0"
+                                   Text="Email:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="1" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="EmailEntry"
+                                       Placeholder="Введите email"
+                                       Keyboard="Email"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Имя -->
+                            <Label Grid.Row="2" Grid.Column="0"
+                                   Text="Имя:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="2" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="FirstNameEntry"
+                                       Placeholder="Введите имя"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Фамилия -->
+                            <Label Grid.Row="3" Grid.Column="0"
+                                   Text="Фамилия:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="3" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="LastNameEntry"
+                                       Placeholder="Введите фамилию"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Пароль (только для нового пользователя) -->
+                            <Label Grid.Row="4" Grid.Column="0"
+                                   x:Name="PasswordLabel"
+                                   Text="Пароль:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"
+                                   IsVisible="False"/>
+                            <Border Grid.Row="4" Grid.Column="1"
+                                    x:Name="PasswordBorder"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0"
+                                    IsVisible="False">
+                                <Entry x:Name="PasswordEntry"
+                                       Placeholder="Введите пароль"
+                                       IsPassword="True"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Роль -->
+                            <Label Grid.Row="5" Grid.Column="0"
+                                   Text="Роль:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="5" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Picker x:Name="RolePicker"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,0"
+                                        FontSize="14"
+                                        HeightRequest="45"
+                                        Title="Выберите роль">
+                                    <Picker.Items>
+                                        <x:String>Студент</x:String>
+                                        <x:String>Преподаватель</x:String>
+                                        <x:String>Администратор</x:String>
+                                        <x:String>Контент-менеджер</x:String>
+                                    </Picker.Items>
+                                </Picker>
+                            </Border>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Статус -->
+                <Border BackgroundColor="White"
+                        Stroke="#4CAF50"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15">
+                        <Label Grid.Column="0"
+                               Text="Активен:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="#666"
+                               VerticalOptions="Center"/>
+                        <Switch Grid.Column="1"
+                                x:Name="IsActiveSwitch"
+                                IsToggled="True"
+                                OnColor="#4CAF50"
+                                ThumbColor="White"
+                                VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Кнопки -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                    <Button Grid.Column="0"
+                            Text="Отмена"
+                            Clicked="OnBackClicked"
+                            BackgroundColor="#6C757D"
+                            TextColor="White"
+                            HeightRequest="45"
+                            CornerRadius="8"
+                            FontSize="14"/>
+                    <Button Grid.Column="1"
+                            x:Name="DeleteButton2"
+                            Text="Удалить"
+                            Clicked="OnDeleteUserClicked"
+                            BackgroundColor="#F44336"
+                            TextColor="White"
+                            HeightRequest="45"
+                            CornerRadius="8"
+                            FontSize="14"
+                            IsVisible="False"/>
+                    <Button Grid.Column="2"
+                            Text="Сохранить"
+                            Clicked="OnSaveClicked"
+                            BackgroundColor="{DynamicResource SuccessColor}"
+                            TextColor="White"
+                            HeightRequest="45"
+                            CornerRadius="8"
+                            FontSize="14"
+                            FontAttributes="Bold"/>
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

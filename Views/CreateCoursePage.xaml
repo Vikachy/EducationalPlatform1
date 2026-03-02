@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.CreateCoursePage"
+             Title="Создание курса"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Создание курса" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="2"
+                        Text="💾"
+                        Clicked="OnSaveClicked"
+                        BackgroundColor="White"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- Основная информация -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="Основная информация"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="15" ColumnSpacing="15">
+                            <!-- Название курса -->
+                            <Label Grid.Row="0" Grid.Column="0"
+                                   Text="Название:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="0" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="CourseNameEntry"
+                                       Placeholder="Введите название курса"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Описание -->
+                            <Label Grid.Row="1" Grid.Column="0"
+                                   Text="Описание:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Start"
+                                   Margin="0,12,0,0"/>
+                            <Border Grid.Row="1" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Editor x:Name="DescriptionEditor"
+                                        HeightRequest="100"
+                                        Placeholder="Введите описание курса"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,10"
+                                        FontSize="14"/>
+                            </Border>
+
+                            <!-- Язык программирования -->
+                            <Label Grid.Row="2" Grid.Column="0"
+                                   Text="Язык:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="2" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Picker x:Name="LanguagePicker"
+                                        Title="Выберите язык"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,0"
+                                        FontSize="14"
+                                        HeightRequest="45"
+                                        SelectedIndexChanged="OnLanguageChanged"/>
+                            </Border>
+
+                            <!-- Уровень сложности -->
+                            <Label Grid.Row="3" Grid.Column="0"
+                                   Text="Сложность:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="3" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Picker x:Name="DifficultyPicker"
+                                        Title="Выберите уровень"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,0"
+                                        FontSize="14"
+                                        HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Цена -->
+                            <Label Grid.Row="4" Grid.Column="0"
+                                   Text="Цена:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <Border Grid.Column="0"
+                                        BackgroundColor="#F8F9FA"
+                                        Stroke="#E0E0E0"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="0">
+                                    <Entry x:Name="PriceEntry"
+                                           Text="0"
+                                           Keyboard="Numeric"
+                                           BackgroundColor="Transparent"
+                                           Margin="15,0"
+                                           FontSize="14"
+                                           HeightRequest="45"/>
+                                </Border>
+                                <Label Grid.Column="1"
+                                       Text="монет"
+                                       FontSize="14"
+                                       TextColor="Gray"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Дополнительные настройки -->
+                <Border BackgroundColor="White"
+                        Stroke="#FF9800"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="Дополнительные настройки"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#FF9800"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="15" ColumnSpacing="15">
+                            <!-- Часов -->
+                            <Label Grid.Row="0" Grid.Column="0"
+                                   Text="Часов:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="0" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="HoursEntry"
+                                       Text="40"
+                                       Keyboard="Numeric"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Теги -->
+                            <Label Grid.Row="1" Grid.Column="0"
+                                   Text="Теги:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Border Grid.Row="1" Grid.Column="1"
+                                    BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="TagsEntry"
+                                       Placeholder="Например: python, основы, для начинающих"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="45"/>
+                            </Border>
+
+                            <!-- Групповой курс -->
+                            <Label Grid.Row="2" Grid.Column="0"
+                                   Text="Групповой:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#666"
+                                   VerticalOptions="Center"/>
+                            <Grid Grid.Row="2" Grid.Column="1">
+                                <Switch x:Name="IsGroupCourseSwitch"
+                                        IsToggled="False"
+                                        OnColor="#FF9800"
+                                        ThumbColor="White"
+                                        VerticalOptions="Center"/>
+                            </Grid>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Публикация -->
+                <Border BackgroundColor="White"
+                        Stroke="#4CAF50"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15">
+                        <Label Grid.Column="0"
+                               Text="Опубликовать:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="#666"
+                               VerticalOptions="Center"/>
+                        <Switch Grid.Column="1"
+                                x:Name="PublishSwitch"
+                                IsToggled="False"
+                                OnColor="#4CAF50"
+                                ThumbColor="White"
+                                VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Кнопки -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                    <Button Grid.Column="0"
+                            Text="Отмена"
+                            Clicked="OnBackClicked"
+                            BackgroundColor="#6C757D"
+                            TextColor="White"
+                            HeightRequest="45"
+                            CornerRadius="8"
+                            FontSize="14"/>
+                    <Button Grid.Column="1"
+                            Text="Создать курс"
+                            Clicked="OnSaveClicked"
+                            BackgroundColor="{DynamicResource SuccessColor}"
+                            TextColor="White"
+                            HeightRequest="45"
+                            CornerRadius="8"
+                            FontSize="14"
+                            FontAttributes="Bold"/>
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

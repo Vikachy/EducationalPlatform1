@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.AdminCoursesPage"
+             Title="Управление курсами"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:StatusColorConverter x:Key="StatusToColorConverter" />
+            <converters:PublishStatusConverter x:Key="PublishStatusConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Управление курсами" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="2"
+                        Text="+"
+                        Clicked="OnAddCourseClicked"
+                        BackgroundColor="White"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+            <!-- Поиск и фильтры -->
+            <Border Grid.Row="0"
+                    BackgroundColor="White"
+                    Margin="20,20,20,10"
+                    Padding="0"
+                    Stroke="#E0E0E0"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 12">
+                <Grid ColumnDefinitions="*,Auto" Padding="0">
+                    <Entry x:Name="SearchEntry"
+                           Grid.Column="0"
+                           Placeholder="🔍 Поиск по названию курса..."
+                           BackgroundColor="Transparent"
+                           Margin="15,0"
+                           FontSize="14"
+                           HeightRequest="50"
+                           TextChanged="OnSearchTextChanged"/>
+                    <Picker x:Name="StatusFilter"
+                            Grid.Column="1"
+                            Title="Все"
+                            WidthRequest="80"
+                            HeightRequest="50"
+                            SelectedIndexChanged="OnFilterChanged">
+                        <Picker.Items>
+                            <x:String>Все</x:String>
+                            <x:String>Активные</x:String>
+                            <x:String>Черновики</x:String>
+                        </Picker.Items>
+                    </Picker>
+                </Grid>
+            </Border>
+
+            <!-- Список курсов -->
+            <CollectionView Grid.Row="1"
+                          x:Name="CoursesCollectionView"
+                          Margin="20,0,20,20"
+                          ItemsSource="{Binding FilteredCourses}"
+                          EmptyView="Нет курсов">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,5"
+                                BackgroundColor="White"
+                                Stroke="#E0E0E0"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 12"
+                                Padding="15">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                                <!-- Заголовок с названием и статусом -->
+                                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                    <Label Grid.Column="0"
+                                           Text="{Binding CourseName}"
+                                           FontSize="18"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource PrimaryColor}"/>
+                                    <Border Grid.Column="1"
+                                            BackgroundColor="{Binding IsPublished, Converter={StaticResource StatusToColorConverter}}"
+                                            Padding="8,4"
+                                            StrokeShape="RoundRectangle 5">
+                                        <Label Text="{Binding IsPublished, Converter={StaticResource PublishStatusConverter}}"
+                                               TextColor="White"
+                                               FontSize="11"
+                                               FontAttributes="Bold"/>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Описание -->
+                                <Label Grid.Row="1"
+                                       Text="{Binding Description}"
+                                       FontSize="13"
+                                       TextColor="#666"
+                                       MaxLines="2"
+                                       LineBreakMode="TailTruncation"/>
+
+                                <!-- Информация о языке и сложности -->
+                                <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="10">
+                                    <Border Grid.Column="0"
+                                            BackgroundColor="#E3F2FD"
+                                            Padding="8,4"
+                                            StrokeShape="RoundRectangle 5">
+                                        <Label Text="{Binding LanguageName, StringFormat='Язык: {0}'}"
+                                               FontSize="11"
+                                               TextColor="#1976D2"/>
+                                    </Border>
+                                    <Border Grid.Column="1"
+                                            BackgroundColor="#FFF3E0"
+                                            Padding="8,4"
+                                            StrokeShape="RoundRectangle 5">
+                                        <Label Text="{Binding DifficultyName, StringFormat='Сложность: {0}'}"
+                                               FontSize="11"
+                                               TextColor="#FF9800"/>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Статистика -->
+                                <Grid Grid.Row="3" ColumnDefinitions="*,*,*" ColumnSpacing="5">
+                                    <Border Grid.Column="0"
+                                            BackgroundColor="#F5F5F5"
+                                            Padding="8,4"
+                                            StrokeShape="RoundRectangle 5">
+                                        <Label Text="{Binding LessonCount, StringFormat='📚 {0} уроков'}"
+                                               FontSize="11"
+                                               TextColor="#666"/>
+                                    </Border>
+                                    <Border Grid.Column="1"
+                                            BackgroundColor="#F5F5F5"
+                                            Padding="8,4"
+                                            StrokeShape="RoundRectangle 5">
+                                        <Label Text="{Binding StudentCount, StringFormat='👥 {0} студентов'}"
+                                               FontSize="11"
+                                               TextColor="#666"/>
+                                    </Border>
+                                    <Border Grid.Column="2"
+                                            BackgroundColor="#F5F5F5"
+                                            Padding="8,4"
+                                            StrokeShape="RoundRectangle 5">
+                                        <Label Text="{Binding TeacherName}"
+                                               FontSize="11"
+                                               TextColor="#666"
+                                               LineBreakMode="TailTruncation"/>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Кнопки действий -->
+                                <Grid Grid.Row="4" ColumnDefinitions="*,*,*,*" ColumnSpacing="5">
+                                    <Button Grid.Column="0"
+                                            Text="📚 Уроки"
+                                            Clicked="OnViewLessonsClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#2196F3"
+                                            TextColor="White"
+                                            HeightRequest="40"
+                                            CornerRadius="8"
+                                            FontSize="11"/>
+                                    <Button Grid.Column="1"
+                                            Text="📊 Статистика"
+                                            Clicked="OnCourseStatsClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#4CAF50"
+                                            TextColor="White"
+                                            HeightRequest="40"
+                                            CornerRadius="8"
+                                            FontSize="11"/>
+                                    <Button Grid.Column="2"
+                                            Text="✏️ Редактировать"
+                                            Clicked="OnEditCourseClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#FFC107"
+                                            TextColor="White"
+                                            HeightRequest="40"
+                                            CornerRadius="8"
+                                            FontSize="11"/>
+                                    <Button Grid.Column="3"
+                                            Text="🗑️ Удалить"
+                                            Clicked="OnDeleteCourseClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#F44336"
+                                            TextColor="White"
+                                            HeightRequest="40"
+                                            CornerRadius="8"
+                                            FontSize="11"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Grid>
+</ContentPage>

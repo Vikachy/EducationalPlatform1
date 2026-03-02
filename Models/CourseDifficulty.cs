@@ -11,7 +11,10 @@ namespace EducationalPlatform.Models
         public int DifficultyId { get; set; }
         public string DifficultyName { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public bool HasTheory { get; set; }
-        public bool HasPractice { get; set; }
+        public bool HasTheory { get; set; } = true;
+        public bool HasPractice { get; set; } = true;
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedDate { get; set; }
+        public int CoursesCount { get; set; }
     }
 }

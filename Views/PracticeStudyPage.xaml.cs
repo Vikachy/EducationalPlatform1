@@ -205,51 +205,102 @@ namespace EducationalPlatform.Views
 
         private async Task<bool> SaveSubmission()
         {
-            string answerText = null;
-            string answerFilePath = null;
-
-            switch (_answerType.ToLower())
+            try
             {
-                case "text":
-                    answerText = TextAnswerEditor.Text?.Trim();
-                    break;
+                string answerText = null;
+                string answerFilePath = null;
 
-                case "code":
-                    answerText = CodeAnswerEditor.Text?.Trim();
-                    break;
+                switch (_answerType.ToLower())
+                {
+                    case "text":
+                        answerText = TextAnswerEditor.Text?.Trim();
+                        if (string.IsNullOrEmpty(answerText))
+                        {
+                            await DisplayAlert("Ошибка", "Введите ответ", "OK");
+                            return false;
+                        }
+                        break;
 
-                case "file":
-                    answerFilePath = await SaveSubmissionFile();
-                    if (string.IsNullOrEmpty(answerFilePath)) return false;
-                    break;
+                    case "code":
+                        answerText = CodeAnswerEditor.Text?.Trim();
+                        if (string.IsNullOrEmpty(answerText))
+                        {
+                            await DisplayAlert("Ошибка", "Напишите код", "OK");
+                            return false;
+                        }
+                        break;
+
+                    case "file":
+                        if (_selectedFileBytes == null || _selectedFile == null)
+                        {
+                            await DisplayAlert("Ошибка", "Выберите файл", "OK");
+                            return false;
+                        }
+                        answerFilePath = await SaveSubmissionFile();
+                        if (string.IsNullOrEmpty(answerFilePath))
+                        {
+                            await DisplayAlert("Ошибка", "Не удалось сохранить файл", "OK");
+                            return false;
+                        }
+                        break;
+                }
+
+                // Сохраняем в базу данных
+                bool success = await _dbService.SavePracticeSubmissionAsync(
+                    _lessonId,
+                    _currentUser.UserId,
+                    answerText,
+                    answerFilePath
+                );
+
+                if (success)
+                {
+                    Console.WriteLine($"✅ Работа отправлена: LessonId={_lessonId}, StudentId={_currentUser.UserId}");
+
+                    // Обновляем прогресс курса
+                    if (_courseId > 0)
+                    {
+                        await _dbService.UpdateProgressAsync(_currentUser.UserId, _courseId, "in_progress");
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("❌ Не удалось сохранить работу в БД");
+                    return false;
+                }
             }
-
-            return await _dbService.SavePracticeSubmissionAsync(
-                _lessonId,
-                _currentUser.UserId,
-                answerText,
-                answerFilePath
-            );
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка сохранения: {ex.Message}");
+                return false;
+            }
         }
 
         private async Task<string> SaveSubmissionFile()
         {
             try
             {
-                var folder = Path.Combine(FileSystem.AppDataDirectory, "PracticeSubmissions");
-                Directory.CreateDirectory(folder);
+                // Создаем папку для отправленных работ
+                var submissionsFolder = Path.Combine(FileSystem.AppDataDirectory, "PracticeSubmissions");
+                if (!Directory.Exists(submissionsFolder))
+                    Directory.CreateDirectory(submissionsFolder);
 
-                var extension = Path.GetExtension(_selectedFile.FileName);
-                var fileName = $"submission_{_currentUser.UserId}_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
-                var fullPath = Path.Combine(folder, fileName);
+                // Генерируем уникальное имя файла
+                string fileExtension = Path.GetExtension(_selectedFile.FileName);
+                string fileName = $"submission_{_currentUser.UserId}_{_lessonId}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                string fullPath = Path.Combine(submissionsFolder, fileName);
 
+                // Сохраняем файл
                 await File.WriteAllBytesAsync(fullPath, _selectedFileBytes);
 
+                Console.WriteLine($"✅ Файл сохранен: {fullPath}");
                 return fullPath;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка сохранения файла: {ex.Message}");
+                Console.WriteLine($"❌ Ошибка сохранения файла: {ex.Message}");
                 return null;
             }
         }

@@ -1,30 +1,181 @@
+ï»¿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
 namespace EducationalPlatform.Models
 {
-    public class PracticeSubmission
+    public class PracticeSubmission : INotifyPropertyChanged
     {
-        public int SubmissionId { get; set; }
-        public int LessonId { get; set; }
-        public int StudentId { get; set; }
-        public string? SubmissionText { get; set; }
-        public string? SubmissionFileUrl { get; set; }
-        public DateTime SubmissionDate { get; set; }
-        public int? TeacherScore { get; set; }
-        public string? TeacherComment { get; set; }
-        public string Status { get; set; } = "submitted"; // submitted, graded, returned
-        public int? GradedBy { get; set; }
-        public DateTime? GradedAt { get; set; }
+        private int _submissionId;
+        public int SubmissionId
+        {
+            get => _submissionId;
+            set { _submissionId = value; OnPropertyChanged(); }
+        }
 
-        // Äëÿ îòîáðàæåíèÿ íà ñòðàíèöå ïðåïîäàâàòåëÿ (ìîæíî çàïîëíÿòü ïðè çàïðîñå)
-        public string StudentName { get; set; } = string.Empty;
-        public string CourseName { get; set; } = string.Empty;
-        public string LessonTitle { get; set; } = string.Empty;
+        private int _lessonId;
+        public int LessonId
+        {
+            get => _lessonId;
+            set { _lessonId = value; OnPropertyChanged(); }
+        }
 
-        // Óäîáíûé ïðåäïðîñìîòð äëÿ UI
-        public string Preview => !string.IsNullOrEmpty(SubmissionText)
-            ? (SubmissionText.Length > 80 ? SubmissionText.Substring(0, 80) + "..." : SubmissionText)
-            : (!string.IsNullOrEmpty(SubmissionFileUrl) ? $"Ôàéë: {Path.GetFileName(SubmissionFileUrl)}" : "Íåò îòâåòà");
+        private int _studentId;
+        public int StudentId
+        {
+            get => _studentId;
+            set { _studentId = value; OnPropertyChanged(); }
+        }
 
+        private string? _submissionText;
+        public string? SubmissionText
+        {
+            get => _submissionText;
+            set { _submissionText = value; OnPropertyChanged(); OnPropertyChanged(nameof(Preview)); }
+        }
 
+        private string? _submissionFileUrl;
+        public string? SubmissionFileUrl
+        {
+            get => _submissionFileUrl;
+            set { _submissionFileUrl = value; OnPropertyChanged(); OnPropertyChanged(nameof(Preview)); OnPropertyChanged(nameof(HasFile)); }
+        }
+
+        private DateTime _submissionDate;
+        public DateTime SubmissionDate
+        {
+            get => _submissionDate;
+            set { _submissionDate = value; OnPropertyChanged(); OnPropertyChanged(nameof(FormattedDate)); }
+        }
+
+        private int? _teacherScore;
+        public int? TeacherScore
+        {
+            get => _teacherScore;
+            set { _teacherScore = value; OnPropertyChanged(); OnPropertyChanged(nameof(ScoreDisplay)); }
+        }
+
+        private string? _teacherComment;
+        public string? TeacherComment
+        {
+            get => _teacherComment;
+            set { _teacherComment = value; OnPropertyChanged(); }
+        }
+
+        private string _status = "submitted";
+        public string Status
+        {
+            get => _status;
+            set { _status = value; OnPropertyChanged(); OnPropertyChanged(nameof(StatusDisplay)); OnPropertyChanged(nameof(StatusColor)); }
+        }
+
+        private int? _gradedBy;
+        public int? GradedBy
+        {
+            get => _gradedBy;
+            set { _gradedBy = value; OnPropertyChanged(); }
+        }
+
+        private DateTime? _gradedAt;
+        public DateTime? GradedAt
+        {
+            get => _gradedAt;
+            set { _gradedAt = value; OnPropertyChanged(); OnPropertyChanged(nameof(FormattedGradedDate)); }
+        }
+
+        // Ð”Ð»Ñ Ð¾Ñ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ Ð½Ð° ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ðµ Ð¿Ñ€ÐµÐ¿Ð¾Ð´Ð°Ð²Ð°Ñ‚ÐµÐ»Ñ
+        private string _studentName = string.Empty;
+        public string StudentName
+        {
+            get => _studentName;
+            set { _studentName = value; OnPropertyChanged(); }
+        }
+
+        private string _studentFullName = string.Empty;
+        public string StudentFullName
+        {
+            get => _studentFullName;
+            set { _studentFullName = value; OnPropertyChanged(); }
+        }
+
+        private string _courseName = string.Empty;
+        public string CourseName
+        {
+            get => _courseName;
+            set { _courseName = value; OnPropertyChanged(); }
+        }
+
+        private string _lessonTitle = string.Empty;
+        public string LessonTitle
+        {
+            get => _lessonTitle;
+            set { _lessonTitle = value; OnPropertyChanged(); }
+        }
+
+        private string? _teacherName;
+        public string? TeacherName
+        {
+            get => _teacherName;
+            set { _teacherName = value; OnPropertyChanged(); }
+        }
+
+        // Ð’Ñ‹Ñ‡Ð¸ÑÐ»ÑÐµÐ¼Ñ‹Ðµ ÑÐ²Ð¾Ð¹ÑÑ‚Ð²Ð° Ð´Ð»Ñ UI
+        public bool HasFile => !string.IsNullOrEmpty(SubmissionFileUrl);
+
+        public string FileName => HasFile ? Path.GetFileName(SubmissionFileUrl) : string.Empty;
+
+        public string FileExtension => HasFile ? Path.GetExtension(SubmissionFileUrl)?.ToLower() ?? "" : "";
+
+        public string FileIcon => FileExtension switch
+        {
+            ".pdf" => "ðŸ“„",
+            ".doc" or ".docx" => "ðŸ“",
+            ".xls" or ".xlsx" => "ðŸ“Š",
+            ".ppt" or ".pptx" => "ðŸ“½ï¸",
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" => "ðŸ–¼ï¸",
+            ".zip" or ".rar" or ".7z" => "ðŸ—œï¸",
+            ".txt" => "ðŸ“ƒ",
+            ".mp4" or ".avi" or ".mov" => "ðŸŽ¬",
+            _ => "ðŸ“Ž"
+        };
+
+        public string Preview
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(SubmissionText))
+                    return SubmissionText.Length > 80 ? SubmissionText.Substring(0, 80) + "..." : SubmissionText;
+                if (!string.IsNullOrEmpty(SubmissionFileUrl))
+                    return $"ðŸ“Ž Ð¤Ð°Ð¹Ð»: {FileName}";
+                return "âŒ ÐÐµÑ‚ Ð¾Ñ‚Ð²ÐµÑ‚Ð°";
+            }
+        }
+
+        public string ScoreDisplay => TeacherScore.HasValue ? $"{TeacherScore}/100" : "â€”/100";
+
+        public string FormattedDate => SubmissionDate.ToString("dd.MM.yyyy HH:mm");
+
+        public string FormattedGradedDate => GradedAt?.ToString("dd.MM.yyyy HH:mm") ?? "â€”";
+
+        public string StatusDisplay => Status switch
+        {
+            "submitted" => "ÐžÐ¶Ð¸Ð´Ð°ÐµÑ‚ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸",
+            "graded" => "ÐŸÑ€Ð¾Ð²ÐµÑ€ÐµÐ½Ð¾",
+            "returned" => "Ð’Ð¾Ð·Ð²Ñ€Ð°Ñ‰ÐµÐ½Ð¾",
+            _ => Status
+        };
+
+        public Color StatusColor => Status switch
+        {
+            "submitted" => Color.FromArgb("#FF9800"), // ÐžÑ€Ð°Ð½Ð¶ÐµÐ²Ñ‹Ð¹
+            "graded" => Color.FromArgb("#4CAF50"),    // Ð—ÐµÐ»ÐµÐ½Ñ‹Ð¹
+            "returned" => Color.FromArgb("#F44336"),  // ÐšÑ€Ð°ÑÐ½Ñ‹Ð¹
+            _ => Color.FromArgb("#999999")
+        };
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
     }
 }
-

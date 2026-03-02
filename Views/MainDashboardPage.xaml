@@ -7,17 +7,15 @@
     BackgroundColor="{DynamicResource BackgroundColor}">
 
     <Grid RowDefinitions="Auto,*">
-        <!-- ШАПКА С АНИМАЦИЕЙ -->
+        <!-- ШАПКА -->
         <Border Grid.Row="0"
                 BackgroundColor="{DynamicResource PrimaryColor}"
-                Stroke="{DynamicResource SecondaryColor}"
-                StrokeThickness="1"
+                StrokeThickness="0"
                 StrokeShape="RoundRectangle 0,0,0,20"
-                Padding="0">
-            <Grid ColumnDefinitions="{OnIdiom Default='Auto,*,Auto,Auto,Auto', Desktop='Auto,*,Auto,Auto,Auto'}"
-                  Padding="{OnIdiom Default='10,10', Desktop='20,15'}"
-                  VerticalOptions="Center"
-                  ColumnSpacing="{OnIdiom Default='5', Desktop='10'}">
+                Padding="10">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto"
+                  ColumnSpacing="8"
+                  VerticalOptions="Center">
 
                 <!-- АВАТАР -->
                 <Border Grid.Column="0"
@@ -26,80 +24,82 @@
                         Stroke="{DynamicResource AccentColor}"
                         StrokeThickness="2"
                         StrokeShape="RoundRectangle 25"
-                        WidthRequest="{OnIdiom Default='45', Desktop='50'}"
-                        HeightRequest="{OnIdiom Default='45', Desktop='50'}"
+                        WidthRequest="45"
+                        HeightRequest="45"
                         VerticalOptions="Center">
                     <Image x:Name="AvatarImage"
                            Source="default_avatar.png"
                            Aspect="AspectFill"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center"
-                           WidthRequest="{OnIdiom Default='41', Desktop='46'}"
-                           HeightRequest="{OnIdiom Default='41', Desktop='46'}" />
+                           WidthRequest="41"
+                           HeightRequest="41" />
                 </Border>
 
-                <!-- ПРИВЕТСТВИЕ С ЭМОДЗИ -->
+                <!-- ПРИВЕТСТВИЕ -->
                 <VerticalStackLayout Grid.Column="1"
-                                    Spacing="{OnIdiom Default='1', Desktop='2'}"
-                                    Padding="{OnIdiom Default='8,0', Desktop='15,0'}"
+                                    Spacing="2"
+                                    Padding="8,0"
                                     VerticalOptions="Center">
-                    <HorizontalStackLayout Spacing="5">
-                        <Label x:Name="WelcomeLabel"
-                               Text="Добро пожаловать!"
-                               FontSize="{OnIdiom Default='13', Desktop='16'}"
-                               TextColor="White"
-                               FontAttributes="Bold"
-                               LineBreakMode="TailTruncation" />
-                        <Label x:Name="UserEmojiLabel"
-                               FontSize="{OnIdiom Default='13', Desktop='16'}"
-                               TextColor="White"
-                               IsVisible="False" />
-                    </HorizontalStackLayout>
+                    <Label x:Name="WelcomeLabel"
+                           Text="Добро пожаловать!"
+                           FontSize="14"
+                           TextColor="White"
+                           FontAttributes="Bold"
+                           LineBreakMode="TailTruncation" />
                     <Label x:Name="StatsLabel"
-                           Text="Серия: 0 дней 🔥 | Валюта: 0"
-                           FontSize="{OnIdiom Default='9', Desktop='12'}"
+                           Text="🔥 0 дней | 💰 0"
+                           FontSize="11"
                            TextColor="White"
                            LineBreakMode="TailTruncation" />
                 </VerticalStackLayout>
 
-                <!-- КНОПКА НАСТРОЕК -->
+                <!-- КНОПКИ -->
                 <Button Grid.Column="2"
+                        x:Name="AdminPanelButton"
+                        Text="👑"
+                        Clicked="OnAdminDashboardClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="18"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20"
+                        Padding="0"
+                        IsVisible="False" />
+
+                <Button Grid.Column="3"
                         Text="⚙️"
                         Clicked="OnSettingsClicked"
                         BackgroundColor="Transparent"
                         TextColor="White"
-                        FontSize="{OnIdiom Default='16', Desktop='18'}"
-                        WidthRequest="{OnIdiom Default='38', Desktop='45'}"
-                        HeightRequest="{OnIdiom Default='38', Desktop='45'}"
-                        CornerRadius="19"
+                        FontSize="18"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20"
                         Padding="0" />
 
-                <!-- КНОПКА ПРОФИЛЯ -->
-                <Button Grid.Column="3"
+                <Button Grid.Column="4"
                         Text="👤"
                         Clicked="OnProfileClicked"
                         BackgroundColor="Transparent"
                         TextColor="White"
-                        FontSize="{OnIdiom Default='16', Desktop='20'}"
-                        WidthRequest="{OnIdiom Default='38', Desktop='45'}"
-                        HeightRequest="{OnIdiom Default='38', Desktop='45'}"
-                        CornerRadius="19"
+                        FontSize="18"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20"
                         Padding="0" />
 
-                <!-- КНОПКА ВЫХОДА -->
-                <Button Grid.Column="4"
-                        Text="⎋"
+                <Button Grid.Column="5"
+                        Text="🚪"
                         Clicked="OnLogoutClicked"
                         BackgroundColor="Transparent"
                         TextColor="White"
-                        FontSize="{OnIdiom Default='14', Desktop='18'}"
-                        WidthRequest="{OnIdiom Default='38', Desktop='45'}"
-                        HeightRequest="{OnIdiom Default='38', Desktop='45'}"
-                        CornerRadius="19"
+                        FontSize="18"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20"
                         Padding="0" />
             </Grid>
         </Border>
-
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Spacing="20" Padding="20">
@@ -209,7 +209,7 @@
                        FontAttributes="Bold" />
 
                 <Grid ColumnDefinitions="{OnIdiom Default='*,*', Desktop='*,*'}"
-                      RowDefinitions="{OnIdiom Default='Auto,Auto', Desktop='Auto,Auto'}"
+                      RowDefinitions="{OnIdiom Default='Auto,Auto,Auto', Desktop='Auto,Auto,Auto'}"
                       ColumnSpacing="{OnIdiom Default='10', Desktop='15'}"
                       RowSpacing="{OnIdiom Default='10', Desktop='15'}">
 
@@ -316,6 +316,61 @@
                                     FontAttributes="Bold" />
                         </VerticalStackLayout>
                     </Border>
+
+                    <!-- МОИ ОЦЕНКИ (ДЛЯ УЧЕНИКОВ) -->
+                    <Border Grid.Row="2" Grid.Column="0"
+                            x:Name="GradesButton"
+                            BackgroundColor="{DynamicResource BackgroundColor}"
+                            Stroke="#9C27B0"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 15"
+                            IsVisible="False">
+                        <VerticalStackLayout Spacing="12" Padding="{OnIdiom Default='15', Desktop='20'}">
+                            <Label Text="📝"
+                                   FontSize="{OnIdiom Default='24', Desktop='28'}"
+                                   HorizontalOptions="Center" />
+                            <Label Text="Мои оценки"
+                                   FontSize="{OnIdiom Default='14', Desktop='16'}"
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextColor}" />
+                            <Button Text="Смотреть →"
+                                    Clicked="OnGradesClicked"
+                                    BackgroundColor="#9C27B0"
+                                    TextColor="White"
+                                    HeightRequest="{OnIdiom Default='35', Desktop='40'}"
+                                    CornerRadius="20"
+                                    FontSize="{OnIdiom Default='12', Desktop='14'}"
+                                    FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- ЧАТЫ -->
+                    <Border Grid.Row="2" Grid.Column="1"
+                            x:Name="ChatsButton"
+                            BackgroundColor="{DynamicResource BackgroundColor}"
+                            Stroke="#2196F3"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 15">
+                        <VerticalStackLayout Spacing="12" Padding="{OnIdiom Default='15', Desktop='20'}">
+                            <Label Text="💬"
+                                   FontSize="{OnIdiom Default='24', Desktop='28'}"
+                                   HorizontalOptions="Center" />
+                            <Label Text="Чаты"
+                                   FontSize="{OnIdiom Default='14', Desktop='16'}"
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="Center"
+                                   TextColor="{DynamicResource TextColor}" />
+                            <Button Text="Открыть →"
+                                    Clicked="OnChatClicked"
+                                    BackgroundColor="#2196F3"
+                                    TextColor="White"
+                                    HeightRequest="{OnIdiom Default='35', Desktop='40'}"
+                                    CornerRadius="20"
+                                    FontSize="{OnIdiom Default='12', Desktop='14'}"
+                                    FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
                 </Grid>
 
                 <!-- СЕГОДНЯШНИЕ ЗАДАЧИ -->
@@ -386,72 +441,81 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <!-- ПАНЕЛЬ УЧИТЕЛЯ -->
-                <!-- ПАНЕЛЬ УЧИТЕЛЯ -->
+                <!-- ПАНЕЛЬ УЧИТЕЛЯ/АДМИНА -->
                 <Border x:Name="TeacherPanel"
-        BackgroundColor="{DynamicResource BackgroundColor}"
-        Stroke="{DynamicResource AccentColor}"
-        StrokeThickness="2"
-        StrokeShape="RoundRectangle 15"
-        IsVisible="False"
-        Padding="20">
+                        BackgroundColor="{DynamicResource BackgroundColor}"
+                        Stroke="{DynamicResource AccentColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 15"
+                        IsVisible="False"
+                        Padding="20">
                     <VerticalStackLayout Spacing="15">
-                        <Label Text="Панель преподавателя"
-               FontSize="18"
-               FontAttributes="Bold"
-               TextColor="{DynamicResource AccentColor}"
-               HorizontalOptions="Center" />
+                        <Label Text="Панель управления"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource AccentColor}"
+                               HorizontalOptions="Center" />
 
                         <!-- Кнопка для контент-менеджера -->
                         <Button x:Name="ContentManagerButton"
-                Text="📰 Управление контентом" 
-                Clicked="OnContentManagerClicked"
-                BackgroundColor="#FF9800"
-                TextColor="White"
-                HeightRequest="40"
-                CornerRadius="20"
-                IsVisible="{Binding IsContentManager}" />
+                                Text="📰 Управление контентом" 
+                                Clicked="OnContentManagerClicked"
+                                BackgroundColor="#FF9800"
+                                TextColor="White"
+                                HeightRequest="40"
+                                CornerRadius="20"
+                                IsVisible="{Binding IsContentManager}" />
 
-                        <Button Text="Управление контентом" 
-                Clicked="OnManageCourseContentClicked"
-                BackgroundColor="{DynamicResource PrimaryColor}"
-                TextColor="White"
-                HeightRequest="40"
-                CornerRadius="20" />
+                        <!-- Кнопка для администратора -->
+                        <Button x:Name="AdminButton"
+                                Text="👑 Админ панель" 
+                                Clicked="OnAdminDashboardClicked"
+                                BackgroundColor="#9C27B0"
+                                TextColor="White"
+                                HeightRequest="40"
+                                CornerRadius="20"
+                                IsVisible="{Binding IsAdmin}" />
 
-                        <Button Text="Управление курсами"
-                Clicked="OnTeacherManagementClicked"
-                BackgroundColor="{DynamicResource AccentColor}"
-                TextColor="White"
-                HeightRequest="40"
-                CornerRadius="20" />
+                        <Button Text="📚 Управление контентом" 
+                                Clicked="OnManageCourseContentClicked"
+                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                TextColor="White"
+                                HeightRequest="40"
+                                CornerRadius="20" />
 
-                        <Button Text="Учебные группы"
-                Clicked="OnTeacherGroupsClicked"
-                BackgroundColor="{DynamicResource PrimaryColor}"
-                TextColor="White"
-                HeightRequest="40"
-                CornerRadius="20" />
+                        <Button Text="📋 Управление курсами"
+                                Clicked="OnTeacherManagementClicked"
+                                BackgroundColor="{DynamicResource AccentColor}"
+                                TextColor="White"
+                                HeightRequest="40"
+                                CornerRadius="20" />
+
+                        <Button Text="👥 Учебные группы"
+                                Clicked="OnTeacherGroupsClicked"
+                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                TextColor="White"
+                                HeightRequest="40"
+                                CornerRadius="20" />
 
                         <VerticalStackLayout Spacing="10" x:Name="TeacherButtonsLayout" IsVisible="False">
-                            <Button Text="Создать тест" 
-                    Clicked="OnCreateTestClicked"
-                    BackgroundColor="{DynamicResource SecondaryColor}"
-                    TextColor="White"
-                    HeightRequest="35"
-                    CornerRadius="15"/>
-                            <Button Text="Создать практику" 
-                    Clicked="OnCreatePracticeClicked"
-                    BackgroundColor="{DynamicResource SecondaryColor}"
-                    TextColor="White"
-                    HeightRequest="35"
-                    CornerRadius="15"/>
-                            <Button Text="Создать теорию" 
-                    Clicked="OnCreateTheoryClicked"
-                    BackgroundColor="{DynamicResource SecondaryColor}"
-                    TextColor="White"
-                    HeightRequest="35"
-                    CornerRadius="15"/>
+                            <Button Text="📝 Создать тест" 
+                                    Clicked="OnCreateTestClicked"
+                                    BackgroundColor="{DynamicResource SecondaryColor}"
+                                    TextColor="White"
+                                    HeightRequest="35"
+                                    CornerRadius="15"/>
+                            <Button Text="✏️ Создать практику" 
+                                    Clicked="OnCreatePracticeClicked"
+                                    BackgroundColor="{DynamicResource SecondaryColor}"
+                                    TextColor="White"
+                                    HeightRequest="35"
+                                    CornerRadius="15"/>
+                            <Button Text="📖 Создать теорию" 
+                                    Clicked="OnCreateTheoryClicked"
+                                    BackgroundColor="{DynamicResource SecondaryColor}"
+                                    TextColor="White"
+                                    HeightRequest="35"
+                                    CornerRadius="15"/>
                         </VerticalStackLayout>
                     </VerticalStackLayout>
                 </Border>

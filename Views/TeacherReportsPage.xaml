@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.TeacherReportsPage"
+             Title="Отчеты"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:BoolToColorConverter x:Key="StatusColorConverter" 
+                                             TrueColor="#4CAF50" 
+                                             FalseColor="#F44336"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Отчеты" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Label Grid.Column="2"
+                       Text="📊"
+                       FontSize="20"
+                       TextColor="White"
+                       VerticalOptions="Center"
+                       Margin="0,0,10,0" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- Фильтр по периоду -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="📅 Период" 
+                               FontSize="16" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}"/>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Picker x:Name="PeriodPicker"
+                                        Title="Выберите период"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,0"
+                                        FontSize="14"
+                                        HeightRequest="50"
+                                        SelectedIndex="0">
+                                    <Picker.Items>
+                                        <x:String>За неделю</x:String>
+                                        <x:String>За месяц</x:String>
+                                        <x:String>За все время</x:String>
+                                    </Picker.Items>
+                                </Picker>
+                            </Border>
+
+                            <Button Grid.Column="1"
+                                    Text="Применить"
+                                    Clicked="OnApplyFilterClicked"
+                                    BackgroundColor="{DynamicResource PrimaryColor}"
+                                    TextColor="White"
+                                    CornerRadius="8"
+                                    HeightRequest="50"
+                                    FontSize="14"/>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Общая статистика -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="15">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="📊 Общая статистика" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}"/>
+
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10" RowSpacing="15">
+                            <Border Grid.Column="0"
+                                    BackgroundColor="#E8F5E8"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 8">
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="{Binding TotalStudents}"
+                                           FontSize="24"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="Center"/>
+                                    <Label Text="Студентов"
+                                           FontSize="12"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center"/>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Column="1"
+                                    BackgroundColor="#E3F2FD"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 8">
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="{Binding TotalCourses}"
+                                           FontSize="24"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="Center"/>
+                                    <Label Text="Курсов"
+                                           FontSize="12"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center"/>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Column="2"
+                                    BackgroundColor="#FFF3E0"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 8">
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="{Binding CompletionRate}"
+                                           FontSize="24"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="Center"/>
+                                    <Label Text="Завершили"
+                                           FontSize="12"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center"/>
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Статистика по курсам -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource SecondaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="15">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="📚 Статистика по курсам" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource SecondaryColor}"/>
+
+                        <CollectionView x:Name="CoursesStatsCollection"
+                                        ItemsSource="{Binding CourseStats}"
+                                        EmptyView="Нет данных по курсам">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="#F8F9FA"
+                                            Padding="15"
+                                            Margin="0,5"
+                                            Stroke="#E0E0E0"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8">
+                                        <VerticalStackLayout Spacing="10">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <Label Text="{Binding CourseName}" 
+                                                       FontSize="16" 
+                                                       FontAttributes="Bold"
+                                                       TextColor="{DynamicResource PrimaryColor}"/>
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="{Binding IsPublished, Converter={StaticResource StatusColorConverter}}"
+                                                        Padding="6,3"
+                                                        StrokeShape="RoundRectangle 3">
+                                                    <Label Text="{Binding IsPublished, StringFormat='{0}'}" 
+                                                           TextColor="White"
+                                                           FontSize="10"
+                                                           FontAttributes="Bold"/>
+                                                </Border>
+                                            </Grid>
+
+                                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                                                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                                    <Label Text="Студентов" 
+                                                           FontSize="11" 
+                                                           TextColor="Gray"/>
+                                                    <Label Text="{Binding StudentCount}" 
+                                                           FontSize="16" 
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                </VerticalStackLayout>
+
+                                                <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                                    <Label Text="Завершили" 
+                                                           FontSize="11" 
+                                                           TextColor="Gray"/>
+                                                    <Label Text="{Binding CompletedCount}" 
+                                                           FontSize="16" 
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                </VerticalStackLayout>
+
+                                                <VerticalStackLayout Grid.Column="2" Spacing="2">
+                                                    <Label Text="Ср. балл" 
+                                                           FontSize="11" 
+                                                           TextColor="Gray"/>
+                                                    <Label Text="{Binding AverageScore}" 
+                                                           FontSize="16" 
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                </VerticalStackLayout>
+                                            </Grid>
+
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                                <ProgressBar Grid.Column="0"
+                                                           Progress="{Binding CompletionRate}"
+                                                           ProgressColor="{DynamicResource SuccessColor}"
+                                                           HeightRequest="6"
+                                                           VerticalOptions="Center"/>
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding CompletionRatePercent}"
+                                                       FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{DynamicResource SuccessColor}"/>
+                                            </Grid>
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Активность студентов -->
+                <Border BackgroundColor="White"
+                        Stroke="#FF9800"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="15">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="📈 Активность студентов" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="#FF9800"/>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Border BackgroundColor="#F8F9FA"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 8">
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="{Binding ActiveToday}"
+                                           FontSize="24"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="Center"
+                                           TextColor="#FF9800"/>
+                                    <Label Text="Сегодня"
+                                           FontSize="12"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center"/>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border BackgroundColor="#F8F9FA"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 8">
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="{Binding ActiveThisWeek}"
+                                           FontSize="24"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="Center"
+                                           TextColor="#4CAF50"/>
+                                    <Label Text="На этой неделе"
+                                           FontSize="12"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center"/>
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

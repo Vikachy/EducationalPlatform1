@@ -3,79 +3,175 @@ using EducationalPlatform.Services;
 using System.Collections.ObjectModel;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.ApplicationModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace EducationalPlatform.Views
 {
-    public partial class EditPracticePage : ContentPage
+    public partial class EditPracticePage : ContentPage, INotifyPropertyChanged
     {
         private readonly User _user;
         private readonly DatabaseService _dbService;
         private readonly SettingsService _settingsService;
         private readonly FileService _fileService;
         private readonly int _lessonId;
-        private PracticeDto _practice;
+        private PracticeDto? _practice;
+
+        // Элементы управления
+        private Grid? _loadingOverlay;
+        private ActivityIndicator? _loadingIndicator;
+        private Label? _loadingLabel;
+        private Entry? _titleEntry;
+        private Editor? _descriptionEditor;
+        private Picker? _answerTypePicker;
+        private StackLayout? _codeSection;
+        private Editor? _starterCodeEditor;
+        private Editor? _expectedAnswerEditor;
+        private StackLayout? _fileSettingsSection;
+        private Entry? _maxFileSizeEntry;
+        private CheckBox? _zipCheckBox;
+        private CheckBox? _imageCheckBox;
+        private CheckBox? _pdfCheckBox;
+        private CheckBox? _docCheckBox;
+        private CheckBox? _txtCheckBox;
+        private CheckBox? _powerPointCheckBox;
+        private Editor? _hintEditor;
+        private CollectionView? _attachmentsCollection;
+        private Button? _clearAllButton;
+        private ProgressBar? _uploadProgressBar;
+        private Label? _uploadStatusLabel;
 
         public ObservableCollection<PracticeFileAttachment> Attachments { get; set; } = new();
 
+        public new event PropertyChangedEventHandler? PropertyChanged;
+        protected new void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public EditPracticePage(User user, DatabaseService dbService, SettingsService settingsService, int lessonId)
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка инициализации EditPracticePage: {ex.Message}");
+            }
+
             _user = user;
             _dbService = dbService;
             _settingsService = settingsService;
             _fileService = ServiceHelper.GetService<FileService>();
             _lessonId = lessonId;
 
-            BindingContext = this;
-            AttachmentsCollection.ItemsSource = Attachments;
+            // Инициализируем элементы управления
+            InitializeControls();
 
-            // Обновляем видимость кнопок при изменении коллекции
+            if (_attachmentsCollection != null)
+                _attachmentsCollection.ItemsSource = Attachments;
+
+            if (_answerTypePicker != null)
+                _answerTypePicker.SelectedIndexChanged += OnAnswerTypeChanged;
+
             Attachments.CollectionChanged += (s, e) =>
             {
-                ClearAllButton.IsVisible = Attachments.Any();
-                AttachmentsCollection.IsVisible = Attachments.Any();
+                if (_clearAllButton != null)
+                    _clearAllButton.IsVisible = Attachments.Any();
+                if (_attachmentsCollection != null)
+                    _attachmentsCollection.IsVisible = Attachments.Any();
             };
-
-            AnswerTypePicker.SelectedIndexChanged += OnAnswerTypeChanged;
 
             LoadPracticeData();
             LoadAttachments();
+        }
+
+        private void InitializeControls()
+        {
+            _loadingOverlay = this.FindByName<Grid>("LoadingOverlay");
+            _loadingIndicator = this.FindByName<ActivityIndicator>("LoadingIndicator");
+            _loadingLabel = this.FindByName<Label>("LoadingLabel");
+            _titleEntry = this.FindByName<Entry>("TitleEntry");
+            _descriptionEditor = this.FindByName<Editor>("DescriptionEditor");
+            _answerTypePicker = this.FindByName<Picker>("AnswerTypePicker");
+            _codeSection = this.FindByName<StackLayout>("CodeSection");
+            _starterCodeEditor = this.FindByName<Editor>("StarterCodeEditor");
+            _expectedAnswerEditor = this.FindByName<Editor>("ExpectedAnswerEditor");
+            _fileSettingsSection = this.FindByName<StackLayout>("FileSettingsSection");
+            _maxFileSizeEntry = this.FindByName<Entry>("MaxFileSizeEntry");
+            _zipCheckBox = this.FindByName<CheckBox>("ZipCheckBox");
+            _imageCheckBox = this.FindByName<CheckBox>("ImageCheckBox");
+            _pdfCheckBox = this.FindByName<CheckBox>("PdfCheckBox");
+            _docCheckBox = this.FindByName<CheckBox>("DocCheckBox");
+            _txtCheckBox = this.FindByName<CheckBox>("TxtCheckBox");
+            _powerPointCheckBox = this.FindByName<CheckBox>("PowerPointCheckBox");
+            _hintEditor = this.FindByName<Editor>("HintEditor");
+            _attachmentsCollection = this.FindByName<CollectionView>("AttachmentsCollection");
+            _clearAllButton = this.FindByName<Button>("ClearAllButton");
+            _uploadProgressBar = this.FindByName<ProgressBar>("UploadProgressBar");
+            _uploadStatusLabel = this.FindByName<Label>("UploadStatusLabel");
+
+            // Устанавливаем начальные значения чекбоксов
+            if (_zipCheckBox != null) _zipCheckBox.IsChecked = true;
+            if (_imageCheckBox != null) _imageCheckBox.IsChecked = true;
+            if (_pdfCheckBox != null) _pdfCheckBox.IsChecked = true;
+        }
+
+        private void ShowLoading(bool show, string message = "Загрузка...")
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_loadingOverlay != null)
+                {
+                    _loadingOverlay.IsVisible = show;
+                    _loadingOverlay.InputTransparent = !show;
+                }
+                if (_loadingIndicator != null)
+                    _loadingIndicator.IsRunning = show;
+                if (_loadingLabel != null && !string.IsNullOrEmpty(message))
+                    _loadingLabel.Text = message;
+            });
         }
 
         private async void LoadPracticeData()
         {
             try
             {
+                ShowLoading(true, "Загрузка данных...");
                 _practice = await _dbService.GetPracticeExerciseWithLessonDataAsync(_lessonId);
 
                 if (_practice != null)
                 {
-                    TitleEntry.Text = _practice.Title;
-                    DescriptionEditor.Text = _practice.Description;
+                    if (_titleEntry != null) _titleEntry.Text = _practice.Title;
+                    if (_descriptionEditor != null) _descriptionEditor.Text = _practice.Description;
 
-                    if (!string.IsNullOrEmpty(_practice.AnswerType))
+                    if (_answerTypePicker != null && !string.IsNullOrEmpty(_practice.AnswerType))
                     {
-                        var index = AnswerTypePicker.Items.IndexOf(_practice.AnswerType);
+                        var index = _answerTypePicker.Items.IndexOf(_practice.AnswerType);
                         if (index >= 0)
-                            AnswerTypePicker.SelectedIndex = index;
+                            _answerTypePicker.SelectedIndex = index;
                     }
 
-                    StarterCodeEditor.Text = _practice.StarterCode;
-                    ExpectedAnswerEditor.Text = _practice.ExpectedOutput;
-                    HintEditor.Text = _practice.Hint;
+                    if (_starterCodeEditor != null) _starterCodeEditor.Text = _practice.StarterCode;
+                    if (_expectedAnswerEditor != null) _expectedAnswerEditor.Text = _practice.ExpectedOutput;
+                    if (_hintEditor != null) _hintEditor.Text = _practice.Hint;
 
                     // Загружаем настройки файлов если они есть
-                    if (_practice.AnswerType == "file")
+                    if (_practice.AnswerType == "file" && _practice.MaxFileSize > 0)
                     {
-                        if (_practice.MaxFileSize > 0)
-                            MaxFileSizeEntry.Text = _practice.MaxFileSize.ToString();
+                        if (_maxFileSizeEntry != null)
+                            _maxFileSizeEntry.Text = _practice.MaxFileSize.ToString();
 
-                        if (!string.IsNullOrEmpty(_practice.AllowedFileTypes))
+                        if (!string.IsNullOrEmpty(_practice.AllowedFileTypes) && _zipCheckBox != null && _imageCheckBox != null && _pdfCheckBox != null)
                         {
-                            var types = _practice.AllowedFileTypes.Split(';');
-                            ZipCheckBox.IsChecked = types.Contains(".zip");
-                            ImageCheckBox.IsChecked = types.Any(t => t == ".jpg" || t == ".jpeg" || t == ".png" || t == ".gif");
-                            PdfCheckBox.IsChecked = types.Contains(".pdf");
+                            var types = _practice.AllowedFileTypes.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                            if (_zipCheckBox != null) _zipCheckBox.IsChecked = types.Contains(".zip");
+                            if (_imageCheckBox != null) _imageCheckBox.IsChecked = types.Any(t => t == ".jpg" || t == ".jpeg" || t == ".png" || t == ".gif");
+                            if (_pdfCheckBox != null) _pdfCheckBox.IsChecked = types.Contains(".pdf");
+                            if (_docCheckBox != null) _docCheckBox.IsChecked = types.Contains(".doc") || types.Contains(".docx");
+                            if (_txtCheckBox != null) _txtCheckBox.IsChecked = types.Contains(".txt");
+                            if (_powerPointCheckBox != null) _powerPointCheckBox.IsChecked = types.Contains(".ppt") || types.Contains(".pptx");
                         }
                     }
 
@@ -91,39 +187,56 @@ namespace EducationalPlatform.Views
             {
                 await DisplayAlert("Ошибка", $"Не удалось загрузить данные задания: {ex.Message}", "OK");
             }
+            finally
+            {
+                ShowLoading(false);
+            }
         }
 
-        private void OnAnswerTypeChanged(object sender, EventArgs e)
+        private void OnAnswerTypeChanged(object? sender, EventArgs? e)
         {
-            var selectedType = AnswerTypePicker.SelectedItem as string;
-            CodeSection.IsVisible = selectedType == "code";
-            FileSettingsSection.IsVisible = selectedType == "file";
+            var selectedType = _answerTypePicker?.SelectedItem as string;
+
+            if (_codeSection != null)
+                _codeSection.IsVisible = selectedType == "code";
+
+            if (_fileSettingsSection != null)
+                _fileSettingsSection.IsVisible = selectedType == "file";
         }
 
         private async void LoadAttachments()
         {
             try
             {
-                Attachments.Clear();
                 var attachments = await _dbService.GetLessonAttachmentsAsync(_lessonId);
 
-                if (attachments != null && attachments.Any())
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    foreach (var att in attachments)
-                    {
-                        Attachments.Add(new PracticeFileAttachment
-                        {
-                            AttachmentId = att.AttachmentId,
-                            FileName = att.FileName,
-                            FilePath = att.FilePath,
-                            FileSize = ParseFileSize(att.FileSize),
-                            UploadDate = att.UploadDate,
-                            FileType = att.FileType
-                        });
-                    }
+                    Attachments.Clear();
 
-                    Console.WriteLine($"✅ Загружено {Attachments.Count} вложений");
-                }
+                    if (attachments != null && attachments.Any())
+                    {
+                        foreach (var att in attachments)
+                        {
+                            Attachments.Add(new PracticeFileAttachment
+                            {
+                                AttachmentId = att.AttachmentId,
+                                FileName = att.FileName,
+                                FilePath = att.FilePath,
+                                FileSize = ParseFileSize(att.FileSize),
+                                SizeFormatted = att.FileSize,
+                                UploadDate = att.UploadDate,
+                                FileType = att.FileType,
+                                FileIcon = _fileService.GetFileIcon(att.FileType)
+                            });
+                        }
+
+                        if (_attachmentsCollection != null)
+                            _attachmentsCollection.IsVisible = true;
+                        if (_clearAllButton != null)
+                            _clearAllButton.IsVisible = true;
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -135,23 +248,18 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                var fileTypes = new FilePickerFileType(
-                    new Dictionary<DevicePlatform, IEnumerable<string>>
-                    {
-                        { DevicePlatform.WinUI, new[] { ".zip", ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg", ".txt", ".mp4" } },
-                        { DevicePlatform.macOS, new[] { ".zip", ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg", ".txt", ".mp4" } },
-                        { DevicePlatform.Android, new[] { "*/*" } },
-                        { DevicePlatform.iOS, new[] { "public.data" } }
-                    });
-
                 var options = new PickOptions
                 {
                     PickerTitle = "Выберите файлы для прикрепления",
-                    FileTypes = fileTypes
+                    FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                    {
+                        { DevicePlatform.WinUI, new[] { ".zip", ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg", ".txt", ".mp4" } },
+                        { DevicePlatform.Android, new[] { "*/*" } },
+                        { DevicePlatform.iOS, new[] { "public.data" } }
+                    })
                 };
 
-                var results = await PickFilesSequentially(options);
-
+                var results = await FilePicker.Default.PickMultipleAsync(options);
                 if (results != null && results.Any())
                 {
                     await ProcessSelectedFiles(results);
@@ -163,43 +271,18 @@ namespace EducationalPlatform.Views
             }
         }
 
-        private async Task<List<FileResult>> PickFilesSequentially(PickOptions options)
-        {
-            var files = new List<FileResult>();
-            bool continueSelecting = true;
-
-            while (continueSelecting && files.Count < 10)
-            {
-                var result = await FilePicker.Default.PickAsync(options);
-                if (result != null)
-                {
-                    files.Add(result);
-
-                    if (files.Count < 10)
-                    {
-                        continueSelecting = await DisplayAlert("Файлы",
-                            $"Добавлено файлов: {files.Count}. Добавить еще?", "Да", "Нет");
-                    }
-                    else
-                    {
-                        await DisplayAlert("Информация", "Достигнут лимит в 10 файлов", "OK");
-                        continueSelecting = false;
-                    }
-                }
-                else
-                {
-                    continueSelecting = false;
-                }
-            }
-
-            return files;
-        }
-
         private async Task ProcessSelectedFiles(IEnumerable<FileResult> files)
         {
-            UploadProgressBar.IsVisible = true;
-            UploadStatusLabel.IsVisible = true;
-            UploadProgressBar.Progress = 0;
+            if (_uploadProgressBar != null)
+            {
+                _uploadProgressBar.IsVisible = true;
+                _uploadProgressBar.Progress = 0;
+            }
+            if (_uploadStatusLabel != null)
+            {
+                _uploadStatusLabel.IsVisible = true;
+                _uploadStatusLabel.Text = "Обработка файлов...";
+            }
 
             int processed = 0;
             int total = files.Count();
@@ -208,26 +291,14 @@ namespace EducationalPlatform.Views
             {
                 try
                 {
-                    UploadStatusLabel.Text = $"Обработка: {file.FileName}";
+                    if (_uploadStatusLabel != null)
+                        _uploadStatusLabel.Text = $"Обработка: {file.FileName}";
 
                     // Проверяем размер файла
                     long fileSize = 0;
-                    try
+                    using (var stream = await file.OpenReadAsync())
                     {
-                        if (!string.IsNullOrEmpty(file.FullPath) && File.Exists(file.FullPath))
-                        {
-                            var fileInfo = new FileInfo(file.FullPath);
-                            fileSize = fileInfo.Length;
-                        }
-                        else
-                        {
-                            using var stream = await file.OpenReadAsync();
-                            fileSize = stream.Length;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"⚠️ Не удалось определить размер файла: {ex.Message}");
+                        fileSize = stream.Length;
                     }
 
                     if (fileSize > 50 * 1024 * 1024)
@@ -261,16 +332,18 @@ namespace EducationalPlatform.Views
                             FileName = addedAttachment.FileName,
                             FilePath = addedAttachment.FilePath,
                             FileSize = fileBytes.Length,
+                            SizeFormatted = FormatFileSize(fileBytes.Length),
                             UploadDate = addedAttachment.UploadDate,
-                            FileType = addedAttachment.FileType
+                            FileType = addedAttachment.FileType,
+                            FileIcon = _fileService.GetFileIcon(addedAttachment.FileType)
                         };
 
                         Attachments.Add(attachment);
-                        Console.WriteLine($"✅ Файл прикреплен: {file.FileName}");
                     }
 
                     processed++;
-                    UploadProgressBar.Progress = (double)processed / total;
+                    if (_uploadProgressBar != null)
+                        _uploadProgressBar.Progress = (double)processed / total;
                 }
                 catch (Exception ex)
                 {
@@ -279,29 +352,22 @@ namespace EducationalPlatform.Views
                 }
             }
 
-            UploadProgressBar.IsVisible = false;
-            UploadStatusLabel.IsVisible = false;
-            UploadProgressBar.Progress = 0;
-            UploadStatusLabel.Text = "";
+            if (_uploadProgressBar != null)
+                _uploadProgressBar.IsVisible = false;
+            if (_uploadStatusLabel != null)
+                _uploadStatusLabel.IsVisible = false;
         }
 
         private async void OnRemoveAttachmentClicked(object sender, EventArgs e)
         {
             if (sender is Button btn && btn.CommandParameter is PracticeFileAttachment attachment)
             {
-                try
-                {
-                    bool confirm = await DisplayAlert("Подтверждение",
-                        $"Удалить файл {attachment.FileName}?", "Да", "Нет");
+                bool confirm = await DisplayAlert("Подтверждение",
+                    $"Удалить файл {attachment.FileName}?", "Да", "Нет");
 
-                    if (confirm)
-                    {
-                        await RemoveAttachment(attachment);
-                    }
-                }
-                catch (Exception ex)
+                if (confirm)
                 {
-                    await DisplayAlert("Ошибка", $"Не удалось удалить файл: {ex.Message}", "OK");
+                    await RemoveAttachment(attachment);
                 }
             }
         }
@@ -317,7 +383,6 @@ namespace EducationalPlatform.Views
                 {
                     await RemoveAttachment(attachment);
                 }
-                Attachments.Clear();
             }
         }
 
@@ -328,19 +393,7 @@ namespace EducationalPlatform.Views
                 var success = await _dbService.DeleteLessonAttachmentAsync(attachment.AttachmentId);
                 if (success)
                 {
-                    // Удаляем локальный файл если он существует
-                    var resolvedPath = await _fileService.ResolveFilePath(attachment.FilePath, attachment.FileName, "PracticeFiles");
-                    if (!string.IsNullOrEmpty(resolvedPath) && File.Exists(resolvedPath))
-                    {
-                        File.Delete(resolvedPath);
-                    }
-
                     Attachments.Remove(attachment);
-                    await DisplayAlert("Успех", $"Файл {attachment.FileName} удален", "OK");
-                }
-                else
-                {
-                    await DisplayAlert("Ошибка", "Не удалось удалить файл из базы данных", "OK");
                 }
             }
             catch (Exception ex)
@@ -353,7 +406,7 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(TitleEntry.Text))
+                if (_titleEntry == null || string.IsNullOrWhiteSpace(_titleEntry.Text))
                 {
                     await DisplayAlert("Ошибка", "Введите название задания", "OK");
                     return;
@@ -365,7 +418,7 @@ namespace EducationalPlatform.Views
                     return;
                 }
 
-                var answerType = AnswerTypePicker.SelectedItem?.ToString() ?? "text";
+                var answerType = _answerTypePicker?.SelectedItem?.ToString() ?? "text";
 
                 // Настройки для файлов
                 var maxFileSize = 10;
@@ -373,22 +426,32 @@ namespace EducationalPlatform.Views
 
                 if (answerType == "file")
                 {
-                    if (!int.TryParse(MaxFileSizeEntry.Text, out maxFileSize) || maxFileSize <= 0)
+                    if (_maxFileSizeEntry != null && !int.TryParse(_maxFileSizeEntry.Text, out maxFileSize))
                     {
-                        await DisplayAlert("Ошибка", "Укажите корректный максимальный размер файла", "OK");
-                        return;
+                        maxFileSize = 10;
                     }
 
                     var allowedTypes = new List<string>();
-                    if (ZipCheckBox.IsChecked) allowedTypes.Add(".zip");
-                    if (ImageCheckBox.IsChecked)
+                    if (_zipCheckBox?.IsChecked == true) allowedTypes.Add(".zip");
+                    if (_imageCheckBox?.IsChecked == true)
                     {
                         allowedTypes.Add(".jpg");
                         allowedTypes.Add(".jpeg");
                         allowedTypes.Add(".png");
                         allowedTypes.Add(".gif");
                     }
-                    if (PdfCheckBox.IsChecked) allowedTypes.Add(".pdf");
+                    if (_pdfCheckBox?.IsChecked == true) allowedTypes.Add(".pdf");
+                    if (_docCheckBox?.IsChecked == true)
+                    {
+                        allowedTypes.Add(".doc");
+                        allowedTypes.Add(".docx");
+                    }
+                    if (_txtCheckBox?.IsChecked == true) allowedTypes.Add(".txt");
+                    if (_powerPointCheckBox?.IsChecked == true)
+                    {
+                        allowedTypes.Add(".ppt");
+                        allowedTypes.Add(".pptx");
+                    }
 
                     if (!allowedTypes.Any())
                     {
@@ -399,14 +462,17 @@ namespace EducationalPlatform.Views
                     allowedFileTypes = string.Join(";", allowedTypes);
                 }
 
-                _practice.Title = TitleEntry.Text;
-                _practice.Description = DescriptionEditor.Text;
+                // Обновляем объект практики
+                _practice.Title = _titleEntry.Text;
+                _practice.Description = _descriptionEditor?.Text;
                 _practice.AnswerType = answerType;
-                _practice.StarterCode = StarterCodeEditor.Text;
-                _practice.ExpectedOutput = ExpectedAnswerEditor.Text;
-                _practice.Hint = HintEditor.Text;
+                _practice.StarterCode = _starterCodeEditor?.Text;
+                _practice.ExpectedOutput = _expectedAnswerEditor?.Text;
+                _practice.Hint = _hintEditor?.Text;
                 _practice.MaxFileSize = maxFileSize;
                 _practice.AllowedFileTypes = allowedFileTypes;
+
+                ShowLoading(true, "Сохранение...");
 
                 var success = await _dbService.UpdatePracticeExerciseAsync(_practice);
 
@@ -423,6 +489,10 @@ namespace EducationalPlatform.Views
             catch (Exception ex)
             {
                 await DisplayAlert("Ошибка", $"Ошибка сохранения: {ex.Message}", "OK");
+            }
+            finally
+            {
+                ShowLoading(false);
             }
         }
 

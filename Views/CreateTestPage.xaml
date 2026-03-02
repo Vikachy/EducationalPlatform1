@@ -2,73 +2,232 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="EducationalPlatform.Views.CreateTestPage"
-             Title="Создание теста">
+             Title="Создание теста"
+             BackgroundColor="{DynamicResource BackgroundColor}">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="20">
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Создание теста" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Label Grid.Column="2"
+                       Text="📝"
+                       FontSize="20"
+                       TextColor="White"
+                       VerticalOptions="Center"
+                       Margin="0,0,10,0" />
+            </Grid>
+        </Border>
 
-            <Label Text="Создание теста" 
-                   FontSize="24" FontAttributes="Bold"
-                   HorizontalOptions="Center" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="20" Padding="20">
 
-            <Border Style="{DynamicResource StandardFrameStyle}" Padding="15">
-                <VerticalStackLayout Spacing="15">
+                <!-- Основные настройки -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="📋 Основные настройки" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}"/>
 
-                    <!-- Основные настройки теста -->
-                    <Label Text="Название теста:" Style="{DynamicResource StandardLabelStyle}"/>
-                    <Entry Text="{Binding TestTitle}" Placeholder="Введите название теста" />
-
-                    <Label Text="Описание:" Style="{DynamicResource StandardLabelStyle}"/>
-                    <Editor Text="{Binding TestDescription}" HeightRequest="80" />
-
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto" ColumnSpacing="20">
-                        <VerticalStackLayout Grid.Column="0" Spacing="5">
-                            <Label Text="Лимит времени (мин):" Style="{DynamicResource StandardLabelStyle}"/>
-                            <Entry Text="{Binding TimeLimit, StringFormat='{0}'}" Keyboard="Numeric" />
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Название теста:" 
+                                   FontSize="14" 
+                                   FontAttributes="Bold"/>
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="TestTitleEntry" 
+                                       Placeholder="Введите название теста"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="14"
+                                       HeightRequest="50"
+                                       Text="{Binding TestTitle}"/>
+                            </Border>
                         </VerticalStackLayout>
-                        <VerticalStackLayout Grid.Column="1" Spacing="5">
-                            <Label Text="Проходной балл:" Style="{DynamicResource StandardLabelStyle}"/>
-                            <Entry Text="{Binding PassingScore, StringFormat='{0}'}" Keyboard="Numeric" />
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Описание:" 
+                                   FontSize="14" 
+                                   FontAttributes="Bold"/>
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Editor x:Name="TestDescriptionEditor" 
+                                        HeightRequest="80"
+                                        Placeholder="Введите описание теста"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,10"
+                                        FontSize="14"
+                                        Text="{Binding TestDescription}"/>
+                            </Border>
                         </VerticalStackLayout>
-                    </Grid>
 
-                    <!-- Вопросы -->
-                    <Label Text="Вопросы:" FontSize="16" FontAttributes="Bold" />
-                    <Button Text="➕ Добавить вопрос" Clicked="OnAddQuestionClicked" />
-
-                    <CollectionView ItemsSource="{Binding Questions}">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Border BackgroundColor="#F0F0F0" Padding="10" Margin="0,5">
-                                    <VerticalStackLayout>
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <Label Text="{Binding QuestionText}" FontAttributes="Bold" />
-                                            <Button Grid.Column="1" Text="❌" 
-                                                    Clicked="OnRemoveQuestionClicked"
-                                                    CommandParameter="{Binding .}" />
-                                        </Grid>
-                                        <Label Text="{Binding QuestionType, StringFormat='Тип: {0}'}" 
-                                               FontSize="12" />
-                                        <Label Text="{Binding AnswerOptions.Count, StringFormat='Вариантов: {0}'}" 
-                                               FontSize="12" />
-                                        <Button Text="✏️ Редактировать" 
-                                                Clicked="OnEditQuestionClicked"
-                                                CommandParameter="{Binding .}" />
-                                    </VerticalStackLayout>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                            <VerticalStackLayout Grid.Column="0" Spacing="8">
+                                <Label Text="Лимит времени (мин):" 
+                                       FontSize="14" 
+                                       FontAttributes="Bold"/>
+                                <Border BackgroundColor="#F8F9FA"
+                                        Stroke="#E0E0E0"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="0">
+                                    <Entry x:Name="TimeLimitEntry" 
+                                           Text="{Binding TimeLimit}"
+                                           Keyboard="Numeric"
+                                           BackgroundColor="Transparent"
+                                           Margin="15,0"
+                                           FontSize="14"
+                                           HeightRequest="50"/>
                                 </Border>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                            </VerticalStackLayout>
 
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <Button Text="Назад" Clicked="OnBackClicked" />
-                        <Button Text="Создать тест" Clicked="OnCreateClicked" 
-                                BackgroundColor="{DynamicResource PrimaryColor}" />
-                    </Grid>
+                            <VerticalStackLayout Grid.Column="1" Spacing="8">
+                                <Label Text="Проходной балл:" 
+                                       FontSize="14" 
+                                       FontAttributes="Bold"/>
+                                <Border BackgroundColor="#F8F9FA"
+                                        Stroke="#E0E0E0"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="0">
+                                    <Entry x:Name="PassingScoreEntry" 
+                                           Text="{Binding PassingScore}"
+                                           Keyboard="Numeric"
+                                           BackgroundColor="Transparent"
+                                           Margin="15,0"
+                                           FontSize="14"
+                                           HeightRequest="50"/>
+                                </Border>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
 
-                </VerticalStackLayout>
-            </Border>
+                <!-- Вопросы -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource SecondaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="❓ Вопросы теста" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource SecondaryColor}"/>
 
-        </VerticalStackLayout>
-    </ScrollView>
+                        <Button Text="➕ Добавить вопрос" 
+                                Clicked="OnAddQuestionClicked"
+                                BackgroundColor="{DynamicResource SecondaryColor}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="45"
+                                FontSize="14"/>
+
+                        <CollectionView x:Name="QuestionsCollectionView"
+                                        ItemsSource="{Binding Questions}"
+                                        EmptyView="Нет добавленных вопросов"
+                                        HeightRequest="250">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="#F8F9FA" 
+                                            Padding="12" 
+                                            Margin="0,5"
+                                            Stroke="#E0E0E0"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8">
+                                        <VerticalStackLayout Spacing="8">
+                                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                                <Label Grid.Column="0" 
+                                                       Text="{Binding QuestionText}" 
+                                                       FontSize="14" 
+                                                       FontAttributes="Bold"
+                                                       LineBreakMode="TailTruncation"/>
+                                                <Label Grid.Column="1" 
+                                                       Text="{Binding Score, StringFormat='{0} балл(ов)'}"
+                                                       FontSize="12"
+                                                       TextColor="Gray"
+                                                       VerticalOptions="Center"/>
+                                                <Button Grid.Column="2"
+                                                        Text="✏️"
+                                                        Clicked="OnEditQuestionClicked"
+                                                        CommandParameter="{Binding .}"
+                                                        BackgroundColor="Transparent"
+                                                        FontSize="16"
+                                                        WidthRequest="40"/>
+                                            </Grid>
+
+                                            <Label Text="{Binding QuestionType, StringFormat='Тип: {0}'}" 
+                                                   FontSize="11" 
+                                                   TextColor="Gray"/>
+
+                                            <Label Text="{Binding AnswerOptions.Count, StringFormat='Вариантов ответа: {0}'}" 
+                                                   FontSize="11" 
+                                                   TextColor="Gray"/>
+
+                                            <Button Text="❌ Удалить"
+                                                    Clicked="OnRemoveQuestionClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#FF6B6B"
+                                                    FontSize="12"
+                                                    HorizontalOptions="End"/>
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Кнопки действий -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                    <Button Text="Назад" 
+                            Clicked="OnBackClicked"
+                            BackgroundColor="#6C757D"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="50"
+                            FontSize="16"/>
+                    <Button Text="Создать тест" 
+                            Clicked="OnCreateClicked"
+                            BackgroundColor="{DynamicResource PrimaryColor}"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="50"
+                            FontSize="16"
+                            FontAttributes="Bold"/>
+                </Grid>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

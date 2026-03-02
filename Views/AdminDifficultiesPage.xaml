@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="EducationalPlatform.Views.AdminDifficultiesPage"
+             Title="Уровни сложности"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Уровни сложности" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="2"
+                        Text="+"
+                        Clicked="OnAddDifficultyClicked"
+                        BackgroundColor="White"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+            <!-- Поиск -->
+            <Border Grid.Row="0"
+                    BackgroundColor="White"
+                    Margin="20,20,20,10"
+                    Padding="0"
+                    Stroke="#E0E0E0"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 12">
+                <Entry x:Name="SearchEntry"
+                       Placeholder="🔍 Поиск по названию..."
+                       BackgroundColor="Transparent"
+                       Margin="15,0"
+                       FontSize="14"
+                       HeightRequest="50"
+                       TextChanged="OnSearchTextChanged"/>
+            </Border>
+
+            <!-- Список уровней -->
+            <CollectionView Grid.Row="1"
+                          x:Name="DifficultiesCollectionView"
+                          Margin="20,0,20,20"
+                          ItemsSource="{Binding Difficulties}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,5"
+                                BackgroundColor="White"
+                                Stroke="#FF5722"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 12"
+                                Padding="15">
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                <!-- Название -->
+                                <Label Grid.Row="0" Grid.Column="0"
+                                       Text="{Binding DifficultyName}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#333"/>
+
+                                <!-- Описание -->
+                                <Label Grid.Row="1" Grid.Column="0"
+                                       Text="{Binding Description}"
+                                       FontSize="13"
+                                       TextColor="#666"
+                                       MaxLines="2"/>
+
+                                <!-- Типы уроков -->
+                                <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Spacing="10">
+                                    <Border BackgroundColor="{Binding HasTheory, Converter={StaticResource BoolToColorConverter}}"
+                                            Padding="5,2"
+                                            StrokeShape="RoundRectangle 3">
+                                        <Label Text="Теория" FontSize="10" TextColor="White"/>
+                                    </Border>
+                                    <Border BackgroundColor="{Binding HasPractice, Converter={StaticResource BoolToColorConverter}}"
+                                            Padding="5,2"
+                                            StrokeShape="RoundRectangle 3">
+                                        <Label Text="Практика" FontSize="10" TextColor="White"/>
+                                    </Border>
+                                </HorizontalStackLayout>
+
+                                <!-- Кнопки действий -->
+                                <HorizontalStackLayout Grid.Row="0" Grid.Column="1"
+                                                      Grid.RowSpan="3"
+                                                      Spacing="8"
+                                                      VerticalOptions="Center">
+                                    <Button Text="✏️"
+                                            Clicked="OnEditDifficultyClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#FFC107"
+                                            TextColor="White"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            CornerRadius="20"
+                                            FontSize="16"/>
+                                    <Button Text="🗑️"
+                                            Clicked="OnDeleteDifficultyClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#F44336"
+                                            TextColor="White"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            CornerRadius="20"
+                                            FontSize="16"/>
+                                </HorizontalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Grid>
+</ContentPage>

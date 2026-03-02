@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.AdminRolesPage"
+             Title="Управление ролями"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:RoleToColorConverter x:Key="RoleToColorConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Управление ролями" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="15">
+
+                <!-- Роли -->
+                <CollectionView x:Name="RolesCollectionView"
+                                ItemsSource="{Binding Roles}"
+                                EmptyView="Нет данных">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,5"
+                                    BackgroundColor="White"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 12"
+                                    Padding="15">
+                                <VerticalStackLayout Spacing="12">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Text="{Binding RoleName}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{Binding RoleId, Converter={StaticResource RoleToColorConverter}}"/>
+                                        <Label Grid.Column="1"
+                                               Text="{Binding UsersCount, StringFormat='{0} пользователей'}"
+                                               FontSize="12"
+                                               TextColor="Gray"/>
+                                    </Grid>
+
+                                    <Label Text="{Binding Description}"
+                                           FontSize="13"
+                                           TextColor="#666"/>
+
+                                    <Border BackgroundColor="#F8F9FA"
+                                            Padding="12"
+                                            Stroke="#E0E0E0"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8">
+                                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
+                                            <CheckBox Grid.Row="0" Grid.Column="0"
+                                                      IsChecked="{Binding CanCreateCourses}"
+                                                      IsEnabled="False"/>
+                                            <Label Grid.Row="0" Grid.Column="1"
+                                                   Text="Создание курсов"
+                                                   FontSize="12"
+                                                   VerticalOptions="Center"/>
+
+                                            <CheckBox Grid.Row="1" Grid.Column="0"
+                                                      IsChecked="{Binding CanManageUsers}"
+                                                      IsEnabled="False"/>
+                                            <Label Grid.Row="1" Grid.Column="1"
+                                                   Text="Управление пользователями"
+                                                   FontSize="12"
+                                                   VerticalOptions="Center"/>
+
+                                            <CheckBox Grid.Row="2" Grid.Column="0"
+                                                      IsChecked="{Binding CanManageGroups}"
+                                                      IsEnabled="False"/>
+                                            <Label Grid.Row="2" Grid.Column="1"
+                                                   Text="Управление группами"
+                                                   FontSize="12"
+                                                   VerticalOptions="Center"/>
+
+                                            <CheckBox Grid.Row="3" Grid.Column="0"
+                                                      IsChecked="{Binding CanManageContent}"
+                                                      IsEnabled="False"/>
+                                            <Label Grid.Row="3" Grid.Column="1"
+                                                   Text="Управление контентом"
+                                                   FontSize="12"
+                                                   VerticalOptions="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Button Text="Редактировать"
+                                            Clicked="OnEditRoleClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="{DynamicResource SecondaryColor}"
+                                            TextColor="White"
+                                            HeightRequest="40"
+                                            CornerRadius="8"
+                                            FontSize="13"/>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

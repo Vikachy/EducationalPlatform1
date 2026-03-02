@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.AdminUsersPage"
+             Title="Управление пользователями"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:RoleToTextConverter x:Key="RoleToTextConverter" />
+            <converters:StatusColorConverter x:Key="StatusToColorConverter" />
+            <converters:DateTimeToRelativeConverter x:Key="DateTimeToRelativeConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Управление пользователями" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="2"
+                        Text="+"
+                        Clicked="OnAddUserClicked"
+                        BackgroundColor="White"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*">
+            <!-- Статистика -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,*,*" ColumnSpacing="10" Margin="20,20,20,10">
+                <Border Grid.Column="0"
+                        BackgroundColor="#E3F2FD"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 10">
+                    <VerticalStackLayout>
+                        <Label Text="Всего" FontSize="11" TextColor="#1976D2"/>
+                        <Label x:Name="TotalUsersLabel" Text="0" FontSize="18" FontAttributes="Bold" TextColor="#1976D2"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Grid.Column="1"
+                        BackgroundColor="#E8F5E8"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 10">
+                    <VerticalStackLayout>
+                        <Label Text="Активных" FontSize="11" TextColor="#4CAF50"/>
+                        <Label x:Name="ActiveUsersLabel" Text="0" FontSize="18" FontAttributes="Bold" TextColor="#4CAF50"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Grid.Column="2"
+                        BackgroundColor="#FFEBEE"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 10">
+                    <VerticalStackLayout>
+                        <Label Text="Новых" FontSize="11" TextColor="#F44336"/>
+                        <Label x:Name="NewUsersLabel" Text="0" FontSize="18" FontAttributes="Bold" TextColor="#F44336"/>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- Поиск и фильтры -->
+            <Border Grid.Row="1"
+                    BackgroundColor="White"
+                    Margin="20,10"
+                    Padding="15"
+                    Stroke="#E0E0E0"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 12">
+                <VerticalStackLayout Spacing="10">
+                    <Border BackgroundColor="#F5F5F5"
+                            Stroke="#E0E0E0"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="0">
+                        <Entry x:Name="SearchEntry"
+                               Placeholder="Поиск по имени или email..."
+                               BackgroundColor="Transparent"
+                               Margin="15,0"
+                               FontSize="14"
+                               HeightRequest="45"
+                               TextChanged="OnSearchTextChanged"/>
+                    </Border>
+
+                    <HorizontalStackLayout Spacing="10">
+                        <Picker x:Name="RoleFilter"
+                                Title="Все роли"
+                                WidthRequest="110"
+                                HeightRequest="40"
+                                SelectedIndexChanged="OnFilterChanged">
+                            <Picker.Items>
+                                <x:String>Все</x:String>
+                                <x:String>Студенты</x:String>
+                                <x:String>Преподаватели</x:String>
+                                <x:String>Админы</x:String>
+                                <x:String>Контент</x:String>
+                            </Picker.Items>
+                        </Picker>
+
+                        <Picker x:Name="StatusFilter"
+                                Title="Все статусы"
+                                WidthRequest="110"
+                                HeightRequest="40"
+                                SelectedIndexChanged="OnFilterChanged">
+                            <Picker.Items>
+                                <x:String>Все</x:String>
+                                <x:String>Активные</x:String>
+                                <x:String>Неактивные</x:String>
+                            </Picker.Items>
+                        </Picker>
+
+                        <Button Text="Сброс"
+                                Clicked="OnResetFiltersClicked"
+                                BackgroundColor="#6C757D"
+                                TextColor="White"
+                                HeightRequest="40"
+                                WidthRequest="60"
+                                CornerRadius="8"
+                                FontSize="11"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Список пользователей -->
+            <CollectionView Grid.Row="2"
+                          x:Name="UsersCollectionView"
+                          Margin="20,0,20,20"
+                          ItemsSource="{Binding Users}"
+                          SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,5"
+                                BackgroundColor="White"
+                                Stroke="#E0E0E0"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 12"
+                                Padding="15">
+                            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                                <!-- Аватар -->
+                                <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="0"
+                                        WidthRequest="50"
+                                        HeightRequest="50"
+                                        Stroke="{DynamicResource PrimaryColor}"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 25"
+                                        BackgroundColor="#F5F5F5"
+                                        Margin="0,0,15,0">
+                                    <Image Source="{Binding AvatarUrl, Converter={StaticResource AvatarConverter}}"
+                                           Aspect="AspectFill"
+                                           WidthRequest="46"
+                                           HeightRequest="46" />
+                                </Border>
+
+                                <!-- Имя и роль -->
+                                <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <Label Grid.Column="0"
+                                           Text="{Binding FullName}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource TextColor}"/>
+                                    <Border Grid.Column="1"
+                                            BackgroundColor="{Binding RoleId, Converter={StaticResource RoleToColorConverter}}"
+                                            Padding="8,4"
+                                            StrokeShape="RoundRectangle 5">
+                                        <Label Text="{Binding RoleId, Converter={StaticResource RoleToTextConverter}}"
+                                               TextColor="White"
+                                               FontSize="10"
+                                               FontAttributes="Bold"/>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Email -->
+                                <Label Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding Email}"
+                                       FontSize="13"
+                                       TextColor="#666"/>
+
+                                <!-- Статус и дата -->
+                                <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                        <Border BackgroundColor="{Binding IsActive, Converter={StaticResource StatusToColorConverter}}"
+                                                WidthRequest="8"
+                                                HeightRequest="8"
+                                                StrokeShape="RoundRectangle 4"
+                                                VerticalOptions="Center"/>
+                                        <Label Text="{Binding IsActive, Converter={StaticResource ActiveStatusTextConverter}}"
+                                               FontSize="11"
+                                               TextColor="Gray"/>
+                                    </HorizontalStackLayout>
+                                    <Label Grid.Column="1"
+                                           Text="{Binding RegistrationDate, Converter={StaticResource DateTimeToRelativeConverter}}"
+                                           FontSize="11"
+                                           TextColor="Gray"/>
+                                </Grid>
+
+                                <!-- Кнопки действий -->
+                                <VerticalStackLayout Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" Spacing="8">
+                                    <Button Text="✎"
+                                            Clicked="OnEditUserClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#FFC107"
+                                            TextColor="White"
+                                            WidthRequest="35"
+                                            HeightRequest="35"
+                                            CornerRadius="17"
+                                            FontSize="14"/>
+                                    <Button Text="{Binding IsActive, Converter={StaticResource ToggleStatusIconConverter}}"
+                                            Clicked="OnToggleStatusClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="{Binding IsActive, Converter={StaticResource ToggleStatusColorConverter}}"
+                                            TextColor="White"
+                                            WidthRequest="35"
+                                            HeightRequest="35"
+                                            CornerRadius="17"
+                                            FontSize="14"/>
+                                    <Button Text="🔑"
+                                            Clicked="OnResetPasswordClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#17A2B8"
+                                            TextColor="White"
+                                            WidthRequest="35"
+                                            HeightRequest="35"
+                                            CornerRadius="17"
+                                            FontSize="14"/>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Grid>
+</ContentPage>

@@ -1,33 +1,123 @@
-using EducationalPlatform.Models;
+п»їusing EducationalPlatform.Models;
 using EducationalPlatform.Services;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace EducationalPlatform.Views
 {
-    public partial class CreateTestPage : ContentPage
+    public partial class CreateTestPage : ContentPage, INotifyPropertyChanged
     {
         private readonly User _user;
         private readonly DatabaseService _dbService;
         private readonly SettingsService _settingsService;
         private readonly int _courseId;
 
+        // Р­Р»РµРјРµРЅС‚С‹ СѓРїСЂР°РІР»РµРЅРёСЏ
+        private Entry? _testTitleEntry;
+        private Editor? _testDescriptionEditor;
+        private Entry? _timeLimitEntry;
+        private Entry? _passingScoreEntry;
+        private CollectionView? _questionsCollectionView;
+
         public ObservableCollection<ExtendedQuestionCreationModel> Questions { get; set; } = new();
 
-        // Свойства для привязки данных
-        public string TestTitle { get; set; }
-        public string TestDescription { get; set; }
-        public int TimeLimit { get; set; } = 60;
-        public int PassingScore { get; set; } = 60;
+        private string _testTitle = string.Empty;
+        public string TestTitle
+        {
+            get => _testTitle;
+            set
+            {
+                _testTitle = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _testDescription = string.Empty;
+        public string TestDescription
+        {
+            get => _testDescription;
+            set
+            {
+                _testDescription = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private int _timeLimit = 60;
+        public int TimeLimit
+        {
+            get => _timeLimit;
+            set
+            {
+                _timeLimit = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private int _passingScore = 60;
+        public int PassingScore
+        {
+            get => _passingScore;
+            set
+            {
+                _passingScore = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public new event PropertyChangedEventHandler? PropertyChanged;
+        protected new void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public CreateTestPage(User user, DatabaseService dbService, SettingsService settingsService, int courseId)
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё CreateTestPage: {ex.Message}");
+            }
+
             _user = user;
             _dbService = dbService;
             _settingsService = settingsService;
             _courseId = courseId;
 
+            // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЌР»РµРјРµРЅС‚С‹ СѓРїСЂР°РІР»РµРЅРёСЏ
+            _testTitleEntry = this.FindByName<Entry>("TestTitleEntry");
+            _testDescriptionEditor = this.FindByName<Editor>("TestDescriptionEditor");
+            _timeLimitEntry = this.FindByName<Entry>("TimeLimitEntry");
+            _passingScoreEntry = this.FindByName<Entry>("PassingScoreEntry");
+            _questionsCollectionView = this.FindByName<CollectionView>("QuestionsCollectionView");
+
             BindingContext = this;
+
+            if (_questionsCollectionView != null)
+                _questionsCollectionView.ItemsSource = Questions;
+
+            // РџРѕРґРїРёСЃС‹РІР°РµРјСЃСЏ РЅР° СЃРѕР±С‹С‚РёРµ РїРѕСЏРІР»РµРЅРёСЏ СЃС‚СЂР°РЅРёС†С‹
+            this.Appearing += OnPageAppearing;
+        }
+
+        private void OnPageAppearing(object? sender, EventArgs e)
+        {
+            // РћР±РЅРѕРІР»СЏРµРј РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ РІРѕРїСЂРѕСЃРѕРІ РїСЂРё РІРѕР·РІСЂР°С‰РµРЅРёРё РЅР° СЃС‚СЂР°РЅРёС†Сѓ
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_questionsCollectionView != null)
+                {
+                    _questionsCollectionView.ItemsSource = null;
+                    _questionsCollectionView.ItemsSource = Questions;
+                }
+                OnPropertyChanged(nameof(Questions));
+
+                Console.WriteLine($"рџ”„ РЎС‚СЂР°РЅРёС†Р° CreateTestPage РѕР±РЅРѕРІР»РµРЅР°. Р’РѕРїСЂРѕСЃРѕРІ: {Questions.Count}");
+            });
         }
 
         private async void OnAddQuestionClicked(object sender, EventArgs e)
@@ -41,9 +131,7 @@ namespace EducationalPlatform.Views
 
         private void OnQuestionSaved(ExtendedQuestionCreationModel question)
         {
-            // Вопрос уже добавлен в коллекцию через CreateQuestionPage
-            // Обновляем отображение
-            OnPropertyChanged(nameof(Questions));
+            Console.WriteLine($"вњ… Р’РѕРїСЂРѕСЃ СЃРѕС…СЂР°РЅРµРЅ: {question.QuestionText}");
         }
 
         private void OnRemoveQuestionClicked(object sender, EventArgs e)
@@ -51,6 +139,13 @@ namespace EducationalPlatform.Views
             if (sender is Button btn && btn.CommandParameter is ExtendedQuestionCreationModel question)
             {
                 Questions.Remove(question);
+
+                // РћР±РЅРѕРІР»СЏРµРј РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ
+                if (_questionsCollectionView != null)
+                {
+                    _questionsCollectionView.ItemsSource = null;
+                    _questionsCollectionView.ItemsSource = Questions;
+                }
             }
         }
 
@@ -70,19 +165,35 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(TestTitle))
+                // РџРѕР»СѓС‡Р°РµРј Р·РЅР°С‡РµРЅРёСЏ РёР· Entry
+                string title = _testTitleEntry?.Text ?? TestTitle;
+                string description = _testDescriptionEditor?.Text ?? TestDescription;
+
+                int timeLimit = 60;
+                if (_timeLimitEntry != null && int.TryParse(_timeLimitEntry.Text, out int tl))
+                    timeLimit = tl;
+                else
+                    timeLimit = TimeLimit;
+
+                int passingScore = 60;
+                if (_passingScoreEntry != null && int.TryParse(_passingScoreEntry.Text, out int ps))
+                    passingScore = ps;
+                else
+                    passingScore = PassingScore;
+
+                if (string.IsNullOrWhiteSpace(title))
                 {
-                    await DisplayAlert("Ошибка", "Введите название теста", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", "Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ С‚РµСЃС‚Р°", "OK");
                     return;
                 }
 
                 if (!Questions.Any())
                 {
-                    await DisplayAlert("Ошибка", "Добавьте хотя бы один вопрос", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", "Р”РѕР±Р°РІСЊС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ РІРѕРїСЂРѕСЃ", "OK");
                     return;
                 }
 
-                // Преобразуем ExtendedQuestionCreationModel в QuestionCreationModel для базы данных
+                // РџСЂРµРѕР±СЂР°Р·СѓРµРј ExtendedQuestionCreationModel РІ QuestionCreationModel РґР»СЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С…
                 var questionsForDb = new List<QuestionCreationModel>();
                 foreach (var question in Questions)
                 {
@@ -106,28 +217,29 @@ namespace EducationalPlatform.Views
                     questionsForDb.Add(dbQuestion);
                 }
 
+                // Р’С‹Р·С‹РІР°РµРј РјРµС‚РѕРґ DatabaseService
                 var lessonId = await _dbService.CreateTestWithQuestionsAsync(
                     _courseId,
-                    TestTitle.Trim(),
-                    TestDescription?.Trim() ?? "",
-                    TimeLimit,
-                    PassingScore,
+                    title.Trim(),
+                    description?.Trim() ?? "",
+                    timeLimit,
+                    passingScore,
                     questionsForDb
                 );
 
                 if (lessonId.HasValue)
                 {
-                    await DisplayAlert("Успех", "Тест создан!", "OK");
+                    await DisplayAlert("РЈСЃРїРµС…", "РўРµСЃС‚ СЃРѕР·РґР°РЅ!", "OK");
                     await Navigation.PopAsync();
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось создать тест", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ С‚РµСЃС‚", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка создания: {ex.Message}", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", $"РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ: {ex.Message}", "OK");
             }
         }
 
@@ -136,11 +248,10 @@ namespace EducationalPlatform.Views
             await Navigation.PopAsync();
         }
 
-        protected override void OnAppearing()
+        protected override void OnDisappearing()
         {
-            base.OnAppearing();
-            // Обновляем отображение при возвращении на страницу
-            OnPropertyChanged(nameof(Questions));
+            base.OnDisappearing();
+            this.Appearing -= OnPageAppearing;
         }
     }
 }

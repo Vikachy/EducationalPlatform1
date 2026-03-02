@@ -2,29 +2,612 @@
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:converters="clr-namespace:EducationalPlatform.Converters"
     x:Class="EducationalPlatform.Views.AdminDashboardPage"
-    Title="Админ панель">
+    Title="Админ панель"
+    BackgroundColor="{DynamicResource BackgroundColor}">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="20" VerticalOptions="Center">
-            <Label Text="Админ панель"
-                   FontSize="28"
-                   TextColor="{DynamicResource TextColor}"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center" />
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:DateTimeToRelativeConverter x:Key="DateTimeToRelativeConverter" />
+            <converters:StatusColorConverter x:Key="StatusToColorConverter" />
+            <converters:RoleToColorConverter x:Key="RoleToColorConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
-            <Label Text="Страница в разработке..."
-                   FontSize="16"
-                   TextColor="#666"
-                   HorizontalOptions="Center" />
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Панель администратора" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Label Grid.Column="2"
+                       Text="ADMIN"
+                       FontSize="12"
+                       TextColor="White"
+                       BackgroundColor="#9C27B0"
+                       Padding="10,5"
+                       VerticalOptions="Center" />
+            </Grid>
+        </Border>
 
-            <Button Text="Вернуться на главную"
-                    Clicked="OnBackClicked"
-                    BackgroundColor="{DynamicResource PrimaryColor}"
-                    TextColor="White"
-                    HeightRequest="50"
-                    CornerRadius="25"
-                    HorizontalOptions="Center" />
-        </VerticalStackLayout>
-    </ScrollView>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="20" Padding="20">
+
+                <!-- Приветствие -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Spacing="5">
+                            <Label x:Name="WelcomeLabel" 
+                                   Text="Добро пожаловать!" 
+                                   FontSize="22" 
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource PrimaryColor}"/>
+                            <Label x:Name="LastLoginLabel" 
+                                   Text="Последний вход: сегодня"
+                                   FontSize="14"
+                                   TextColor="Gray"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="1"
+                                BackgroundColor="#9C27B0"
+                                Padding="15,8"
+                                StrokeShape="RoundRectangle 10">
+                            <Label Text="Администратор"
+                                   TextColor="White"
+                                   FontSize="14"
+                                   FontAttributes="Bold"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Статистика в реальном времени -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="Статистика системы"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource PrimaryColor}"/>
+
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                            <Border Grid.Column="0"
+                                    BackgroundColor="#E3F2FD"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 10">
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="Пользователи"
+                                           FontSize="12"
+                                           TextColor="#1976D2"
+                                           FontAttributes="Bold"/>
+                                    <Label x:Name="UsersCountLabel"
+                                           Text="0"
+                                           FontSize="24"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="Center"
+                                           TextColor="#1976D2"/>
+                                    <Label x:Name="NewUsersTodayLabel"
+                                           Text="+0 сегодня"
+                                           FontSize="11"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center"/>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Column="1"
+                                    BackgroundColor="#E8F5E8"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 10">
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="Курсы"
+                                           FontSize="12"
+                                           TextColor="#4CAF50"
+                                           FontAttributes="Bold"/>
+                                    <Label x:Name="CoursesCountLabel"
+                                           Text="0"
+                                           FontSize="24"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="Center"
+                                           TextColor="#4CAF50"/>
+                                    <Label x:Name="ActiveCoursesLabel"
+                                           Text="0 активных"
+                                           FontSize="11"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center"/>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Column="2"
+                                    BackgroundColor="#FFF3E0"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 10">
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="Группы"
+                                           FontSize="12"
+                                           TextColor="#FF9800"
+                                           FontAttributes="Bold"/>
+                                    <Label x:Name="GroupsCountLabel"
+                                           Text="0"
+                                           FontSize="24"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="Center"
+                                           TextColor="#FF9800"/>
+                                    <Label x:Name="ActiveGroupsLabel"
+                                           Text="0 активных"
+                                           FontSize="11"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center"/>
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                            <Border Grid.Column="0"
+                                    BackgroundColor="#F3E5F5"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 10">
+                                <VerticalStackLayout>
+                                    <Label Text="Преподаватели"
+                                           FontSize="11"
+                                           TextColor="#9C27B0"/>
+                                    <Label x:Name="TeachersCountLabel" 
+                                           Text="0" 
+                                           FontSize="18" 
+                                           FontAttributes="Bold"
+                                           TextColor="#9C27B0"/>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Column="1"
+                                    BackgroundColor="#E1F5FE"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 10">
+                                <VerticalStackLayout>
+                                    <Label Text="Студенты"
+                                           FontSize="11"
+                                           TextColor="#03A9F4"/>
+                                    <Label x:Name="StudentsCountLabel" 
+                                           Text="0" 
+                                           FontSize="18" 
+                                           FontAttributes="Bold"
+                                           TextColor="#03A9F4"/>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Column="2"
+                                    BackgroundColor="#FFEBEE"
+                                    Padding="15"
+                                    StrokeShape="RoundRectangle 10">
+                                <VerticalStackLayout>
+                                    <Label Text="Админы"
+                                           FontSize="11"
+                                           TextColor="#F44336"/>
+                                    <Label x:Name="AdminsCountLabel" 
+                                           Text="0" 
+                                           FontSize="18" 
+                                           FontAttributes="Bold"
+                                           TextColor="#F44336"/>
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Быстрое управление -->
+                <Label Text="Быстрое управление"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource PrimaryColor}"
+                       Margin="0,5,0,5"/>
+
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="15" RowSpacing="15">
+
+                    <!-- Пользователи -->
+                    <Border Grid.Row="0" Grid.Column="0"
+                            BackgroundColor="White"
+                            Stroke="#1976D2"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Пользователи"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#1976D2"/>
+                            <Label Text="Управление аккаунтами"
+                                   FontSize="11"
+                                   TextColor="Gray"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                <Button Grid.Column="0"
+                                        Text="Список"
+                                        Clicked="OnManageUsersClicked"
+                                        BackgroundColor="#1976D2"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                                <Button Grid.Column="1"
+                                        Text="+ Новый"
+                                        Clicked="OnAddUserClicked"
+                                        BackgroundColor="#1976D2"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Роли -->
+                    <Border Grid.Row="0" Grid.Column="1"
+                            BackgroundColor="White"
+                            Stroke="#9C27B0"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Роли"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#9C27B0"/>
+                            <Label Text="Права доступа"
+                                   FontSize="11"
+                                   TextColor="Gray"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                <Button Grid.Column="0"
+                                        Text="Список"
+                                        Clicked="OnManageRolesClicked"
+                                        BackgroundColor="#9C27B0"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                                <Button Grid.Column="1"
+                                        Text="+ Новая"
+                                        Clicked="OnAddRoleClicked"
+                                        BackgroundColor="#9C27B0"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Курсы -->
+                    <Border Grid.Row="1" Grid.Column="0"
+                            BackgroundColor="White"
+                            Stroke="#4CAF50"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Курсы"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#4CAF50"/>
+                            <Label Text="Управление курсами"
+                                   FontSize="11"
+                                   TextColor="Gray"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                <Button Grid.Column="0"
+                                        Text="Список"
+                                        Clicked="OnManageCoursesClicked"
+                                        BackgroundColor="#4CAF50"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                                <Button Grid.Column="1"
+                                        Text="+ Новый"
+                                        Clicked="OnAddCourseClicked"
+                                        BackgroundColor="#4CAF50"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Группы -->
+                    <Border Grid.Row="1" Grid.Column="1"
+                            BackgroundColor="White"
+                            Stroke="#FF9800"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Группы"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#FF9800"/>
+                            <Label Text="Учебные группы"
+                                   FontSize="11"
+                                   TextColor="Gray"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                <Button Grid.Column="0"
+                                        Text="Список"
+                                        Clicked="OnManageGroupsClicked"
+                                        BackgroundColor="#FF9800"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                                <Button Grid.Column="1"
+                                        Text="+ Новая"
+                                        Clicked="OnAddGroupClicked"
+                                        BackgroundColor="#FF9800"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Языки программирования -->
+                    <Border Grid.Row="2" Grid.Column="0"
+                            BackgroundColor="White"
+                            Stroke="#00BCD4"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Языки"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#00BCD4"/>
+                            <Label Text="Языки программирования"
+                                   FontSize="11"
+                                   TextColor="Gray"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                <Button Grid.Column="0"
+                                        Text="Список"
+                                        Clicked="OnManageLanguagesClicked"
+                                        BackgroundColor="#00BCD4"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                                <Button Grid.Column="1"
+                                        Text="+ Новый"
+                                        Clicked="OnAddLanguageClicked"
+                                        BackgroundColor="#00BCD4"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Уровни сложности -->
+                    <Border Grid.Row="2" Grid.Column="1"
+                            BackgroundColor="White"
+                            Stroke="#FF5722"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Сложность"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#FF5722"/>
+                            <Label Text="Уровни сложности"
+                                   FontSize="11"
+                                   TextColor="Gray"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                <Button Grid.Column="0"
+                                        Text="Список"
+                                        Clicked="OnManageDifficultiesClicked"
+                                        BackgroundColor="#FF5722"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                                <Button Grid.Column="1"
+                                        Text="+ Новый"
+                                        Clicked="OnAddDifficultyClicked"
+                                        BackgroundColor="#FF5722"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Контент -->
+                    <Border Grid.Row="3" Grid.Column="0"
+                            BackgroundColor="White"
+                            Stroke="#2196F3"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Контент"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#2196F3"/>
+                            <Label Text="Управление контентом"
+                                   FontSize="11"
+                                   TextColor="Gray"/>
+                            <Button Text="Управлять"
+                                    Clicked="OnContentManagerClicked"
+                                    BackgroundColor="#2196F3"
+                                    TextColor="White"
+                                    HeightRequest="35"
+                                    CornerRadius="8"
+                                    FontSize="11"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Новости -->
+                    <Border Grid.Row="3" Grid.Column="1"
+                            BackgroundColor="White"
+                            Stroke="#F44336"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Новости"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#F44336"/>
+                            <Label Text="Управление новостями"
+                                   FontSize="11"
+                                   TextColor="Gray"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
+                                <Button Grid.Column="0"
+                                        Text="Список"
+                                        Clicked="OnManageNewsClicked"
+                                        BackgroundColor="#F44336"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                                <Button Grid.Column="1"
+                                        Text="+ Новая"
+                                        Clicked="OnAddNewsClicked"
+                                        BackgroundColor="#F44336"
+                                        TextColor="White"
+                                        HeightRequest="35"
+                                        CornerRadius="8"
+                                        FontSize="11"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Настройки системы -->
+                    <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                            BackgroundColor="White"
+                            Stroke="#607D8B"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="15">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                            <VerticalStackLayout>
+                                <Label Text="Системные настройки"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#607D8B"/>
+                                <Label Text="Конфигурация платформы"
+                                       FontSize="11"
+                                       TextColor="Gray"/>
+                            </VerticalStackLayout>
+                            <Button Grid.Column="1"
+                                    Text="⚙️ Настроить"
+                                    Clicked="OnSystemSettingsClicked"
+                                    BackgroundColor="#607D8B"
+                                    TextColor="White"
+                                    HeightRequest="40"
+                                    CornerRadius="8"
+                                    FontSize="12"
+                                    WidthRequest="100"/>
+                            <Button Grid.Column="2"
+                                    Text="📊 Логи"
+                                    Clicked="OnViewLogsClicked"
+                                    BackgroundColor="#607D8B"
+                                    TextColor="White"
+                                    HeightRequest="40"
+                                    CornerRadius="8"
+                                    FontSize="12"
+                                    WidthRequest="80"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- Последние действия -->
+                <Border BackgroundColor="White"
+                        Stroke="#E0E0E0"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Последние действия"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource PrimaryColor}"/>
+                            <Button Grid.Column="1"
+                                    Text="🔄 Обновить"
+                                    Clicked="OnRefreshActivitiesClicked"
+                                    BackgroundColor="Transparent"
+                                    TextColor="{DynamicResource PrimaryColor}"
+                                    FontSize="12"
+                                    CornerRadius="8"/>
+                        </Grid>
+
+                        <CollectionView x:Name="RecentActivitiesCollection"
+                                      HeightRequest="200"
+                                      EmptyView="Нет активности">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="#F8F9FA"
+                                            Padding="12"
+                                            Margin="0,3"
+                                            Stroke="#E0E0E0"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8">
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding Icon}"
+                                                   FontSize="18"
+                                                   VerticalOptions="Center"/>
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                                <Label Text="{Binding Description}" 
+                                                       FontSize="14"
+                                                       TextColor="#333"/>
+                                                <Label Text="{Binding Time}" 
+                                                       FontSize="11" 
+                                                       TextColor="Gray"/>
+                                                <Label Text="{Binding User}" 
+                                                       FontSize="11" 
+                                                       TextColor="{DynamicResource PrimaryColor}"/>
+                                            </VerticalStackLayout>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Кнопка выхода -->
+                <Button Text="Выйти"
+                        Clicked="OnLogoutClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="#F44336"
+                        BorderColor="#F44336"
+                        BorderWidth="1"
+                        CornerRadius="8"
+                        HeightRequest="45"
+                        Margin="0,10,0,0"/>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

@@ -1,4 +1,6 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace EducationalPlatform.Models
 {
@@ -64,11 +66,54 @@ namespace EducationalPlatform.Models
     }
 
     // Модель для отображения вложений
-    public class AttachmentViewModel
+    public class AttachmentViewModel : INotifyPropertyChanged
     {
-        public string FileName { get; set; } = string.Empty;
-        public string FileSize { get; set; } = string.Empty;
-        public string FilePath { get; set; } = string.Empty;
-        public string FileIcon { get; set; } = "📎";
+        private int _attachmentId;
+        public int AttachmentId
+        {
+            get => _attachmentId;
+            set { _attachmentId = value; OnPropertyChanged(); }
+        }
+
+        private string _fileName = string.Empty;
+        public string FileName
+        {
+            get => _fileName;
+            set { _fileName = value; OnPropertyChanged(); }
+        }
+
+        private string _fileSize = string.Empty;
+        public string FileSize
+        {
+            get => _fileSize;
+            set { _fileSize = value; OnPropertyChanged(); }
+        }
+
+        private string _filePath = string.Empty;
+        public string FilePath
+        {
+            get => _filePath;
+            set { _filePath = value; OnPropertyChanged(); }
+        }
+
+        private string _fileIcon = "📄";
+        public string FileIcon
+        {
+            get => _fileIcon;
+            set { _fileIcon = value; OnPropertyChanged(); }
+        }
+
+        private string _fileType = string.Empty;
+        public string FileType
+        {
+            get => _fileType;
+            set { _fileType = value; OnPropertyChanged(); }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
     }
 }

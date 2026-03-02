@@ -1,14 +1,19 @@
-﻿public class ProgrammingLanguage
+﻿namespace EducationalPlatform.Models
 {
-    public int LanguageId { get; set; }
-    public string LanguageName { get; set; } = string.Empty;
-    public string? IconUrl { get; set; }
-}
-public class CourseDifficulty
-{
-    public int DifficultyId { get; set; }
-    public string DifficultyName { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public bool HasTheory { get; set; }
-    public bool HasPractice { get; set; }
+    public class ProgrammingLanguage
+    {
+        public int LanguageId { get; set; }
+        public string LanguageName { get; set; } = string.Empty;
+        public string? Icon { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedDate { get; set; }
+        public int CoursesCount { get; set; }
+
+        // Для обратной совместимости (если используется в старом коде)
+        public string? IconUrl
+        {
+            get => Icon;
+            set => Icon = value;
+        }
+    }
 }

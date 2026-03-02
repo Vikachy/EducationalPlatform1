@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
+             x:Class="EducationalPlatform.Views.AdminGroupsPage"
+             Title="Управление группами"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:StatusColorConverter x:Key="StatusToColorConverter" />
+            <converters:ActiveStatusTextConverter x:Key="ActiveStatusTextConverter" />
+            <converters:ToggleStatusIconConverter x:Key="ToggleStatusIconConverter" />
+            <converters:ToggleStatusColorConverter x:Key="ToggleStatusColorConverter" />
+            <converters:AvatarToImageSourceConverter x:Key="AvatarConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Заголовок -->
+        <Border Grid.Row="0"
+                BackgroundColor="{DynamicResource PrimaryColor}"
+                Padding="20,15"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Управление группами" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="2"
+                        Text="+"
+                        Clicked="OnAddGroupClicked"
+                        BackgroundColor="White"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*">
+            <!-- Статистика -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,*,*" ColumnSpacing="10" Margin="20,20,20,10">
+                <Border Grid.Column="0"
+                        BackgroundColor="#E3F2FD"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 10">
+                    <VerticalStackLayout>
+                        <Label Text="Всего групп" FontSize="11" TextColor="#1976D2"/>
+                        <Label x:Name="TotalGroupsLabel" Text="0" FontSize="18" FontAttributes="Bold" TextColor="#1976D2"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Grid.Column="1"
+                        BackgroundColor="#E8F5E8"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 10">
+                    <VerticalStackLayout>
+                        <Label Text="Активных" FontSize="11" TextColor="#4CAF50"/>
+                        <Label x:Name="ActiveGroupsLabel" Text="0" FontSize="18" FontAttributes="Bold" TextColor="#4CAF50"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Grid.Column="2"
+                        BackgroundColor="#FFF3E0"
+                        Padding="15"
+                        StrokeShape="RoundRectangle 10">
+                    <VerticalStackLayout>
+                        <Label Text="Студентов" FontSize="11" TextColor="#FF9800"/>
+                        <Label x:Name="TotalStudentsLabel" Text="0" FontSize="18" FontAttributes="Bold" TextColor="#FF9800"/>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- Поиск -->
+            <Border Grid.Row="1"
+                    BackgroundColor="White"
+                    Margin="20,10,20,10"
+                    Padding="0"
+                    Stroke="#E0E0E0"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 12">
+                <Entry x:Name="SearchEntry"
+                       Placeholder="🔍 Поиск по названию группы, курсу или преподавателю..."
+                       BackgroundColor="Transparent"
+                       Margin="15,0"
+                       FontSize="14"
+                       HeightRequest="50"
+                       TextChanged="OnSearchTextChanged"/>
+            </Border>
+
+            <!-- Список групп -->
+            <CollectionView Grid.Row="2"
+                          x:Name="GroupsCollectionView"
+                          Margin="20,0,20,20"
+                          ItemsSource="{Binding Groups}"
+                          EmptyView="Нет групп">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,5"
+                                BackgroundColor="White"
+                                Stroke="{Binding IsActive, Converter={StaticResource StatusToColorConverter}}"
+                                StrokeThickness="2"
+                                StrokeShape="RoundRectangle 12"
+                                Padding="15">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                                <!-- Заголовок с названием и статусом -->
+                                <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                    <!-- Аватар группы -->
+                                    <Border Grid.Column="0"
+                                            WidthRequest="50"
+                                            HeightRequest="50"
+                                            Stroke="{DynamicResource PrimaryColor}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 25"
+                                            BackgroundColor="#F5F5F5">
+                                        <Image Source="{Binding AvatarUrl, Converter={StaticResource AvatarConverter}}"
+                                               Aspect="AspectFill"
+                                               WidthRequest="46"
+                                               HeightRequest="46" />
+                                    </Border>
+
+                                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                        <Label Text="{Binding GroupName}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextColor}"/>
+                                        <Label Text="{Binding CourseName}"
+                                               FontSize="12"
+                                               TextColor="#666"/>
+                                    </VerticalStackLayout>
+
+                                    <Border Grid.Column="2"
+                                            BackgroundColor="{Binding IsActive, Converter={StaticResource StatusToColorConverter}}"
+                                            Padding="8,4"
+                                            StrokeShape="RoundRectangle 5">
+                                        <Label Text="{Binding IsActive, Converter={StaticResource ActiveStatusTextConverter}}"
+                                               TextColor="White"
+                                               FontSize="10"
+                                               FontAttributes="Bold"/>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Преподаватель -->
+                                <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Grid.Column="0" Text="👨‍🏫" FontSize="14" TextColor="#666"/>
+                                    <Label Grid.Column="1" 
+                                           Text="{Binding TeacherName}"
+                                           FontSize="13"
+                                           TextColor="#333"/>
+                                </Grid>
+
+                                <!-- Студенты -->
+                                <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Grid.Column="0" Text="👥" FontSize="14" TextColor="#666"/>
+                                    <Label Grid.Column="1" 
+                                           Text="{Binding StudentCount, StringFormat='{0} студентов'}"
+                                           FontSize="13"
+                                           TextColor="#333"/>
+                                </Grid>
+
+                                <!-- Даты -->
+                                <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="10">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                                        <Label Text="📅" FontSize="12" TextColor="#666"/>
+                                        <Label Text="{Binding StartDate, StringFormat='dd.MM.yyyy'}"
+                                               FontSize="11"
+                                               TextColor="#666"/>
+                                    </Grid>
+                                    <Grid Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                                        <Label Text="➡️" FontSize="12" TextColor="#666"/>
+                                        <Label Text="{Binding EndDate, StringFormat='dd.MM.yyyy'}"
+                                               FontSize="11"
+                                               TextColor="#666"/>
+                                    </Grid>
+                                </Grid>
+
+                                <!-- Кнопки действий -->
+                                <Grid Grid.Row="4" ColumnDefinitions="*,*,*,*" ColumnSpacing="5">
+                                    <Button Grid.Column="0"
+                                            Text="👥 Студенты"
+                                            Clicked="OnManageStudentsClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#2196F3"
+                                            TextColor="White"
+                                            HeightRequest="35"
+                                            CornerRadius="8"
+                                            FontSize="10"
+                                            Padding="0"/>
+                                    <Button Grid.Column="1"
+                                            Text="✏️ Редактировать"
+                                            Clicked="OnEditGroupClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#FFC107"
+                                            TextColor="White"
+                                            HeightRequest="35"
+                                            CornerRadius="8"
+                                            FontSize="10"
+                                            Padding="0"/>
+                                    <Button Grid.Column="2"
+                                            Text="ℹ️ Инфо"
+                                            Clicked="OnGroupInfoClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#4CAF50"
+                                            TextColor="White"
+                                            HeightRequest="35"
+                                            CornerRadius="8"
+                                            FontSize="10"
+                                            Padding="0"/>
+                                    <Button Grid.Column="3"
+                                            Text="{Binding IsActive, Converter={StaticResource ToggleStatusIconConverter}}"
+                                            Clicked="OnToggleStatusClicked"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="{Binding IsActive, Converter={StaticResource ToggleStatusColorConverter}}"
+                                            TextColor="White"
+                                            HeightRequest="35"
+                                            CornerRadius="8"
+                                            FontSize="14"
+                                            Padding="0"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Grid>
+</ContentPage>

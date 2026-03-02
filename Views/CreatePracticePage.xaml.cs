@@ -1,8 +1,6 @@
 using EducationalPlatform.Models;
 using EducationalPlatform.Services;
 using System.Collections.ObjectModel;
-using Microsoft.Maui.Storage;
-using Microsoft.Maui.ApplicationModel;
 
 namespace EducationalPlatform.Views
 {
@@ -14,161 +12,103 @@ namespace EducationalPlatform.Views
         private readonly FileService _fileService;
         private readonly int _courseId;
 
-        // Используем EnhancedFileAttachment из Models
         public ObservableCollection<EnhancedFileAttachment> Attachments { get; set; } = new();
 
         public CreatePracticePage(User user, DatabaseService dbService, SettingsService settingsService, int courseId)
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка инициализации: {ex.Message}");
+            }
+
             _user = user;
             _dbService = dbService;
             _settingsService = settingsService;
             _fileService = ServiceHelper.GetService<FileService>();
             _courseId = courseId;
 
-            AnswerTypePicker.SelectedIndex = 0;
-            AnswerTypePicker.SelectedIndexChanged += OnAnswerTypeChanged;
-
-            // Инициализируем секцию прикрепленных файлов как в теории
+            // Настройка BindingContext и коллекций
             BindingContext = this;
-            AttachmentsCollection.ItemsSource = Attachments;
-            Attachments.CollectionChanged += (s, e) =>
-            {
-                AttachmentsCollection.IsVisible = Attachments.Any();
-                ClearAllButton.IsVisible = Attachments.Any();
-                UploadProgressSection.IsVisible = false;
-            };
 
-            OnAnswerTypeChanged(null, EventArgs.Empty);
+            var attachmentsCollection = this.FindByName<CollectionView>("AttachmentsCollection");
+            if (attachmentsCollection != null)
+                attachmentsCollection.ItemsSource = Attachments;
+
+            // Устанавливаем начальные значения
+            var typePicker = this.FindByName<Picker>("AnswerTypePicker");
+            if (typePicker != null)
+            {
+                typePicker.SelectedIndex = 0;
+                typePicker.SelectedIndexChanged += OnAnswerTypeChanged;
+            }
+
+            // Устанавливаем начальные значения для чекбоксов
+            var zipBox = this.FindByName<CheckBox>("ZipCheckBox");
+            if (zipBox != null) zipBox.IsChecked = true;
+
+            var imgBox = this.FindByName<CheckBox>("ImageCheckBox");
+            if (imgBox != null) imgBox.IsChecked = true;
+
+            var pdfBox = this.FindByName<CheckBox>("PdfCheckBox");
+            if (pdfBox != null) pdfBox.IsChecked = true;
+
+            OnAnswerTypeChanged(null, null);
         }
 
         private void OnAnswerTypeChanged(object sender, EventArgs e)
         {
-            var selectedType = AnswerTypePicker.SelectedItem as string;
-            CodeSection.IsVisible = selectedType == "code";
-            FileSettingsSection.IsVisible = selectedType == "file";
+            var typePicker = this.FindByName<Picker>("AnswerTypePicker");
+            var selectedType = typePicker?.SelectedItem as string;
+
+            var codeSection = this.FindByName<StackLayout>("CodeSection");
+            if (codeSection != null)
+                codeSection.IsVisible = selectedType == "code";
+
+            var fileSection = this.FindByName<StackLayout>("FileSettingsSection");
+            if (fileSection != null)
+                fileSection.IsVisible = selectedType == "file";
         }
 
-        // ВЫБОР ФАЙЛОВ ДЛЯ ПРИКРЕПЛЕНИЯ (как в теории)
         private async void OnSelectFilesClicked(object sender, EventArgs e)
         {
             try
             {
-                var fileTypes = new FilePickerFileType(
-                    new Dictionary<DevicePlatform, IEnumerable<string>>
+                var results = await FilePicker.Default.PickMultipleAsync(new PickOptions
+                {
+                    PickerTitle = "Выберите файлы",
+                    FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
                     {
-                        { DevicePlatform.WinUI, new[] { ".zip", ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg", ".txt", ".mp4" } },
-                        { DevicePlatform.macOS, new[] { ".zip", ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg", ".txt", ".mp4" } },
+                        { DevicePlatform.WinUI, new[] { ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".txt", ".zip" } },
                         { DevicePlatform.Android, new[] { "*/*" } },
                         { DevicePlatform.iOS, new[] { "public.data" } }
-                    });
-
-                var options = new PickOptions
-                {
-                    PickerTitle = "Выберите файлы для прикрепления",
-                    FileTypes = fileTypes
-                };
-
-                var results = await FilePicker.Default.PickMultipleAsync(options);
+                    })
+                });
 
                 if (results != null && results.Any())
                 {
-                    await ProcessSelectedFiles(results);
+                    foreach (var file in results)
+                    {
+                        using var stream = await file.OpenReadAsync();
+                        using var ms = new MemoryStream();
+                        await stream.CopyToAsync(ms);
+
+                        Attachments.Add(new EnhancedFileAttachment
+                        {
+                            FileName = file.FileName,
+                            FileSize = ms.Length,
+                            FileBytes = ms.ToArray(),
+                            FileIcon = GetFileIcon(Path.GetExtension(file.FileName))
+                        });
+                    }
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось выбрать файлы: {ex.Message}", "OK");
-            }
-        }
-
-        private async Task ProcessSelectedFiles(IEnumerable<FileResult> files)
-        {
-            UploadProgressSection.IsVisible = true;
-            UploadProgressBar.Progress = 0;
-            UploadStatusLabel.Text = "Подготовка файлов...";
-
-            int processed = 0;
-            int total = files.Count();
-
-            foreach (var file in files)
-            {
-                try
-                {
-                    UploadStatusLabel.Text = $"Обработка: {file.FileName}";
-
-                    // Создаем объект вложения со статусом загрузки
-                    var attachment = new EnhancedFileAttachment
-                    {
-                        FileName = file.FileName,
-                        FileIcon = _fileService.GetFileIcon(Path.GetExtension(file.FileName)),
-                        IsUploading = true,
-                        StatusIcon = "⏳"
-                    };
-
-                    Attachments.Add(attachment);
-
-                    // Проверяем размер файла
-                    long fileSize = 0;
-                    try
-                    {
-                        if (!string.IsNullOrEmpty(file.FullPath) && File.Exists(file.FullPath))
-                        {
-                            var fileInfo = new FileInfo(file.FullPath);
-                            fileSize = fileInfo.Length;
-                        }
-                        else
-                        {
-                            using var stream = await file.OpenReadAsync();
-                            fileSize = stream.Length;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Не удалось определить размер файла: {ex.Message}");
-                    }
-
-                    if (fileSize > 50 * 1024 * 1024)
-                    {
-                        await DisplayAlert("Предупреждение", $"Файл {file.FileName} слишком большой (максимум 50 МБ)", "OK");
-                        Attachments.Remove(attachment);
-                        processed++;
-                        continue;
-                    }
-
-                    attachment.FileSize = fileSize;
-
-                    // Читаем файл в байты
-                    byte[] fileBytes;
-                    using (var stream = await file.OpenReadAsync())
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await stream.CopyToAsync(memoryStream);
-                        fileBytes = memoryStream.ToArray();
-                    }
-
-                    // Сохраняем файл в памяти для последующего сохранения
-                    attachment.FileBytes = fileBytes;
-                    attachment.IsUploading = false;
-                    attachment.StatusIcon = "✅";
-
-                    processed++;
-                    UploadProgressBar.Progress = (double)processed / total;
-                }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Ошибка", $"Не удалось обработать файл {file.FileName}: {ex.Message}", "OK");
-                    processed++;
-                }
-            }
-
-            UploadProgressSection.IsVisible = false;
-            UploadProgressBar.Progress = 0;
-            UploadStatusLabel.Text = "";
-
-            if (Attachments.Any(a => !a.IsUploading))
-            {
-                await DisplayAlert("Готово", $"Успешно обработано {Attachments.Count(a => !a.IsUploading)} файлов", "OK");
+                await DisplayAlert("Ошибка", ex.Message, "OK");
             }
         }
 
@@ -182,113 +122,115 @@ namespace EducationalPlatform.Views
 
         private async void OnClearAllFilesClicked(object sender, EventArgs e)
         {
-            bool confirm = await DisplayAlert("Подтверждение",
-                "Удалить все прикрепленные файлы?", "Да", "Нет");
-
+            bool confirm = await DisplayAlert("Подтверждение", "Удалить все файлы?", "Да", "Нет");
             if (confirm)
-            {
                 Attachments.Clear();
-            }
+        }
+
+        private string GetFileIcon(string extension)
+        {
+            return extension?.ToLower() switch
+            {
+                ".pdf" => "📄",
+                ".doc" or ".docx" => "📝",
+                ".ppt" or ".pptx" => "📽️",
+                ".jpg" or ".jpeg" or ".png" or ".gif" => "🖼️",
+                ".zip" or ".rar" => "🗜️",
+                ".txt" => "📃",
+                _ => "📎"
+            };
         }
 
         private async void OnCreateClicked(object sender, EventArgs e)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(TitleEntry.Text))
+                var titleEntry = this.FindByName<Entry>("TitleEntry");
+                if (titleEntry == null || string.IsNullOrWhiteSpace(titleEntry.Text))
                 {
-                    await DisplayAlert("Ошибка", "Введите название задания", "OK");
+                    await DisplayAlert("Ошибка", "Введите название", "OK");
                     return;
                 }
 
-                var answerType = AnswerTypePicker.SelectedItem as string ?? "text";
+                var typePicker = this.FindByName<Picker>("AnswerTypePicker");
+                var answerType = typePicker?.SelectedItem as string ?? "text";
 
-                // Настройки для файлов-ответов студента
-                var maxFileSize = 10;
+                var descEditor = this.FindByName<Editor>("DescriptionEditor");
+                var starterEditor = this.FindByName<Editor>("StarterCodeEditor");
+                var expectedEditor = this.FindByName<Editor>("ExpectedAnswerEditor");
+                var hintEditor = this.FindByName<Editor>("HintEditor");
+                var maxSizeEntry = this.FindByName<Entry>("MaxFileSizeEntry");
+
+                int maxFileSize = 10;
                 var allowedTypes = new List<string>();
 
                 if (answerType == "file")
                 {
-                    if (!int.TryParse(MaxFileSizeEntry.Text, out maxFileSize) || maxFileSize <= 0)
-                    {
-                        await DisplayAlert("Ошибка", "Укажите корректный максимальный размер файла", "OK");
-                        return;
-                    }
+                    if (maxSizeEntry != null)
+                        int.TryParse(maxSizeEntry.Text, out maxFileSize);
 
-                    if (ZipCheckBox.IsChecked) allowedTypes.Add(".zip");
-                    if (ImageCheckBox.IsChecked)
+                    var zipBox = this.FindByName<CheckBox>("ZipCheckBox");
+                    var imgBox = this.FindByName<CheckBox>("ImageCheckBox");
+                    var pdfBox = this.FindByName<CheckBox>("PdfCheckBox");
+                    var docBox = this.FindByName<CheckBox>("DocCheckBox");
+                    var txtBox = this.FindByName<CheckBox>("TxtCheckBox");
+                    var pptBox = this.FindByName<CheckBox>("PowerPointCheckBox");
+
+                    if (zipBox?.IsChecked == true) allowedTypes.Add(".zip");
+                    if (imgBox?.IsChecked == true)
                     {
-                        allowedTypes.Add(".jpg");
-                        allowedTypes.Add(".jpeg");
-                        allowedTypes.Add(".png");
-                        allowedTypes.Add(".gif");
+                        allowedTypes.Add(".jpg"); allowedTypes.Add(".jpeg");
+                        allowedTypes.Add(".png"); allowedTypes.Add(".gif");
                     }
-                    if (PdfCheckBox.IsChecked) allowedTypes.Add(".pdf");
+                    if (pdfBox?.IsChecked == true) allowedTypes.Add(".pdf");
+                    if (docBox?.IsChecked == true) { allowedTypes.Add(".doc"); allowedTypes.Add(".docx"); }
+                    if (txtBox?.IsChecked == true) allowedTypes.Add(".txt");
+                    if (pptBox?.IsChecked == true) { allowedTypes.Add(".ppt"); allowedTypes.Add(".pptx"); }
 
                     if (!allowedTypes.Any())
                     {
-                        await DisplayAlert("Ошибка", "Выберите хотя бы один разрешенный тип файла", "OK");
+                        await DisplayAlert("Ошибка", "Выберите тип файла", "OK");
                         return;
                     }
                 }
 
-                var starterCode = answerType == "code" ? StarterCodeEditor.Text?.Trim() : null;
-
                 var lessonId = await _dbService.AddPracticeWithAnswerTypeAsync(
-                    _courseId,
-                    TitleEntry.Text.Trim(),
-                    DescriptionEditor.Text?.Trim() ?? string.Empty,
-                    answerType,
-                    starterCode,
-                    ExpectedAnswerEditor.Text?.Trim(),
-                    HintEditor.Text?.Trim(),
-                    maxFileSize,
-                    string.Join(";", allowedTypes)
+                    courseId: _courseId,
+                    title: titleEntry.Text.Trim(),
+                    description: descEditor?.Text?.Trim() ?? "",
+                    answerType: answerType,
+                    starterCode: answerType == "code" ? starterEditor?.Text?.Trim() : null,
+                    expectedAnswer: expectedEditor?.Text?.Trim(),
+                    hint: hintEditor?.Text?.Trim(),
+                    maxFileSize: maxFileSize,
+                    allowedFileTypes: string.Join(";", allowedTypes)
                 );
 
-                if (lessonId.HasValue && lessonId.Value > 0)
+                if (lessonId.HasValue)
                 {
-                    // Если есть прикрепленные файлы – сохраняем их как вложения урока
                     if (Attachments.Any())
                     {
-                        foreach (var attachment in Attachments.Where(a => a.FileBytes != null).ToList())
+                        foreach (var att in Attachments.Where(a => a.FileBytes != null))
                         {
-                            try
-                            {
-                                var fileType = Path.GetExtension(attachment.FileName);
-                                var fileSizeFormatted = FormatFileSize(attachment.FileSize);
-
-                                // Временно сохраняем как вложения урока, пока нет метода для практики
-                                var savedAttachment = await _dbService.AddLessonAttachmentAsync(
-                                    lessonId.Value,
-                                    attachment.FileName,
-                                    fileType,
-                                    fileSizeFormatted,
-                                    attachment.FileBytes);
-
-                                if (savedAttachment != null)
-                                {
-                                    Console.WriteLine($"✅ Файл прикреплен: {attachment.FileName}");
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"❌ Ошибка прикрепления файла {attachment.FileName}: {ex.Message}");
-                            }
+                            await _dbService.AddLessonAttachmentAsync(
+                                lessonId.Value,
+                                att.FileName,
+                                Path.GetExtension(att.FileName),
+                                FormatFileSize(att.FileSize),
+                                att.FileBytes);
                         }
                     }
-
-                    await DisplayAlert("Успех", "Практическое задание создано!", "OK");
+                    await DisplayAlert("Успех", "Практика создана!", "OK");
                     await Navigation.PopAsync();
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось создать практическое задание", "OK");
+                    await DisplayAlert("Ошибка", "Не удалось создать", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка создания: {ex.Message}", "OK");
+                await DisplayAlert("Ошибка", ex.Message, "OK");
             }
         }
 

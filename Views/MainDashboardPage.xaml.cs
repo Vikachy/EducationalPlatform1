@@ -15,6 +15,12 @@ namespace EducationalPlatform.Views
         public ObservableCollection<TodayTask> TodayTasks { get; set; }
         public ObservableCollection<NewsItem> NewsItems { get; set; }
 
+        // Свойства для проверки ролей
+        public bool IsTeacher => _currentUser?.RoleId == 2;
+        public bool IsAdmin => _currentUser?.RoleId == 3;
+        public bool IsContentManager => _currentUser?.RoleId == 4 || _currentUser?.RoleId == 3; // ContentManager или Admin
+        public bool IsStudent => _currentUser?.RoleId == 1;
+
         public MainDashboardPage()
         {
             InitializeComponent();
@@ -48,20 +54,19 @@ namespace EducationalPlatform.Views
             MessagingCenter.Subscribe<ShopPage, int?>(this, "FrameChanged", async (sender, frameItemId) =>
             {
                 Console.WriteLine($"📢 Получено событие FrameChanged: {frameItemId}");
-                await LoadEquippedItems(); // Перезагружаем экипировку
+                await LoadEquippedItems();
             });
 
             MessagingCenter.Subscribe<ShopPage, string?>(this, "EmojiChanged", async (sender, emojiIcon) =>
             {
                 Console.WriteLine($"📢 Получено событие EmojiChanged: {emojiIcon}");
-                await LoadEquippedItems(); // Перезагружаем экипировку
+                await LoadEquippedItems();
             });
 
-            // Подписываемся на обновление инвентаря
             MessagingCenter.Subscribe<ShopPage>(this, "InventoryUpdated", async (sender) =>
             {
                 Console.WriteLine($"📢 Получено событие InventoryUpdated");
-                await LoadEquippedItems(); // Перезагружаем экипировку
+                await LoadEquippedItems();
             });
 
             // Загружаем тексты сразу
@@ -71,15 +76,12 @@ namespace EducationalPlatform.Views
             Task.Run(async () => await InitializeDashboard());
         }
 
-        public bool IsTeacher => _currentUser?.RoleId == 2;
-        public bool IsContentManager => _currentUser?.RoleId == 4 || _currentUser?.RoleId == 3;
-
         protected override void OnAppearing()
         {
             base.OnAppearing();
 
-            TeacherPanel.IsVisible = IsTeacher;
-            TeacherButtonsLayout.IsVisible = IsTeacher;
+            // Обновляем видимость панелей в зависимости от роли
+            UpdateUIBasedOnRole();
 
             if (_currentUser != null)
             {
@@ -93,6 +95,30 @@ namespace EducationalPlatform.Views
                 LoadTodayTasks();
                 LoadNews();
             }
+        }
+
+        private void UpdateUIBasedOnRole()
+        {
+            // Панель преподавателя (учитель, админ, контент-менеджер)
+            if (TeacherPanel != null)
+                TeacherPanel.IsVisible = IsTeacher || IsAdmin || IsContentManager;
+
+            if (TeacherButtonsLayout != null)
+                TeacherButtonsLayout.IsVisible = IsTeacher || IsAdmin || IsContentManager;
+
+            // Кнопка контент-менеджера
+            if (ContentManagerButton != null)
+                ContentManagerButton.IsVisible = IsContentManager;
+
+            // Кнопка админ-панели (только для администратора)
+            var adminPanelButton = this.FindByName<Button>("AdminPanelButton");
+            if (adminPanelButton != null)
+                adminPanelButton.IsVisible = IsAdmin;
+
+            // Кнопка оценок (только для учеников)
+            var gradesButton = this.FindByName<Border>("GradesButton");
+            if (gradesButton != null)
+                gradesButton.IsVisible = IsStudent;
         }
 
         protected override void OnDisappearing()
@@ -112,7 +138,6 @@ namespace EducationalPlatform.Views
         {
             MainThread.BeginInvokeOnMainThread(() => {
                 UpdatePageAppearance();
-                // Перезагружаем рамку при смене темы
                 _ = LoadEquippedItems();
             });
         }
@@ -178,10 +203,7 @@ namespace EducationalPlatform.Views
                 shopBtn.Text = _localizationService.GetText("Shop");
         }
 
-        private void UpdatePageAppearance()
-        {
-            // Обновляем внешний вид при смене темы
-        }
+        private void UpdatePageAppearance() { }
 
         private async Task LoadUserAvatar()
         {
@@ -216,7 +238,6 @@ namespace EducationalPlatform.Views
             {
                 var equipped = await _dbService.GetEquippedItemsAsync(_currentUser.UserId);
 
-                // Применяем рамку - делаем это в главном потоке
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     var avatarFrameBorder = this.FindByName<Border>("AvatarFrameBorder");
@@ -226,17 +247,14 @@ namespace EducationalPlatform.Views
                         {
                             try
                             {
-                                // Парсим цвет из строки
                                 var frameColor = Color.FromArgb(equipped.FrameColor);
                                 avatarFrameBorder.Stroke = frameColor;
                                 avatarFrameBorder.StrokeThickness = 3;
                                 avatarFrameBorder.BackgroundColor = frameColor.WithAlpha(0.2f);
                                 Console.WriteLine($"✅ Рамка применена с цветом: {equipped.FrameColor}");
                             }
-                            catch (Exception ex)
+                            catch
                             {
-                                Console.WriteLine($"❌ Ошибка парсинга цвета рамки: {ex.Message}");
-                                // Если цвет не удалось распарсить, используем стандартный
                                 avatarFrameBorder.Stroke = (Color)Application.Current.Resources["AccentColor"];
                                 avatarFrameBorder.StrokeThickness = 2;
                                 avatarFrameBorder.BackgroundColor = Colors.White;
@@ -247,11 +265,9 @@ namespace EducationalPlatform.Views
                             avatarFrameBorder.Stroke = (Color)Application.Current.Resources["AccentColor"];
                             avatarFrameBorder.StrokeThickness = 2;
                             avatarFrameBorder.BackgroundColor = Colors.White;
-                            Console.WriteLine($"✅ Рамка сброшена на стандартную");
                         }
                     }
 
-                    // Применяем эмодзи
                     var userEmojiLabel = this.FindByName<Label>("UserEmojiLabel");
                     if (userEmojiLabel != null)
                     {
@@ -259,31 +275,25 @@ namespace EducationalPlatform.Views
                         {
                             userEmojiLabel.Text = equipped.EmojiIcon;
                             userEmojiLabel.IsVisible = true;
-                            Console.WriteLine($"✅ Эмодзи применено: {equipped.EmojiIcon}");
                         }
                         else
                         {
                             userEmojiLabel.IsVisible = false;
-                            Console.WriteLine($"✅ Эмодзи сброшено");
                         }
                     }
                 });
 
-                // Применяем тему (только если изменилась и не равна standard)
                 if (!string.IsNullOrEmpty(equipped.ThemeKey) &&
                     equipped.ThemeKey != "standard" &&
                     _settingsService.CurrentTheme != equipped.ThemeKey)
                 {
-                    Console.WriteLine($"🔄 Меняем тему с {_settingsService.CurrentTheme} на {equipped.ThemeKey}");
                     _settingsService.CurrentTheme = equipped.ThemeKey;
                 }
                 else if (string.IsNullOrEmpty(equipped.ThemeKey) || equipped.ThemeKey == "standard")
                 {
-                    // Если нет активной темы, но у пользователя есть сохраненная тема, применяем её
                     var userTheme = await _dbService.GetUserThemeAsync(_currentUser.UserId);
                     if (!string.IsNullOrEmpty(userTheme) && userTheme != "standard" && _settingsService.CurrentTheme != userTheme)
                     {
-                        Console.WriteLine($"🔄 Применяем сохраненную тему пользователя: {userTheme}");
                         _settingsService.CurrentTheme = userTheme;
                     }
                 }
@@ -324,7 +334,6 @@ namespace EducationalPlatform.Views
 
             try
             {
-                // Сначала загружаем экипировку, чтобы применить тему ДО загрузки остального
                 await LoadEquippedItems();
 
                 var greeting = await _dbService.GetRandomLoginGreetingAsync(
@@ -338,11 +347,7 @@ namespace EducationalPlatform.Views
                         WelcomeLabel.Text = greeting;
 
                     UpdateTexts();
-
-                    if (_currentUser.RoleId == 2 || _currentUser.RoleId == 3 || _currentUser.RoleId == 4)
-                    {
-                        TeacherPanel.IsVisible = true;
-                    }
+                    UpdateUIBasedOnRole();
                 });
 
                 await LoadUserAvatar();
@@ -516,9 +521,10 @@ namespace EducationalPlatform.Views
             }
         }
 
+        // Методы для преподавателя и администратора
         private async void OnTeacherManagementClicked(object sender, EventArgs e)
         {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            if (IsTeacher || IsAdmin || IsContentManager)
             {
                 try
                 {
@@ -533,7 +539,7 @@ namespace EducationalPlatform.Views
 
         private async void OnManageCourseContentClicked(object sender, EventArgs e)
         {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            if (IsTeacher || IsAdmin || IsContentManager)
             {
                 try
                 {
@@ -581,7 +587,7 @@ namespace EducationalPlatform.Views
 
         private async void OnTeacherGroupsClicked(object sender, EventArgs e)
         {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            if (IsTeacher || IsAdmin || IsContentManager)
             {
                 try
                 {
@@ -614,7 +620,7 @@ namespace EducationalPlatform.Views
 
         private async void OnCreateTestClicked(object sender, EventArgs e)
         {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            if (IsTeacher || IsAdmin || IsContentManager)
             {
                 try
                 {
@@ -661,7 +667,7 @@ namespace EducationalPlatform.Views
 
         private async void OnCreatePracticeClicked(object sender, EventArgs e)
         {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            if (IsTeacher || IsAdmin || IsContentManager)
             {
                 try
                 {
@@ -708,7 +714,7 @@ namespace EducationalPlatform.Views
 
         private async void OnCreateTheoryClicked(object sender, EventArgs e)
         {
-            if (_currentUser?.RoleId == 2 || _currentUser?.RoleId == 3 || _currentUser?.RoleId == 4)
+            if (IsTeacher || IsAdmin || IsContentManager)
             {
                 try
                 {
@@ -753,12 +759,21 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // В MainDashboardPage.xaml.cs добавьте метод:
+        // Метод для контент-менеджера
         private async void OnContentManagerClicked(object sender, EventArgs e)
         {
-            if (_currentUser?.RoleId == 4 || _currentUser?.RoleId == 3) // ContentManager or Admin
+            if (IsContentManager)
             {
                 await Navigation.PushAsync(new ContentManagerPage(_currentUser, _dbService, _settingsService));
+            }
+        }
+
+        // Метод для администратора
+        private async void OnAdminDashboardClicked(object sender, EventArgs e)
+        {
+            if (IsAdmin)
+            {
+                await Navigation.PushAsync(new AdminDashboardPage(_currentUser, _dbService, _settingsService));
             }
         }
 
@@ -768,7 +783,7 @@ namespace EducationalPlatform.Views
             {
                 MyCourses.Clear();
 
-                if (_currentUser?.RoleId == 1)
+                if (IsStudent)
                 {
                     var progressList = await _dbService.GetStudentProgressAsync(_currentUser.UserId);
                     foreach (var progress in progressList)
@@ -784,7 +799,7 @@ namespace EducationalPlatform.Views
                         });
                     }
                 }
-                else if (_currentUser?.RoleId == 2)
+                else if (IsTeacher || IsAdmin || IsContentManager)
                 {
                     var teacherCourses = await _dbService.GetTeacherCoursesAsync(_currentUser.UserId);
                     foreach (var course in teacherCourses)
@@ -817,7 +832,7 @@ namespace EducationalPlatform.Views
             {
                 TodayTasks.Clear();
 
-                if (_currentUser?.RoleId == 1)
+                if (IsStudent)
                 {
                     TodayTasks.Add(new TodayTask
                     {
@@ -847,7 +862,7 @@ namespace EducationalPlatform.Views
                         TaskType = "practice"
                     });
                 }
-                else if (_currentUser?.RoleId == 2)
+                else if (IsTeacher)
                 {
                     TodayTasks.Add(new TodayTask
                     {
@@ -875,6 +890,22 @@ namespace EducationalPlatform.Views
                         TaskId = 2,
                         IsCompleted = false,
                         TaskType = "chat"
+                    });
+                }
+                else if (IsAdmin)
+                {
+                    TodayTasks.Add(new TodayTask
+                    {
+                        Icon = "👑",
+                        Title = "Администрирование",
+                        Description = "Управление системой",
+                        ButtonText = "Открыть",
+                        CardColor = Color.FromArgb("#F3E5F5"),
+                        BorderColor = Color.FromArgb("#9C27B0"),
+                        ButtonColor = Color.FromArgb("#9C27B0"),
+                        TaskId = 1,
+                        IsCompleted = false,
+                        TaskType = "admin"
                     });
                 }
 
@@ -923,10 +954,17 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button button && button.CommandParameter is TodayTask task)
             {
-                await DisplayAlert(
-                    _localizationService?.CurrentLanguage == "ru" ? "Задача" : "Task",
-                    $"{(_localizationService?.CurrentLanguage == "ru" ? "Начало выполнения: " : "Starting: ")}{task.Title}",
-                    _localizationService?.GetText("OK") ?? "OK");
+                if (task.TaskType == "admin" && IsAdmin)
+                {
+                    OnAdminDashboardClicked(sender, e);
+                }
+                else
+                {
+                    await DisplayAlert(
+                        _localizationService?.CurrentLanguage == "ru" ? "Задача" : "Task",
+                        $"{(_localizationService?.CurrentLanguage == "ru" ? "Начало выполнения: " : "Starting: ")}{task.Title}",
+                        _localizationService?.GetText("OK") ?? "OK");
+                }
             }
         }
 
@@ -965,11 +1003,11 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                if (_currentUser.RoleId == 1)
+                if (IsStudent)
                 {
                     await Navigation.PushAsync(new StudentChatsPage(_currentUser, _dbService, _settingsService));
                 }
-                else if (_currentUser.RoleId == 2)
+                else if (IsTeacher || IsAdmin || IsContentManager)
                 {
                     await Navigation.PushAsync(new TeacherChatsPage(_currentUser, _dbService, _settingsService));
                 }
@@ -977,6 +1015,21 @@ namespace EducationalPlatform.Views
             catch (Exception ex)
             {
                 await DisplayAlert("Ошибка", $"Не удалось открыть чаты: {ex.Message}", "OK");
+            }
+        }
+
+        private async void OnGradesClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                if (IsStudent && _dbService != null && _settingsService != null)
+                {
+                    await Navigation.PushAsync(new StudentGradesPage(_currentUser, _dbService, _settingsService));
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось перейти к оценкам: {ex.Message}", "OK");
             }
         }
 

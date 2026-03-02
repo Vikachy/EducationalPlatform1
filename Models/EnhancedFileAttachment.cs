@@ -15,6 +15,7 @@ namespace EducationalPlatform.Models
         private bool _isUploading;
         private string _statusIcon = "⏳";
         private byte[]? _fileBytes;
+        private string _fileSizeFormatted = "0 Б";
 
         public int AttachmentId
         {
@@ -41,6 +42,7 @@ namespace EducationalPlatform.Models
             {
                 if (SetProperty(ref _fileSize, value))
                 {
+                    UpdateSizeFormatted();
                     OnPropertyChanged(nameof(SizeFormatted));
                 }
             }
@@ -82,13 +84,37 @@ namespace EducationalPlatform.Models
             set => SetProperty(ref _fileBytes, value);
         }
 
+        // Добавлено свойство для форматированного размера файла
+        public string FileSizeFormatted
+        {
+            get => _fileSizeFormatted;
+            set => SetProperty(ref _fileSizeFormatted, value);
+        }
+
+        // Свойство для обратной совместимости
         public string SizeFormatted
         {
             get
             {
-                if (FileSize < 1024) return $"{FileSize} Б";
-                if (FileSize < 1024 * 1024) return $"{FileSize / 1024.0:0.0} КБ";
-                return $"{FileSize / (1024.0 * 1024.0):0.0} МБ";
+                if (_fileSize < 1024) return $"{_fileSize} Б";
+                if (_fileSize < 1024 * 1024) return $"{_fileSize / 1024.0:0.0} КБ";
+                return $"{_fileSize / (1024.0 * 1024.0):0.0} МБ";
+            }
+        }
+
+        private void UpdateSizeFormatted()
+        {
+            if (_fileSize < 1024)
+            {
+                _fileSizeFormatted = $"{_fileSize} Б";
+            }
+            else if (_fileSize < 1024 * 1024)
+            {
+                _fileSizeFormatted = $"{_fileSize / 1024.0:0.0} КБ";
+            }
+            else
+            {
+                _fileSizeFormatted = $"{_fileSize / (1024.0 * 1024.0):0.0} МБ";
             }
         }
 

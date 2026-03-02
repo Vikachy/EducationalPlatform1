@@ -1,134 +1,294 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:EducationalPlatform.Converters"
              x:Class="EducationalPlatform.Views.EditPracticePage"
-             Title="Редактирование практики">
+             Title="Редактирование практики"
+             BackgroundColor="{DynamicResource BackgroundColor}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:FileTypeToIconConverter x:Key="FileTypeToIconConverter" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:NotNullConverter x:Key="NotNullConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*">
+        <!-- Индикатор загрузки -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.RowSpan="2"
+              BackgroundColor="#80000000"
+              IsVisible="False"
+              InputTransparent="True">
+            <VerticalStackLayout Spacing="20"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center">
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="White"
+                                   HeightRequest="50"
+                                   WidthRequest="50"/>
+                <Label x:Name="LoadingLabel"
+                       Text="Загрузка..."
+                       TextColor="White"
+                       FontSize="16"/>
+            </VerticalStackLayout>
+        </Grid>
+
         <!-- Заголовок -->
         <Border Grid.Row="0"
                 BackgroundColor="{DynamicResource PrimaryColor}"
                 Padding="20,15"
-                StrokeThickness="0">
-            <Label Text="Редактирование практического задания" 
-                   FontSize="22"
-                   FontAttributes="Bold"
-                   TextColor="White"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center" />
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0,0,0,20">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Text="←"
+                        Clicked="OnBackClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+                <Label Grid.Column="1"
+                       Text="Редактирование практики" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       TextColor="White" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Label Grid.Column="2"
+                       Text="✏️"
+                       FontSize="20"
+                       TextColor="White"
+                       VerticalOptions="Center"
+                       Margin="0,0,10,0" />
+            </Grid>
         </Border>
 
-        <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource BackgroundColor}">
+        <ScrollView Grid.Row="1">
             <VerticalStackLayout Spacing="20" Padding="20">
 
+                <!-- Основная информация -->
                 <Border BackgroundColor="White"
-                        Stroke="#E0E0E0"
-                        StrokeThickness="1"
+                        Stroke="{DynamicResource PrimaryColor}"
+                        StrokeThickness="2"
                         StrokeShape="RoundRectangle 12"
                         Padding="20">
-                    <VerticalStackLayout Spacing="18">
+                    <VerticalStackLayout Spacing="15">
 
-                        <Label Text="Название задания:"
-                               FontSize="16"
+                        <Label Text="📋 Основная информация"
+                               FontSize="18"
                                FontAttributes="Bold"
-                               TextColor="{DynamicResource TextColor}"
+                               TextColor="{DynamicResource PrimaryColor}"
                                Margin="0,0,0,5"/>
-                        <Border BackgroundColor="#F8F9FA"
-                                Stroke="#E0E0E0"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 8"
-                                Padding="0">
-                            <Entry x:Name="TitleEntry"
-                                   Placeholder="Введите название задания"
-                                   BackgroundColor="Transparent"
-                                   Margin="12,0"
-                                   FontSize="16"
-                                   HeightRequest="50" />
-                        </Border>
 
-                        <Label Text="Описание:"
-                               FontSize="16"
-                               FontAttributes="Bold"
-                               TextColor="{DynamicResource TextColor}"
-                               Margin="0,0,0,5"/>
-                        <Border BackgroundColor="#F8F9FA"
-                                Stroke="#E0E0E0"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 8"
-                                Padding="0">
-                            <Editor x:Name="DescriptionEditor"
-                                    HeightRequest="100"
-                                    BackgroundColor="Transparent"
-                                    Margin="12,10"
-                                    FontSize="14" />
-                        </Border>
-
-                        <Label Text="Тип ответа:"
-                               FontSize="16"
-                               FontAttributes="Bold"
-                               TextColor="{DynamicResource TextColor}"
-                               Margin="0,0,0,5"/>
-                        <Border BackgroundColor="#F8F9FA"
-                                Stroke="#E0E0E0"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 8"
-                                Padding="0">
-                            <Picker x:Name="AnswerTypePicker"
-                                    BackgroundColor="Transparent"
-                                    Margin="12,0"
-                                    FontSize="16"
-                                    HeightRequest="50">
-                                <Picker.Items>
-                                    <x:String>text</x:String>
-                                    <x:String>code</x:String>
-                                    <x:String>file</x:String>
-                                </Picker.Items>
-                            </Picker>
-                        </Border>
-
-                        <!-- Для программирования -->
-                        <StackLayout x:Name="CodeSection" IsVisible="False">
-                            <Label Text="Стартовый код:"
-                                   FontSize="16"
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Название задания:"
+                                   FontSize="14"
                                    FontAttributes="Bold"
-                                   TextColor="{DynamicResource TextColor}"
-                                   Margin="0,0,0,5"/>
+                                   TextColor="#333"/>
                             <Border BackgroundColor="#F8F9FA"
                                     Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="TitleEntry"
+                                       Placeholder="Введите название задания"
+                                       BackgroundColor="Transparent"
+                                       Margin="15,0"
+                                       FontSize="15"
+                                       HeightRequest="50" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Описание:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#333"/>
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Editor x:Name="DescriptionEditor"
+                                        HeightRequest="100"
+                                        Placeholder="Введите описание задания"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,10"
+                                        FontSize="14" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Тип ответа:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#333"/>
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Picker x:Name="AnswerTypePicker"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,0"
+                                        FontSize="15"
+                                        HeightRequest="50"
+                                        Title="Выберите тип ответа">
+                                    <Picker.Items>
+                                        <x:String>text</x:String>
+                                        <x:String>code</x:String>
+                                        <x:String>file</x:String>
+                                    </Picker.Items>
+                                </Picker>
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Секция для кода -->
+                <Border x:Name="CodeSection"
+                        IsVisible="False"
+                        BackgroundColor="White"
+                        Stroke="{DynamicResource AccentColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="💻 Настройки кода"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource AccentColor}"/>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Стартовый код:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#333"/>
+                            <Border BackgroundColor="#1E1E1E"
+                                    Stroke="#333"
                                     StrokeThickness="1"
                                     StrokeShape="RoundRectangle 8"
                                     Padding="0">
                                 <Editor x:Name="StarterCodeEditor"
                                         HeightRequest="150"
                                         BackgroundColor="Transparent"
-                                        Margin="12,10"
+                                        Margin="15,10"
+                                        FontFamily="Consolas"
+                                        FontSize="13"
+                                        TextColor="#D4D4D4"
+                                        Placeholder="// Введите стартовый код..."
+                                        PlaceholderColor="#888" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Ожидаемый результат:"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="#333"/>
+                            <Border BackgroundColor="#F8F9FA"
+                                    Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Editor x:Name="ExpectedAnswerEditor"
+                                        HeightRequest="100"
+                                        Placeholder="Введите ожидаемый результат"
+                                        BackgroundColor="Transparent"
+                                        Margin="15,10"
                                         FontSize="14" />
                             </Border>
-                        </StackLayout>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
 
-                        <!-- Ожидаемый ответ -->
-                        <Label Text="Ожидаемый ответ/решение:"
-                               FontSize="16"
+                <!-- Настройки для файлов -->
+                <Border x:Name="FileSettingsSection"
+                        IsVisible="False"
+                        BackgroundColor="White"
+                        Stroke="{DynamicResource SuccessColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="📎 Настройки файлов"
+                               FontSize="18"
                                FontAttributes="Bold"
-                               TextColor="{DynamicResource TextColor}"
-                               Margin="0,0,0,5"/>
-                        <Border BackgroundColor="#F8F9FA"
-                                Stroke="#E0E0E0"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 8"
-                                Padding="0">
-                            <Editor x:Name="ExpectedAnswerEditor"
-                                    HeightRequest="100"
-                                    BackgroundColor="Transparent"
-                                    Margin="12,10"
-                                    FontSize="14" />
-                        </Border>
+                               TextColor="{DynamicResource SuccessColor}"/>
 
-                        <Label Text="Подсказка:"
-                               FontSize="16"
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                            <Label Text="Макс. размер:" 
+                                   VerticalOptions="Center"
+                                   FontSize="14"/>
+                            <Entry x:Name="MaxFileSizeEntry" 
+                                   Grid.Column="1"
+                                   Text="10" 
+                                   Keyboard="Numeric"
+                                   BackgroundColor="White"
+                                   HeightRequest="45"
+                                   FontSize="14"/>
+                            <Label Grid.Column="2"
+                                   Text="МБ"
+                                   VerticalOptions="Center"
+                                   FontSize="14"/>
+                        </Grid>
+
+                        <Label Text="Разрешенные типы файлов:" 
+                               FontSize="14"
                                FontAttributes="Bold"
-                               TextColor="{DynamicResource TextColor}"
-                               Margin="0,0,0,5"/>
+                               Margin="0,5,0,5"/>
+
+                        <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" RowSpacing="10" ColumnSpacing="10">
+                            <!-- Первая строка -->
+                            <HorizontalStackLayout Grid.Row="0" Grid.Column="0">
+                                <CheckBox x:Name="ZipCheckBox" IsChecked="True" />
+                                <Label Text="ZIP" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+
+                            <HorizontalStackLayout Grid.Row="0" Grid.Column="1">
+                                <CheckBox x:Name="ImageCheckBox" IsChecked="True" />
+                                <Label Text="Изображения" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+
+                            <HorizontalStackLayout Grid.Row="0" Grid.Column="2">
+                                <CheckBox x:Name="PdfCheckBox" IsChecked="True" />
+                                <Label Text="PDF" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+
+                            <!-- Вторая строка -->
+                            <HorizontalStackLayout Grid.Row="1" Grid.Column="0">
+                                <CheckBox x:Name="DocCheckBox" IsChecked="False" />
+                                <Label Text="Word" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+
+                            <HorizontalStackLayout Grid.Row="1" Grid.Column="1">
+                                <CheckBox x:Name="TxtCheckBox" IsChecked="False" />
+                                <Label Text="TXT" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+
+                            <HorizontalStackLayout Grid.Row="1" Grid.Column="2">
+                                <CheckBox x:Name="PowerPointCheckBox" IsChecked="False" />
+                                <Label Text="PowerPoint" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Подсказка -->
+                <Border BackgroundColor="White"
+                        Stroke="#FF9800"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="💡 Подсказка"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#FF9800"/>
                         <Border BackgroundColor="#F8F9FA"
                                 Stroke="#E0E0E0"
                                 StrokeThickness="1"
@@ -136,145 +296,126 @@
                                 Padding="0">
                             <Editor x:Name="HintEditor"
                                     HeightRequest="80"
+                                    Placeholder="Введите подсказку для студентов"
                                     BackgroundColor="Transparent"
-                                    Margin="12,10"
+                                    Margin="15,10"
                                     FontSize="14" />
                         </Border>
-
-                        <!-- Настройки для файлов -->
-                        <StackLayout x:Name="FileSettingsSection" IsVisible="False">
-                            <Label Text="Максимальный размер файла (МБ):"
-                                   FontSize="16"
-                                   FontAttributes="Bold"
-                                   TextColor="{DynamicResource TextColor}"
-                                   Margin="0,0,0,5"/>
-                            <Border BackgroundColor="#F8F9FA"
-                                    Stroke="#E0E0E0"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 8"
-                                    Padding="0">
-                                <Entry x:Name="MaxFileSizeEntry"
-                                       Text="10"
-                                       Keyboard="Numeric"
-                                       BackgroundColor="Transparent"
-                                       Margin="12,0"
-                                       FontSize="16"
-                                       HeightRequest="50" />
-                            </Border>
-
-                            <Label Text="Разрешенные типы файлов:"
-                                   FontSize="16"
-                                   FontAttributes="Bold"
-                                   TextColor="{DynamicResource TextColor}"
-                                   Margin="0,10,0,5"/>
-                            <HorizontalStackLayout>
-                                <CheckBox x:Name="ZipCheckBox" IsChecked="True" />
-                                <Label Text="ZIP" VerticalOptions="Center" Margin="5,0,0,0" />
-                                <CheckBox x:Name="ImageCheckBox" IsChecked="True" Margin="15,0,0,0" />
-                                <Label Text="Изображения" VerticalOptions="Center" Margin="5,0,0,0" />
-                                <CheckBox x:Name="PdfCheckBox" IsChecked="True" Margin="15,0,0,0" />
-                                <Label Text="PDF" VerticalOptions="Center" Margin="5,0,0,0" />
-                            </HorizontalStackLayout>
-                        </StackLayout>
-
-                        <!-- Секция прикрепленных файлов -->
-                        <Border BackgroundColor="#F0F7FF"
-                                Stroke="{DynamicResource PrimaryColor}"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 10"
-                                Padding="15"
-                                Margin="0,10,0,0">
-                            <VerticalStackLayout Spacing="12">
-                                <Label Text="Прикрепленные файлы:" 
-                                       FontSize="16" 
-                                       FontAttributes="Bold"
-                                       TextColor="{DynamicResource PrimaryColor}" />
-
-                                <Label Text="Разрешенные типы: ZIP, PDF, Word, PowerPoint, PNG, JPG, TXT, MP4" 
-                                       FontSize="12" 
-                                       TextColor="Gray" />
-
-                                <Button Text="Прикрепить файлы" 
-                                        Clicked="OnAttachFilesClicked"
-                                        BackgroundColor="{DynamicResource SecondaryColor}"
-                                        TextColor="White"
-                                        CornerRadius="8"
-                                        HeightRequest="45"
-                                        FontSize="16" />
-
-                                <!-- Список прикрепленных файлов -->
-                                <CollectionView x:Name="AttachmentsCollection" 
-                                              HeightRequest="150"
-                                              IsVisible="False">
-                                    <CollectionView.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid ColumnDefinitions="*,Auto,Auto" 
-                                                  Padding="10" 
-                                                  BackgroundColor="White"
-                                                  Margin="0,2">
-                                                <Label Text="{Binding FileName}" 
-                                                       FontSize="14"
-                                                       VerticalOptions="Center"
-                                                       LineBreakMode="TailTruncation" />
-                                                <Label Grid.Column="1" 
-                                                       Text="{Binding SizeFormatted}" 
-                                                       FontSize="12"
-                                                       TextColor="Gray"
-                                                       VerticalOptions="Center"
-                                                       Margin="10,0" />
-                                                <!-- Значок корзины для удаления файла -->
-                                                <Button Grid.Column="2" 
-                                                        Text="🗑️"
-                                                        Padding="5" 
-                                                        Clicked="OnRemoveAttachmentClicked" 
-                                                        CommandParameter="{Binding .}"
-                                                        BackgroundColor="Transparent"
-                                                        TextColor="Red"
-                                                        FontSize="16"
-                                                        WidthRequest="40"
-                                                        HeightRequest="40" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </CollectionView.ItemTemplate>
-                                </CollectionView>
-
-                                <Button x:Name="ClearAllButton"
-                                        Text="Очистить все файлы"
-                                        Clicked="OnClearAllFilesClicked"
-                                        BackgroundColor="#FF6B6B"
-                                        TextColor="White"
-                                        IsVisible="False" />
-
-                                <ProgressBar x:Name="UploadProgressBar" 
-                                           Progress="0"
-                                           IsVisible="False" />
-                                <Label x:Name="UploadStatusLabel" 
-                                       Text="" 
-                                       FontSize="12"
-                                       IsVisible="False" />
-                            </VerticalStackLayout>
-                        </Border>
-
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="15" Margin="0,10,0,0">
-                            <Button Text="Назад"
-                                    Clicked="OnBackClicked"
-                                    BackgroundColor="#6C757D"
-                                    TextColor="White"
-                                    CornerRadius="8"
-                                    HeightRequest="50"
-                                    FontSize="16" />
-                            <Button Text="Сохранить изменения"
-                                    Clicked="OnSaveClicked"
-                                    BackgroundColor="{DynamicResource PrimaryColor}"
-                                    TextColor="White"
-                                    CornerRadius="8"
-                                    HeightRequest="50"
-                                    FontSize="16"
-                                    FontAttributes="Bold" />
-                        </Grid>
-
                     </VerticalStackLayout>
                 </Border>
+
+                <!-- Прикрепленные файлы -->
+                <Border BackgroundColor="White"
+                        Stroke="{DynamicResource SecondaryColor}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="📎 Прикрепленные файлы"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource SecondaryColor}"/>
+
+                        <Label Text="Разрешенные типы: ZIP, PDF, Word, PowerPoint, PNG, JPG, TXT, MP4" 
+                               FontSize="12" 
+                               TextColor="Gray" />
+
+                        <Button Text="➕ Прикрепить файлы" 
+                                Clicked="OnAttachFilesClicked"
+                                BackgroundColor="{DynamicResource SecondaryColor}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="45"
+                                FontSize="14" />
+
+                        <CollectionView x:Name="AttachmentsCollection" 
+                                        HeightRequest="200"
+                                        IsVisible="False">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="#F8F9FA"
+                                            Padding="12"
+                                            Margin="0,4"
+                                            Stroke="#E0E0E0"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding FileIcon, Converter={StaticResource FileTypeToIconConverter}}"
+                                                   FontSize="20"
+                                                   VerticalOptions="Center"/>
+
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                                <Label Text="{Binding FileName}" 
+                                                       FontSize="14"
+                                                       FontAttributes="Bold"
+                                                       LineBreakMode="TailTruncation"/>
+                                                <Label Text="{Binding SizeFormatted}" 
+                                                       FontSize="11"
+                                                       TextColor="Gray"/>
+                                            </VerticalStackLayout>
+
+                                            <Label Grid.Column="2"
+                                                   Text="{Binding FileSize}"
+                                                   FontSize="12"
+                                                   TextColor="Gray"
+                                                   VerticalOptions="Center"/>
+
+                                            <Button Grid.Column="3" 
+                                                    Text="🗑️"
+                                                    Clicked="OnRemoveAttachmentClicked" 
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="Red"
+                                                    FontSize="16"
+                                                    WidthRequest="40"
+                                                    HeightRequest="40" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <Button x:Name="ClearAllButton"
+                                Text="🗑️ Очистить все файлы"
+                                Clicked="OnClearAllFilesClicked"
+                                BackgroundColor="#FF6B6B"
+                                TextColor="White"
+                                IsVisible="False"
+                                CornerRadius="8"
+                                HeightRequest="40" />
+
+                        <ProgressBar x:Name="UploadProgressBar" 
+                                   Progress="0"
+                                   IsVisible="False"
+                                   ProgressColor="{DynamicResource SuccessColor}"
+                                   HeightRequest="4"/>
+                        <Label x:Name="UploadStatusLabel" 
+                               Text="" 
+                               FontSize="12"
+                               IsVisible="False"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Кнопки действий -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                    <Button Text="Отмена"
+                            Clicked="OnBackClicked"
+                            BackgroundColor="#6C757D"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="50"
+                            FontSize="16" />
+                    <Button Text="💾 Сохранить изменения"
+                            Clicked="OnSaveClicked"
+                            BackgroundColor="{DynamicResource PrimaryColor}"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="50"
+                            FontSize="16"
+                            FontAttributes="Bold" />
+                </Grid>
 
             </VerticalStackLayout>
         </ScrollView>

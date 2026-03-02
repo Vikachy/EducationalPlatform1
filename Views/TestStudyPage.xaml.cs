@@ -1,4 +1,4 @@
-using EducationalPlatform.Models;
+п»їusing EducationalPlatform.Models;
 using EducationalPlatform.Services;
 using System.Timers;
 
@@ -15,7 +15,7 @@ namespace EducationalPlatform.Views
         private List<Question> _questions;
         private int _currentQuestionIndex = 0;
         private Dictionary<int, object> _userAnswers = new();
-        private Dictionary<CheckBox, int> _checkBoxAnswerMap = new(); // Связь CheckBox -> AnswerId
+        private Dictionary<CheckBox, int> _checkBoxAnswerMap = new(); // РЎРІСЏР·СЊ CheckBox -> AnswerId
         private System.Timers.Timer _timer;
         private TimeSpan _timeLeft;
         private int _attemptId;
@@ -35,55 +35,55 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Получаем информацию о тесте
+                // РџРѕР»СѓС‡Р°РµРј РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РµСЃС‚Рµ
                 var testMeta = await _dbService.GetTestMetaByLessonAsync(_lessonId);
                 if (testMeta != null)
                 {
                     _testId = testMeta.TestId;
                     TitleLabel.Text = testMeta.Title;
 
-                    // Получаем вопросы теста
+                    // РџРѕР»СѓС‡Р°РµРј РІРѕРїСЂРѕСЃС‹ С‚РµСЃС‚Р°
                     _questions = await GetTestQuestionsAsync(_testId);
 
                     if (!_questions.Any())
                     {
-                        await DisplayAlert("Ошибка", "В тесте нет вопросов", "OK");
+                        await DisplayAlert("РћС€РёР±РєР°", "Р’ С‚РµСЃС‚Рµ РЅРµС‚ РІРѕРїСЂРѕСЃРѕРІ", "OK");
                         await Navigation.PopAsync();
                         return;
                     }
 
-                    // Получаем ID курса
+                    // РџРѕР»СѓС‡Р°РµРј ID РєСѓСЂСЃР°
                     var courseId = await GetCourseIdByLessonAsync(_lessonId);
                     if (courseId.HasValue) _courseId = courseId.Value;
 
-                    // Начинаем попытку теста
+                    // РќР°С‡РёРЅР°РµРј РїРѕРїС‹С‚РєСѓ С‚РµСЃС‚Р°
                     _attemptId = await StartTestAttemptAsync(_testId, _currentUser.UserId, null) ?? 0;
 
-                    // Запускаем таймер
+                    // Р—Р°РїСѓСЃРєР°РµРј С‚Р°Р№РјРµСЂ
                     StartTimer(testMeta.TimeLimitMinutes);
 
-                    // Показываем первый вопрос
+                    // РџРѕРєР°Р·С‹РІР°РµРј РїРµСЂРІС‹Р№ РІРѕРїСЂРѕСЃ
                     ShowQuestion(0);
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Тест не найден", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", "РўРµСЃС‚ РЅРµ РЅР°Р№РґРµРЅ", "OK");
                     await Navigation.PopAsync();
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось начать тест: {ex.Message}", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ РЅР°С‡Р°С‚СЊ С‚РµСЃС‚: {ex.Message}", "OK");
                 await Navigation.PopAsync();
             }
         }
 
         private void StartTimer(int timeLimitMinutes)
         {
-            // Добавляем проверку на корректное значение времени
+            // Р”РѕР±Р°РІР»СЏРµРј РїСЂРѕРІРµСЂРєСѓ РЅР° РєРѕСЂСЂРµРєС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РІСЂРµРјРµРЅРё
             if (timeLimitMinutes <= 0)
             {
-                timeLimitMinutes = 30; // значение по умолчанию
+                timeLimitMinutes = 30; // Р·РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
             }
 
             _timeLeft = TimeSpan.FromMinutes(timeLimitMinutes);
@@ -103,7 +103,7 @@ namespace EducationalPlatform.Views
                 if (_timeLeft.TotalSeconds <= 0)
                 {
                     _timer.Stop();
-                    FinishTest(); // Автоматическое завершение при истечении времени
+                    FinishTest(); // РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ Р·Р°РІРµСЂС€РµРЅРёРµ РїСЂРё РёСЃС‚РµС‡РµРЅРёРё РІСЂРµРјРµРЅРё
                 }
                 else
                 {
@@ -114,7 +114,7 @@ namespace EducationalPlatform.Views
 
         private void UpdateTimerDisplay()
         {
-            TimerLabel.Text = $"Время: {_timeLeft:mm\\:ss}";
+            TimerLabel.Text = $"Р’СЂРµРјСЏ: {_timeLeft:mm\\:ss}";
             TimeLeftLabel.Text = $"{_timeLeft:mm\\:ss}";
         }
 
@@ -126,18 +126,18 @@ namespace EducationalPlatform.Views
             _currentQuestionIndex = questionIndex;
             var question = _questions[questionIndex];
 
-            // Обновляем прогресс
-            ProgressLabel.Text = $"{questionIndex + 1} из {_questions.Count}";
+            // РћР±РЅРѕРІР»СЏРµРј РїСЂРѕРіСЂРµСЃСЃ
+            ProgressLabel.Text = $"{questionIndex + 1} РёР· {_questions.Count}";
 
-            // Показываем текст вопроса
+            // РџРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚ РІРѕРїСЂРѕСЃР°
             QuestionTextLabel.Text = question.QuestionText;
 
-            // Очищаем предыдущие варианты ответов
+            // РћС‡РёС‰Р°РµРј РїСЂРµРґС‹РґСѓС‰РёРµ РІР°СЂРёР°РЅС‚С‹ РѕС‚РІРµС‚РѕРІ
             AnswerOptionsStack.Children.Clear();
             TextAnswerSection.IsVisible = false;
-            _checkBoxAnswerMap.Clear(); // Очищаем карту связей
+            _checkBoxAnswerMap.Clear(); // РћС‡РёС‰Р°РµРј РєР°СЂС‚Сѓ СЃРІСЏР·РµР№
 
-            // Показываем варианты ответов в зависимости от типа вопроса
+            // РџРѕРєР°Р·С‹РІР°РµРј РІР°СЂРёР°РЅС‚С‹ РѕС‚РІРµС‚РѕРІ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° РІРѕРїСЂРѕСЃР°
             switch (question.QuestionType.ToLower())
             {
                 case "single":
@@ -151,10 +151,10 @@ namespace EducationalPlatform.Views
                     break;
             }
 
-            // Восстанавливаем сохраненный ответ
+            // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃРѕС…СЂР°РЅРµРЅРЅС‹Р№ РѕС‚РІРµС‚
             RestoreUserAnswer(question.QuestionId);
 
-            // Обновляем кнопки навигации
+            // РћР±РЅРѕРІР»СЏРµРј РєРЅРѕРїРєРё РЅР°РІРёРіР°С†РёРё
             UpdateNavigationButtons();
         }
 
@@ -213,7 +213,7 @@ namespace EducationalPlatform.Views
                     Children = { checkBox, label }
                 };
 
-                // Сохраняем связь между CheckBox и AnswerId
+                // РЎРѕС…СЂР°РЅСЏРµРј СЃРІСЏР·СЊ РјРµР¶РґСѓ CheckBox Рё AnswerId
                 _checkBoxAnswerMap[checkBox] = option.AnswerId;
 
                 checkBox.CheckedChanged += (s, e) => OnMultipleAnswerSelected(option.AnswerId, e.Value);
@@ -237,7 +237,7 @@ namespace EducationalPlatform.Views
 
                 if (savedAnswer is int singleAnswer)
                 {
-                    // Восстанавливаем одиночный выбор
+                    // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј РѕРґРёРЅРѕС‡РЅС‹Р№ РІС‹Р±РѕСЂ
                     foreach (var child in AnswerOptionsStack.Children)
                     {
                         if (child is Frame frame && frame.Content is RadioButton radioButton)
@@ -252,7 +252,7 @@ namespace EducationalPlatform.Views
                 }
                 else if (savedAnswer is List<int> multipleAnswers)
                 {
-                    // Восстанавливаем множественный выбор
+                    // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј РјРЅРѕР¶РµСЃС‚РІРµРЅРЅС‹Р№ РІС‹Р±РѕСЂ
                     foreach (var child in AnswerOptionsStack.Children)
                     {
                         if (child is Frame frame && frame.Content is HorizontalStackLayout stackLayout)
@@ -333,8 +333,8 @@ namespace EducationalPlatform.Views
 
         private async void OnFinishTestClicked(object sender, EventArgs e)
         {
-            bool confirm = await DisplayAlert("Завершение теста",
-                "Вы уверены, что хотите завершить тест?", "Да", "Нет");
+            bool confirm = await DisplayAlert("Р—Р°РІРµСЂС€РµРЅРёРµ С‚РµСЃС‚Р°",
+                "Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ Р·Р°РІРµСЂС€РёС‚СЊ С‚РµСЃС‚?", "Р”Р°", "РќРµС‚");
 
             if (confirm)
             {
@@ -348,28 +348,81 @@ namespace EducationalPlatform.Views
             {
                 _timer?.Stop();
 
-                // Вычисляем результат с проверкой правильных ответов
+                // РџРѕР»СѓС‡Р°РµРј РјРµС‚Р°РґР°РЅРЅС‹Рµ С‚РµСЃС‚Р°, С‡С‚РѕР±С‹ СѓР·РЅР°С‚СЊ РїСЂРѕС…РѕРґРЅРѕР№ Р±Р°Р»Р»
+                var testMeta = await _dbService.GetTestMetaByLessonAsync(_lessonId);
+                int passingScore = testMeta?.PassingScore ?? 60; // РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 60, РµСЃР»Рё РЅРµ СѓРєР°Р·Р°РЅРѕ
+
+                // Р’С‹С‡РёСЃР»СЏРµРј СЂРµР·СѓР»СЊС‚Р°С‚ СЃ РїСЂРѕРІРµСЂРєРѕР№ РїСЂР°РІРёР»СЊРЅС‹С… РѕС‚РІРµС‚РѕРІ
                 int score = await CalculateScoreWithValidation();
 
-                // Сохраняем попытку
+                // РЎРѕС…СЂР°РЅСЏРµРј РїРѕРїС‹С‚РєСѓ
                 await CompleteTestAttemptAsync(_attemptId, score);
 
-                // Сохраняем ответы студента в базу данных
+                // РЎРѕС…СЂР°РЅСЏРµРј РѕС‚РІРµС‚С‹ СЃС‚СѓРґРµРЅС‚Р° РІ Р±Р°Р·Сѓ РґР°РЅРЅС‹С…
                 await SaveStudentAnswersAsync();
 
-                // Обновляем прогресс курса
+                // РћР±РЅРѕРІР»СЏРµРј РїСЂРѕРіСЂРµСЃСЃ РєСѓСЂСЃР°
                 if (_courseId > 0)
                 {
-                    var status = score >= 60 ? "completed" : "in_progress";
+                    var status = score >= passingScore ? "completed" : "in_progress";
                     await UpdateProgressWithScoreAsync(_currentUser.UserId, _courseId, _lessonId, status, score);
                 }
 
-                // Показываем результаты
-                ShowTestResults(score);
+                // РќРђР§РРЎР›РЇР•Рњ Р’РђР›Р®РўРЈ Р·Р° СѓСЃРїРµС€РЅРѕРµ РІС‹РїРѕР»РЅРµРЅРёРµ (РїРѕ РїСЂРѕС…РѕРґРЅРѕРјСѓ Р±Р°Р»Р»Сѓ СѓС‡РёС‚РµР»СЏ)
+                if (score >= passingScore)
+                {
+                    bool awarded = await _dbService.AwardCurrencyForCompletionAsync(
+                        _currentUser.UserId,
+                        _lessonId,
+                        "test",
+                        score,
+                        passingScore); // РџРµСЂРµРґР°РµРј РїСЂРѕС…РѕРґРЅРѕР№ Р±Р°Р»Р» РґР»СЏ СЂР°СЃС‡РµС‚Р° РЅР°РіСЂР°РґС‹
+
+                    if (awarded)
+                    {
+                        Console.WriteLine($"рџ’° РќР°С‡РёСЃР»РµРЅР° РЅР°РіСЂР°РґР° Р·Р° С‚РµСЃС‚: {score} Р±Р°Р»Р»РѕРІ (РїСЂРѕС…РѕРґРЅРѕР№: {passingScore})");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"в„№пёЏ РЎС‚СѓРґРµРЅС‚ РЅРµ РЅР°Р±СЂР°Р» РїСЂРѕС…РѕРґРЅРѕР№ Р±Р°Р»Р»: {score} РёР· {passingScore}");
+                }
+
+                // РџРѕРєР°Р·С‹РІР°РµРј СЂРµР·СѓР»СЊС‚Р°С‚С‹
+                ShowTestResults(score, passingScore);
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка завершения теста: {ex.Message}", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", $"РћС€РёР±РєР° Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµСЃС‚Р°: {ex.Message}", "OK");
+            }
+        }
+
+        // РћР±РЅРѕРІР»РµРЅРЅС‹Р№ РјРµС‚РѕРґ ShowTestResults СЃ СѓС‡РµС‚РѕРј РїСЂРѕС…РѕРґРЅРѕРіРѕ Р±Р°Р»Р»Р°
+        private void ShowTestResults(int score, int passingScore)
+        {
+            // РЎРєСЂС‹РІР°РµРј РІРѕРїСЂРѕСЃС‹ Рё РїРѕРєР°Р·С‹РІР°РµРј СЂРµР·СѓР»СЊС‚Р°С‚С‹
+            if (AnswerOptionsStack != null) AnswerOptionsStack.IsVisible = false;
+            if (TextAnswerSection != null) TextAnswerSection.IsVisible = false;
+            if (PrevQuestionButton != null) PrevQuestionButton.IsVisible = false;
+            if (NextQuestionButton != null) NextQuestionButton.IsVisible = false;
+            if (FinishButton != null) FinishButton.IsVisible = false;
+
+            if (ResultSection != null) ResultSection.IsVisible = true;
+            if (ScoreLabel != null) ScoreLabel.Text = $"Р’Р°С€ СЂРµР·СѓР»СЊС‚Р°С‚: {score}/{passingScore}";
+
+            if (score >= passingScore)
+            {
+                if (ResultMessageLabel != null)
+                    ResultMessageLabel.Text = "РџРѕР·РґСЂР°РІР»СЏРµРј! Р’С‹ СѓСЃРїРµС€РЅРѕ РїСЂРѕС€Р»Рё С‚РµСЃС‚.";
+                if (ResultSection != null)
+                    ResultSection.BackgroundColor = Color.FromArgb("#E8F5E8");
+            }
+            else
+            {
+                if (ResultMessageLabel != null)
+                    ResultMessageLabel.Text = $"Р”Р»СЏ СѓСЃРїРµС€РЅРѕРіРѕ РїСЂРѕС…РѕР¶РґРµРЅРёСЏ РЅСѓР¶РЅРѕ РЅР°Р±СЂР°С‚СЊ {passingScore} Р±Р°Р»Р»РѕРІ.";
+                if (ResultSection != null)
+                    ResultSection.BackgroundColor = Color.FromArgb("#FFEBEE");
             }
         }
 
@@ -412,7 +465,7 @@ namespace EducationalPlatform.Views
                         {
                             var correctAnswers = question.AnswerOptions.Where(a => a.IsCorrect).Select(a => a.AnswerId).ToList();
 
-                            // Для множественного выбора: все правильные должны быть выбраны и никаких лишних
+                            // Р”Р»СЏ РјРЅРѕР¶РµСЃС‚РІРµРЅРЅРѕРіРѕ РІС‹Р±РѕСЂР°: РІСЃРµ РїСЂР°РІРёР»СЊРЅС‹Рµ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РІС‹Р±СЂР°РЅС‹ Рё РЅРёРєР°РєРёС… Р»РёС€РЅРёС…
                             return correctAnswers.Count == selectedAnswerIds.Count &&
                                    correctAnswers.All(ca => selectedAnswerIds.Contains(ca));
                         }
@@ -421,11 +474,11 @@ namespace EducationalPlatform.Views
                     case "text":
                         if (userAnswer is string textAnswer)
                         {
-                            // Для текстовых ответов проверяем по ключевым словам или точному совпадению
+                            // Р”Р»СЏ С‚РµРєСЃС‚РѕРІС‹С… РѕС‚РІРµС‚РѕРІ РїСЂРѕРІРµСЂСЏРµРј РїРѕ РєР»СЋС‡РµРІС‹Рј СЃР»РѕРІР°Рј РёР»Рё С‚РѕС‡РЅРѕРјСѓ СЃРѕРІРїР°РґРµРЅРёСЋ
                             var correctAnswer = question.AnswerOptions.FirstOrDefault(a => a.IsCorrect);
                             if (correctAnswer != null)
                             {
-                                // Простая проверка: точное совпадение или наличие ключевых слов
+                                // РџСЂРѕСЃС‚Р°СЏ РїСЂРѕРІРµСЂРєР°: С‚РѕС‡РЅРѕРµ СЃРѕРІРїР°РґРµРЅРёРµ РёР»Рё РЅР°Р»РёС‡РёРµ РєР»СЋС‡РµРІС‹С… СЃР»РѕРІ
                                 return textAnswer.Trim().Equals(correctAnswer.AnswerText?.Trim(), StringComparison.OrdinalIgnoreCase) ||
                                        textAnswer.ToLower().Contains(correctAnswer.AnswerText?.ToLower() ?? "");
                             }
@@ -435,7 +488,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка проверки ответа: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё РѕС‚РІРµС‚Р°: {ex.Message}");
             }
 
             return false;
@@ -452,14 +505,14 @@ namespace EducationalPlatform.Views
                         var userAnswer = _userAnswers[question.QuestionId];
                         bool isCorrect = await CheckAnswerCorrectness(question, userAnswer);
 
-                        // Сохраняем ответ студента в базу данных
+                        // РЎРѕС…СЂР°РЅСЏРµРј РѕС‚РІРµС‚ СЃС‚СѓРґРµРЅС‚Р° РІ Р±Р°Р·Сѓ РґР°РЅРЅС‹С…
                         await SaveStudentAnswerToDatabase(question.QuestionId, userAnswer, isCorrect);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка сохранения ответов: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ РѕС‚РІРµС‚РѕРІ: {ex.Message}");
             }
         }
 
@@ -467,18 +520,18 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // В реальном приложении нужно вызвать соответствующий метод DatabaseService
+                // Р’ СЂРµР°Р»СЊРЅРѕРј РїСЂРёР»РѕР¶РµРЅРёРё РЅСѓР¶РЅРѕ РІС‹Р·РІР°С‚СЊ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёР№ РјРµС‚РѕРґ DatabaseService
                 await _dbService.SaveStudentAnswerAsync(_attemptId, questionId, userAnswer, isCorrect);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка сохранения ответа в БД: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ РѕС‚РІРµС‚Р° РІ Р‘Р”: {ex.Message}");
             }
         }
 
         private void ShowTestResults(int score)
         {
-            // Скрываем вопросы и показываем результаты
+            // РЎРєСЂС‹РІР°РµРј РІРѕРїСЂРѕСЃС‹ Рё РїРѕРєР°Р·С‹РІР°РµРј СЂРµР·СѓР»СЊС‚Р°С‚С‹
             AnswerOptionsStack.IsVisible = false;
             TextAnswerSection.IsVisible = false;
             PrevQuestionButton.IsVisible = false;
@@ -486,16 +539,16 @@ namespace EducationalPlatform.Views
             FinishButton.IsVisible = false;
 
             ResultSection.IsVisible = true;
-            ScoreLabel.Text = $"Ваш результат: {score}/100";
+            ScoreLabel.Text = $"Р’Р°С€ СЂРµР·СѓР»СЊС‚Р°С‚: {score}/100";
 
             if (score >= 60)
             {
-                ResultMessageLabel.Text = "Поздравляем! Вы успешно прошли тест.";
+                ResultMessageLabel.Text = "РџРѕР·РґСЂР°РІР»СЏРµРј! Р’С‹ СѓСЃРїРµС€РЅРѕ РїСЂРѕС€Р»Рё С‚РµСЃС‚.";
                 ResultSection.BackgroundColor = Color.FromArgb("#E8F5E8");
             }
             else
             {
-                ResultMessageLabel.Text = "Попробуйте еще раз. Для успешного прохождения нужно набрать 60 баллов.";
+                ResultMessageLabel.Text = "РџРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰Рµ СЂР°Р·. Р”Р»СЏ СѓСЃРїРµС€РЅРѕРіРѕ РїСЂРѕС…РѕР¶РґРµРЅРёСЏ РЅСѓР¶РЅРѕ РЅР°Р±СЂР°С‚СЊ 60 Р±Р°Р»Р»РѕРІ.";
                 ResultSection.BackgroundColor = Color.FromArgb("#FFEBEE");
             }
         }
@@ -507,8 +560,8 @@ namespace EducationalPlatform.Views
 
         private async void OnBackClicked(object sender, EventArgs e)
         {
-            bool confirm = await DisplayAlert("Подтверждение",
-                "Вы уверены, что хотите выйти? Прогресс теста не будет сохранен.", "Да", "Нет");
+            bool confirm = await DisplayAlert("РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ",
+                "Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ РІС‹Р№С‚Рё? РџСЂРѕРіСЂРµСЃСЃ С‚РµСЃС‚Р° РЅРµ Р±СѓРґРµС‚ СЃРѕС…СЂР°РЅРµРЅ.", "Р”Р°", "РќРµС‚");
 
             if (confirm)
             {
@@ -524,7 +577,7 @@ namespace EducationalPlatform.Views
             _timer?.Dispose();
         }
 
-        // РЕАЛЬНЫЕ МЕТОДЫ РАБОТЫ С БАЗОЙ ДАННЫХ
+        // Р Р•РђР›Р¬РќР«Р• РњР•РўРћР”Р« Р РђР‘РћРўР« РЎ Р‘РђР—РћР™ Р”РђРќРќР«РҐ
         private async Task<List<Question>> GetTestQuestionsAsync(int testId)
         {
             try
@@ -533,7 +586,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки вопросов: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РІРѕРїСЂРѕСЃРѕРІ: {ex.Message}");
                 return new List<Question>();
             }
         }
@@ -546,7 +599,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка получения ID курса: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ ID РєСѓСЂСЃР°: {ex.Message}");
                 return null;
             }
         }
@@ -559,7 +612,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка начала попытки: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° РЅР°С‡Р°Р»Р° РїРѕРїС‹С‚РєРё: {ex.Message}");
                 return null;
             }
         }
@@ -572,7 +625,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка завершения попытки: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° Р·Р°РІРµСЂС€РµРЅРёСЏ РїРѕРїС‹С‚РєРё: {ex.Message}");
                 return false;
             }
         }
@@ -585,7 +638,7 @@ namespace EducationalPlatform.Views
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка обновления прогресса: {ex.Message}");
+                Console.WriteLine($"РћС€РёР±РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ РїСЂРѕРіСЂРµСЃСЃР°: {ex.Message}");
                 return false;
             }
         }

@@ -1,92 +1,168 @@
-using EducationalPlatform.Models;
+п»їusing EducationalPlatform.Models;
 using EducationalPlatform.Services;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace EducationalPlatform.Views
 {
-    public partial class EditTestPage : ContentPage
+    public partial class EditTestPage : ContentPage, INotifyPropertyChanged
     {
         private readonly User _user;
         private readonly DatabaseService _dbService;
         private readonly SettingsService _settingsService;
         private readonly int _lessonId;
+        private int _testId;
+
+        // Р­Р»РµРјРµРЅС‚С‹ СѓРїСЂР°РІР»РµРЅРёСЏ
+        private Entry? _testTitleEntry;
+        private Editor? _testDescriptionEditor;
+        private Entry? _timeLimitEntry;
+        private Entry? _passingScoreEntry;
+        private CollectionView? _questionsCollection;
 
         public ObservableCollection<Question> Questions { get; set; } = new();
 
-        // Добавляем свойства для привязки данных
-        public string TestTitle { get; set; }
-        public string TestDescription { get; set; }
-        public int TimeLimit { get; set; } = 60;
-        public int PassingScore { get; set; } = 60;
+        private string _testTitle = string.Empty;
+        public string TestTitle
+        {
+            get => _testTitle;
+            set
+            {
+                _testTitle = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _testDescription = string.Empty;
+        public string TestDescription
+        {
+            get => _testDescription;
+            set
+            {
+                _testDescription = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private int _timeLimit = 60;
+        public int TimeLimit
+        {
+            get => _timeLimit;
+            set
+            {
+                _timeLimit = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private int _passingScore = 60;
+        public int PassingScore
+        {
+            get => _passingScore;
+            set
+            {
+                _passingScore = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public new event PropertyChangedEventHandler? PropertyChanged;
+        protected new void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public EditTestPage(User user, DatabaseService dbService, SettingsService settingsService, int lessonId)
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё EditTestPage: {ex.Message}");
+            }
+
             _user = user;
             _dbService = dbService;
             _settingsService = settingsService;
             _lessonId = lessonId;
 
+            // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЌР»РµРјРµРЅС‚С‹ СѓРїСЂР°РІР»РµРЅРёСЏ
+            _testTitleEntry = this.FindByName<Entry>("TestTitleEntry");
+            _testDescriptionEditor = this.FindByName<Editor>("TestDescriptionEditor");
+            _timeLimitEntry = this.FindByName<Entry>("TimeLimitEntry");
+            _passingScoreEntry = this.FindByName<Entry>("PassingScoreEntry");
+            _questionsCollection = this.FindByName<CollectionView>("QuestionsCollection");
+
             BindingContext = this;
-            LoadTestData();
+
+            // РџРѕРґРїРёСЃС‹РІР°РµРјСЃСЏ РЅР° СЃРѕР±С‹С‚РёРµ РїРѕСЏРІР»РµРЅРёСЏ СЃС‚СЂР°РЅРёС†С‹
+            this.Appearing += OnPageAppearing;
         }
 
-        private async void LoadTestData()
+        private async void OnPageAppearing(object? sender, EventArgs e)
+        {
+            await LoadTestDataAsync();
+        }
+
+        private async Task LoadTestDataAsync()
         {
             try
             {
-                // Получаем метаданные теста
+                // РџРѕР»СѓС‡Р°РµРј РјРµС‚Р°РґР°РЅРЅС‹Рµ С‚РµСЃС‚Р°
                 var testMeta = await _dbService.GetTestMetaByLessonAsync(_lessonId);
                 if (testMeta != null)
                 {
+                    _testId = testMeta.TestId;
                     TestTitle = testMeta.Title;
                     TestDescription = testMeta.Description ?? "";
                     TimeLimit = testMeta.TimeLimitMinutes;
                     PassingScore = testMeta.PassingScore;
 
-                    OnPropertyChanged(nameof(TestTitle));
-                    OnPropertyChanged(nameof(TestDescription));
-                    OnPropertyChanged(nameof(TimeLimit));
-                    OnPropertyChanged(nameof(PassingScore));
+                    // Р—Р°РіСЂСѓР¶Р°РµРј РІРѕРїСЂРѕСЃС‹ С‚РµСЃС‚Р°
+                    var questions = await _dbService.GetTestQuestionsAsync(_testId);
 
-                    // Загружаем вопросы теста
-                    var questions = await _dbService.GetTestQuestionsAsync(testMeta.TestId);
-                    Questions.Clear();
-                    foreach (var question in questions)
+                    MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        Questions.Add(question);
-                    }
+                        Questions.Clear();
+                        foreach (var question in questions)
+                        {
+                            Questions.Add(question);
+                        }
+
+                        if (_questionsCollection != null)
+                        {
+                            _questionsCollection.ItemsSource = null;
+                            _questionsCollection.ItemsSource = Questions;
+                        }
+
+                        Console.WriteLine($"вњ… Р—Р°РіСЂСѓР¶РµРЅРѕ {Questions.Count} РІРѕРїСЂРѕСЃРѕРІ РґР»СЏ С‚РµСЃС‚Р° {_testId}");
+                    });
+                }
+                else
+                {
+                    await DisplayAlert("РћС€РёР±РєР°", "РўРµСЃС‚ РЅРµ РЅР°Р№РґРµРЅ", "OK");
+                    await Navigation.PopAsync();
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Не удалось загрузить данные теста: {ex.Message}", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", $"РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РґР°РЅРЅС‹Рµ С‚РµСЃС‚Р°: {ex.Message}", "OK");
             }
         }
 
         private async void OnAddQuestionClicked(object sender, EventArgs e)
         {
-            // Переходим на страницу создания вопроса
-            var testMeta = await _dbService.GetTestMetaByLessonAsync(_lessonId);
-            if (testMeta != null)
-            {
-                await Navigation.PushAsync(new EditQuestionPage(_user, _dbService, _settingsService, testMeta.TestId));
-            }
-            else
-            {
-                await DisplayAlert("Ошибка", "Не удалось загрузить данные теста", "OK");
-            }
+            await Navigation.PushAsync(new EditQuestionPage(_user, _dbService, _settingsService, _testId));
         }
 
         private async void OnEditQuestionClicked(object sender, EventArgs e)
         {
             if (sender is Button button && button.CommandParameter is Question question)
             {
-                var testMeta = await _dbService.GetTestMetaByLessonAsync(_lessonId);
-                if (testMeta != null)
-                {
-                    await Navigation.PushAsync(new EditQuestionPage(_user, _dbService, _settingsService, testMeta.TestId, question));
-                }
+                await Navigation.PushAsync(new EditQuestionPage(_user, _dbService, _settingsService, _testId, question));
             }
         }
 
@@ -94,18 +170,27 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button button && button.CommandParameter is Question question)
             {
-                var result = await DisplayAlert("Подтверждение", "Вы уверены, что хотите удалить этот вопрос?", "Да", "Нет");
+                var result = await DisplayAlert("РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ",
+                    $"Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ РІРѕРїСЂРѕСЃ '{question.QuestionText}'?",
+                    "Р”Р°", "РќРµС‚");
+
                 if (result)
                 {
                     var success = await _dbService.DeleteQuestionAsync(question.QuestionId);
                     if (success)
                     {
                         Questions.Remove(question);
-                        await DisplayAlert("Успех", "Вопрос удален", "OK");
+                        await DisplayAlert("РЈСЃРїРµС…", "Р’РѕРїСЂРѕСЃ СѓРґР°Р»РµРЅ", "OK");
+
+                        if (_questionsCollection != null)
+                        {
+                            _questionsCollection.ItemsSource = null;
+                            _questionsCollection.ItemsSource = Questions;
+                        }
                     }
                     else
                     {
-                        await DisplayAlert("Ошибка", "Не удалось удалить вопрос", "OK");
+                        await DisplayAlert("РћС€РёР±РєР°", "РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ РІРѕРїСЂРѕСЃ", "OK");
                     }
                 }
             }
@@ -115,60 +200,62 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(TestTitle))
+                // РџРѕР»СѓС‡Р°РµРј Р·РЅР°С‡РµРЅРёСЏ РёР· Entry
+                string title = _testTitleEntry?.Text ?? TestTitle;
+                string description = _testDescriptionEditor?.Text ?? TestDescription;
+
+                int timeLimit = 60;
+                if (_timeLimitEntry != null && int.TryParse(_timeLimitEntry.Text, out int tl))
+                    timeLimit = tl;
+                else
+                    timeLimit = TimeLimit;
+
+                int passingScore = 60;
+                if (_passingScoreEntry != null && int.TryParse(_passingScoreEntry.Text, out int ps))
+                    passingScore = ps;
+                else
+                    passingScore = PassingScore;
+
+                if (string.IsNullOrWhiteSpace(title))
                 {
-                    await DisplayAlert("Ошибка", "Введите название теста", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", "Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ С‚РµСЃС‚Р°", "OK");
                     return;
                 }
 
-                if (TimeLimit <= 0)
-                {
-                    await DisplayAlert("Ошибка", "Введите корректный лимит времени", "OK");
-                    return;
-                }
-
-                if (PassingScore <= 0)
-                {
-                    await DisplayAlert("Ошибка", "Введите корректный проходной балл", "OK");
-                    return;
-                }
-
-                // Получаем метаданные теста
-                var testMeta = await _dbService.GetTestMetaByLessonAsync(_lessonId);
-                if (testMeta == null)
-                {
-                    await DisplayAlert("Ошибка", "Тест не найден", "OK");
-                    return;
-                }
-
-                // Обновляем тест
+                // РћР±РЅРѕРІР»СЏРµРј С‚РµСЃС‚
                 var success = await _dbService.UpdateTestMetaAsync(
-                    testMeta.TestId,
-                    TestTitle,
-                    TestDescription,
-                    TimeLimit,
-                    PassingScore
+                    _testId,
+                    title.Trim(),
+                    description?.Trim() ?? "",
+                    timeLimit,
+                    passingScore
                 );
 
                 if (success)
                 {
-                    await DisplayAlert("Успех", "Тест успешно обновлен", "OK");
+                    await DisplayAlert("РЈСЃРїРµС…", "РўРµСЃС‚ СѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІР»РµРЅ", "OK");
                     await Navigation.PopAsync();
                 }
                 else
                 {
-                    await DisplayAlert("Ошибка", "Не удалось сохранить изменения", "OK");
+                    await DisplayAlert("РћС€РёР±РєР°", "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", $"Ошибка сохранения: {ex.Message}", "OK");
+                await DisplayAlert("РћС€РёР±РєР°", $"РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ: {ex.Message}", "OK");
             }
         }
 
         private async void OnBackClicked(object sender, EventArgs e)
         {
             await Navigation.PopAsync();
+        }
+
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+            this.Appearing -= OnPageAppearing;
         }
     }
 }

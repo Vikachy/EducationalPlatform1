@@ -8,17 +8,20 @@ namespace EducationalPlatform.Models
 {
     public class PracticeDto
     {
+        public int ExerciseId { get; set; }
         public int LessonId { get; set; }
-        public string? Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public string AnswerType { get; set; } = "text";
         public string? StarterCode { get; set; }
         public string? ExpectedOutput { get; set; }
         public string? TestCasesJson { get; set; }
         public string? Hint { get; set; }
-        public string? AnswerType { get; set; } = "text";
         public int MaxFileSize { get; set; } = 10;
         public string? AllowedFileTypes { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
+
     public class TestMeta
     {
         public int TestId { get; set; }
