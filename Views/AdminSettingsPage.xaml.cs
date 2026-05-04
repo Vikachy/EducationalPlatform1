@@ -23,7 +23,6 @@ namespace EducationalPlatform.Views
         private Entry? _testRewardEntry;
         private Entry? _maxDailyCurrencyEntry;
         private Entry? _minPasswordEntry;
-        private Switch? _require2FASwitch;
         private Entry? _sessionTimeoutEntry;
         private Entry? _lockoutAttemptsEntry;
         private Switch? _emailNotificationsSwitch;
@@ -66,7 +65,6 @@ namespace EducationalPlatform.Views
             _testRewardEntry = this.FindByName<Entry>("TestRewardEntry");
             _maxDailyCurrencyEntry = this.FindByName<Entry>("MaxDailyCurrencyEntry");
             _minPasswordEntry = this.FindByName<Entry>("MinPasswordEntry");
-            _require2FASwitch = this.FindByName<Switch>("Require2FASwitch");
             _sessionTimeoutEntry = this.FindByName<Entry>("SessionTimeoutEntry");
             _lockoutAttemptsEntry = this.FindByName<Entry>("LockoutAttemptsEntry");
             _emailNotificationsSwitch = this.FindByName<Switch>("EmailNotificationsSwitch");
@@ -92,7 +90,7 @@ namespace EducationalPlatform.Views
 
                 if (tableExists == null)
                 {
-                    // Создаем таблицу если её нет
+                    // Создаем таблицу если её нет (УБРАЛ Require2FA)
                     await connection.ExecuteAsync(@"
                         CREATE TABLE SystemSettings (
                             Id INT PRIMARY KEY,
@@ -105,7 +103,6 @@ namespace EducationalPlatform.Views
                             TestReward INT NOT NULL DEFAULT 75,
                             MaxDailyCurrency INT NOT NULL DEFAULT 500,
                             MinPasswordLength INT NOT NULL DEFAULT 6,
-                            Require2FA BIT NOT NULL DEFAULT 0,
                             SessionTimeout INT NOT NULL DEFAULT 24,
                             LockoutAttempts INT NOT NULL DEFAULT 5,
                             EmailNotifications BIT NOT NULL DEFAULT 1,
@@ -116,17 +113,17 @@ namespace EducationalPlatform.Views
                         )
                     ");
 
-                    // Вставляем начальные настройки
+                    // Вставляем начальные настройки (УБРАЛ Require2FA)
                     await connection.ExecuteAsync(@"
                         INSERT INTO SystemSettings (
                             Id, PlatformName, SupportEmail, AllowRegistration, DefaultTheme,
                             StartBalance, LessonReward, TestReward, MaxDailyCurrency,
-                            MinPasswordLength, Require2FA, SessionTimeout, LockoutAttempts,
+                            MinPasswordLength, SessionTimeout, LockoutAttempts,
                             EmailNotifications, PushNotifications, SmsNotifications
                         ) VALUES (
                             1, 'Educational Platform', 'support@eduplatform.com', 1, 'Светлая',
                             100, 50, 75, 500,
-                            6, 0, 24, 5,
+                            6, 24, 5,
                             1, 1, 0
                         )
                     ");
@@ -155,7 +152,6 @@ namespace EducationalPlatform.Views
                         if (_testRewardEntry != null) _testRewardEntry.Text = settings.TestReward.ToString();
                         if (_maxDailyCurrencyEntry != null) _maxDailyCurrencyEntry.Text = settings.MaxDailyCurrency.ToString();
                         if (_minPasswordEntry != null) _minPasswordEntry.Text = settings.MinPasswordLength.ToString();
-                        if (_require2FASwitch != null) _require2FASwitch.IsToggled = settings.Require2FA;
                         if (_sessionTimeoutEntry != null) _sessionTimeoutEntry.Text = settings.SessionTimeout.ToString();
                         if (_lockoutAttemptsEntry != null) _lockoutAttemptsEntry.Text = settings.LockoutAttempts.ToString();
                         if (_emailNotificationsSwitch != null) _emailNotificationsSwitch.IsToggled = settings.EmailNotifications;
@@ -191,7 +187,6 @@ namespace EducationalPlatform.Views
                     TestReward = int.TryParse(_testRewardEntry?.Text, out var tr) ? tr : 75,
                     MaxDailyCurrency = int.TryParse(_maxDailyCurrencyEntry?.Text, out var md) ? md : 500,
                     MinPasswordLength = int.TryParse(_minPasswordEntry?.Text, out var mp) ? mp : 6,
-                    Require2FA = _require2FASwitch?.IsToggled ?? false,
                     SessionTimeout = int.TryParse(_sessionTimeoutEntry?.Text, out var st) ? st : 24,
                     LockoutAttempts = int.TryParse(_lockoutAttemptsEntry?.Text, out var la) ? la : 5,
                     EmailNotifications = _emailNotificationsSwitch?.IsToggled ?? true,
@@ -211,7 +206,6 @@ namespace EducationalPlatform.Views
                             TestReward = @TestReward,
                             MaxDailyCurrency = @MaxDailyCurrency,
                             MinPasswordLength = @MinPasswordLength,
-                            Require2FA = @Require2FA,
                             SessionTimeout = @SessionTimeout,
                             LockoutAttempts = @LockoutAttempts,
                             EmailNotifications = @EmailNotifications,
@@ -223,12 +217,12 @@ namespace EducationalPlatform.Views
                         INSERT INTO SystemSettings (
                             Id, PlatformName, SupportEmail, AllowRegistration, DefaultTheme,
                             StartBalance, LessonReward, TestReward, MaxDailyCurrency,
-                            MinPasswordLength, Require2FA, SessionTimeout, LockoutAttempts,
+                            MinPasswordLength, SessionTimeout, LockoutAttempts,
                             EmailNotifications, PushNotifications, SmsNotifications
                         ) VALUES (
                             1, @PlatformName, @SupportEmail, @AllowRegistration, @DefaultTheme,
                             @StartBalance, @LessonReward, @TestReward, @MaxDailyCurrency,
-                            @MinPasswordLength, @Require2FA, @SessionTimeout, @LockoutAttempts,
+                            @MinPasswordLength, @SessionTimeout, @LockoutAttempts,
                             @EmailNotifications, @PushNotifications, @SmsNotifications
                         )
                 ", settings);
@@ -328,7 +322,7 @@ namespace EducationalPlatform.Views
                     using var connection = new SqlConnection(_dbService.ConnectionString);
                     await connection.OpenAsync();
 
-                    // Сбрасываем настройки к значениям по умолчанию
+                    // Сбрасываем настройки к значениям по умолчанию (УБРАЛ Require2FA)
                     await connection.ExecuteAsync(@"
                         UPDATE SystemSettings SET 
                             PlatformName = 'Educational Platform',
@@ -340,7 +334,6 @@ namespace EducationalPlatform.Views
                             TestReward = 75,
                             MaxDailyCurrency = 500,
                             MinPasswordLength = 6,
-                            Require2FA = 0,
                             SessionTimeout = 24,
                             LockoutAttempts = 5,
                             EmailNotifications = 1,
@@ -394,7 +387,7 @@ namespace EducationalPlatform.Views
     {
         public int Id { get; set; }
         public string PlatformName { get; set; } = "Educational Platform";
-        public string SupportEmail { get; set; } = "support@eduplatform.com";
+        public string SupportEmail { get; set; } = "mituxina85@gmail.com";
         public bool AllowRegistration { get; set; } = true;
         public string DefaultTheme { get; set; } = "Светлая";
         public int StartBalance { get; set; } = 100;
@@ -402,7 +395,6 @@ namespace EducationalPlatform.Views
         public int TestReward { get; set; } = 75;
         public int MaxDailyCurrency { get; set; } = 500;
         public int MinPasswordLength { get; set; } = 6;
-        public bool Require2FA { get; set; } = false;
         public int SessionTimeout { get; set; } = 24;
         public int LockoutAttempts { get; set; } = 5;
         public bool EmailNotifications { get; set; } = true;
