@@ -22,7 +22,7 @@ namespace EducationalPlatform.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=DESKTOP-62563E5\\SQLDEL;Database=EducationalPlatform;User Id=sa;Password=1234;TrustServerCertificate=true;Encrypt=False;";
+            _connectionString = "Server=HUWAEI-NOTEBOOK\\MSQLEXPRESS;Database=EducationalPlatform;User Id=sa;Password=123;TrustServerCertificate=true;Encrypt=False;";
         }
 
         // Проверка: состоит ли пользователь в какой-либо активной учебной группе
@@ -1744,62 +1744,22 @@ END";
         // АВАТАРЫ
         public async Task<string?> UploadAvatarAsync(Stream imageStream, string fileName, int userId)
         {
-            byte[] imageBytes = Array.Empty<byte>();
-
             try
             {
-                Console.WriteLine($"📸 Начинаем загрузку аватара для пользователя {userId}, файл: {fileName}");
-                
-                // Читаем изображение в массив байтов
+                // Читаем изображение
                 using var memoryStream = new MemoryStream();
                 await imageStream.CopyToAsync(memoryStream);
-                imageBytes = memoryStream.ToArray();
-                
-                Console.WriteLine($"📦 Размер изображения: {imageBytes.Length} байт");
+                byte[] imageBytes = memoryStream.ToArray();
 
-                // Сохраняем файл в папку приложения
-                var avatarsFolder = Path.Combine(FileSystem.AppDataDirectory, "Avatars");
-                if (!Directory.Exists(avatarsFolder))
+                // ОПТИМИЗАЦИЯ: сжимаем если слишком большое
+                if (imageBytes.Length > 500 * 1024) // больше 500KB
                 {
-                    Directory.CreateDirectory(avatarsFolder);
-                    Console.WriteLine($"📁 Создана папка для аватаров: {avatarsFolder}");
+                    imageBytes = await OptimizeImageAsync(imageBytes);
                 }
 
-                // Определяем расширение файла (поддерживаем любой формат)
-                var fileExtension = Path.GetExtension(fileName);
-                if (string.IsNullOrEmpty(fileExtension))
-                {
-                    // Если расширение не указано, пытаемся определить по содержимому или используем .jpg
-                    fileExtension = ".jpg";
-                }
-                
-                var newFileName = $"avatar_{userId}{fileExtension}";
-                var fullPath = Path.Combine(avatarsFolder, newFileName);
-
-                // Сохраняем файл локально
-                await File.WriteAllBytesAsync(fullPath, imageBytes);
-                Console.WriteLine($"✅ Аватар сохранен локально: {fullPath}");
-
-                // Определяем MIME тип для любого формата изображения
-                var mimeType = fileExtension.ToLower().TrimStart('.') switch
-                {
-                    "jpg" or "jpeg" => "image/jpeg",
-                    "png" => "image/png",
-                    "gif" => "image/gif",
-                    "webp" => "image/webp",
-                    "bmp" => "image/bmp",
-                    "svg" => "image/svg+xml",
-                    "ico" => "image/x-icon",
-                    "tiff" or "tif" => "image/tiff",
-                    _ => "image/jpeg" // По умолчанию JPEG
-                };
-                
-                // Сохраняем base64 в БД для синхронизации между устройствами
-                // Убираем ограничение на размер - сохраняем любой размер
                 string base64Image = Convert.ToBase64String(imageBytes);
+                string mimeType = GetMimeTypeFromFileName(fileName);
                 string avatarDataUrl = $"data:{mimeType};base64,{base64Image}";
-                
-                Console.WriteLine($"💾 Размер base64 строки: {avatarDataUrl.Length} символов");
 
                 // Сохраняем в БД
                 using var connection = new SqlConnection(_connectionString);
@@ -1807,50 +1767,49 @@ END";
 
                 var query = "UPDATE Users SET AvatarUrl = @AvatarUrl WHERE UserId = @UserId";
                 using var command = new SqlCommand(query, connection);
-                var param = command.Parameters.Add("@AvatarUrl", System.Data.SqlDbType.NVarChar, -1);
-                param.Value = avatarDataUrl; // Сохраняем base64 для синхронизации
+                command.Parameters.AddWithValue("@AvatarUrl", avatarDataUrl);
                 command.Parameters.AddWithValue("@UserId", userId);
 
                 int rowsAffected = await command.ExecuteNonQueryAsync();
-
-                if (rowsAffected > 0)
-                {
-                    Console.WriteLine($"✅ Аватар успешно сохранен в БД для пользователя {userId}");
-                    return avatarDataUrl; // Возвращаем data URL для немедленного использования
-                }
-                else
-                {
-                    Console.WriteLine($"⚠️ Пользователь {userId} не найден в БД, но файл сохранен локально");
-                    return avatarDataUrl; // Все равно возвращаем data URL
-                }
+                return rowsAffected > 0 ? avatarDataUrl : null;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Ошибка загрузки аватара: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                
-                // Пытаемся сохранить хотя бы локально
-                try
-                {
-                    var avatarsFolder = Path.Combine(FileSystem.AppDataDirectory, "Avatars");
-                    if (!Directory.Exists(avatarsFolder))
-                    {
-                        Directory.CreateDirectory(avatarsFolder);
-                    }
-                    var fileExtension = Path.GetExtension(fileName) ?? ".jpg";
-                    var newFileName = $"avatar_{userId}{fileExtension}";
-                    var fullPath = Path.Combine(avatarsFolder, newFileName);
-                    await File.WriteAllBytesAsync(fullPath, imageBytes);
-                    Console.WriteLine($"⚠️ Аватар сохранен только локально из-за ошибки БД: {fullPath}");
-                    return fullPath;
-                }
-                catch (Exception localEx)
-                {
-                    Console.WriteLine($"❌ Не удалось сохранить аватар даже локально: {localEx.Message}");
-                    return null;
-                }
+                return null;
             }
         }
+
+        private async Task<byte[]> OptimizeImageAsync(byte[] imageBytes)
+        {
+            try
+            {
+                // Используем MAUI Graphics для сжатия
+                using var stream = new MemoryStream(imageBytes);
+                var image = Microsoft.Maui.Graphics.Platform.PlatformImage.FromStream(stream);
+
+                if (image != null)
+                {
+                    // Сжимаем до 500x500
+                    float scale = Math.Min(500f / image.Width, 500f / image.Height);
+                    int newWidth = (int)(image.Width * scale);
+                    int newHeight = (int)(image.Height * scale);
+
+                    using var resizedStream = new MemoryStream();
+                    image.Downsize(newWidth, newHeight)
+                         .Save(resizedStream, Microsoft.Maui.Graphics.ImageFormat.Jpeg, 0.8f);
+
+                    return resizedStream.ToArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Не удалось сжать изображение: {ex.Message}");
+            }
+
+            return imageBytes;
+        }
+
 
         private async Task<string?> SaveAvatarAsFile(byte[] imageBytes, string fileName, int userId)
         {
