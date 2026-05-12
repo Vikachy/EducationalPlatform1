@@ -70,7 +70,6 @@ namespace EducationalPlatform.Views
             _localizationService = App.AppLocalization;
             _fileService = ServiceHelper.GetService<FileService>();
 
-            // Загружаем аватар группы
             _ = LoadGroupAvatarAsync();
 
             BindingContext = this;
@@ -103,7 +102,6 @@ namespace EducationalPlatform.Views
                 }
                 else
                 {
-                    // Проверяем наличие файла в локальной папке
                     string localPath = Path.Combine(FileSystem.AppDataDirectory, "GroupAvatars", $"group_{_group.GroupId}.png");
                     if (File.Exists(localPath))
                     {
@@ -223,7 +221,6 @@ namespace EducationalPlatform.Views
                 group.Messages.Add(message);
             }
 
-            // Сортируем группы по дате
             var sortedGroups = GroupedMessages
                 .OrderBy(g => DateTime.Parse(GetDateKeyFromDisplay(g.Date)))
                 .ToList();
@@ -236,7 +233,6 @@ namespace EducationalPlatform.Views
 
             _lastMessageId = allMessages.Max(m => m.MessageId);
 
-            // Прокручиваем вниз если пользователь был внизу
             if (_isAtBottom)
             {
                 ScrollToBottom();
@@ -245,7 +241,6 @@ namespace EducationalPlatform.Views
             _isFirstLoad = false;
         }
 
-        // НОВЫЙ МЕТОД: Прокрутка вниз
         private void ScrollToBottom()
         {
             MainThread.BeginInvokeOnMainThread(async () =>
@@ -271,7 +266,6 @@ namespace EducationalPlatform.Views
             });
         }
 
-        // НОВЫЙ МЕТОД: Прокрутка к последнему сообщению в группе
         private void ScrollToLastMessageInGroup()
         {
             MainThread.BeginInvokeOnMainThread(async () =>
@@ -286,7 +280,6 @@ namespace EducationalPlatform.Views
                         var messagesScrollView = this.FindByName<ScrollView>("MessagesScrollView");
                         if (messagesScrollView != null)
                         {
-                            // Рассчитываем примерную позицию последнего сообщения
                             double targetY = messagesScrollView.ContentSize.Height - 100;
                             await messagesScrollView.ScrollToAsync(0, targetY, true);
                         }
@@ -331,7 +324,6 @@ namespace EducationalPlatform.Views
                 {
                     message.IsMyMessage = message.SenderId == _user.UserId;
 
-                    // Загружаем аватар и эмодзи для отправителя
                     var senderAvatar = await GetUserAvatarAsync(message.SenderId);
                     message.SenderAvatar = senderAvatar;
 
@@ -372,7 +364,6 @@ namespace EducationalPlatform.Views
                     if (loadingOverlay != null)
                         loadingOverlay.IsVisible = false;
 
-                    // Прокручиваем вниз после загрузки
                     if (GroupedMessages.Count > 0)
                     {
                         ScrollToBottom();
@@ -463,10 +454,9 @@ namespace EducationalPlatform.Views
                 var originalText = messageEntry.Text;
                 messageEntry.Text = "";
 
-                // Добавляем сообщение в UI сразу для мгновенного отображения
                 var tempMessage = new GroupChatMessage
                 {
-                    MessageId = -DateTime.Now.Millisecond, // временный ID
+                    MessageId = -DateTime.Now.Millisecond, 
                     SenderId = _user.UserId,
                     SenderName = $"{_user.FirstName} {_user.LastName}",
                     SenderAvatar = _user.AvatarUrl ?? "default_avatar.png",
@@ -477,7 +467,6 @@ namespace EducationalPlatform.Views
                     IsRead = false
                 };
 
-                // Добавляем в группу
                 var dateKey = GetDateKey(DateTime.UtcNow);
                 var dateDisplay = GetDateDisplay(dateKey);
                 var group = GroupedMessages.FirstOrDefault(g => g.Date == dateDisplay);
@@ -491,7 +480,6 @@ namespace EducationalPlatform.Views
                     };
                     GroupedMessages.Add(group);
 
-                    // Пересортируем группы
                     var sortedGroups = GroupedMessages
                         .OrderBy(g => DateTime.Parse(GetDateKeyFromDisplay(g.Date)))
                         .ToList();
@@ -507,24 +495,20 @@ namespace EducationalPlatform.Views
 
                 group.Messages.Add(tempMessage);
 
-                // Прокручиваем вниз сразу
                 ScrollToBottom();
 
                 bool success = await _dbService.SendGroupChatMessageAsync(_group.GroupId, _user.UserId, messageText);
 
                 if (success)
                 {
-                    // Удаляем временное сообщение и загружаем реальное
                     group.Messages.Remove(tempMessage);
                     await RefreshMessages();
                     await SendTypingStatus(false);
 
-                    // Снова прокручиваем вниз после загрузки
                     ScrollToBottom();
                 }
                 else
                 {
-                    // Если ошибка, возвращаем текст и удаляем временное сообщение
                     group.Messages.Remove(tempMessage);
                     messageEntry.Text = originalText;
                     await DisplayAlert(_localizationService.GetText("Error") ?? "Error",
@@ -721,17 +705,15 @@ namespace EducationalPlatform.Views
 
                 var message = $"[FILE]|BASE64|{mimeType}|{base64Payload}|{fileResult.FileName}|{fileSize}|{fileType}";
 
-                // Добавляем временное сообщение о файле
                 var tempMessage = new GroupChatMessage
                 {
                     MessageId = -DateTime.Now.Millisecond,
                     SenderId = _user.UserId,
                     SenderName = $"{_user.FirstName} {_user.LastName}",
                     SenderAvatar = _user.AvatarUrl ?? "default_avatar.png",
-                    MessageText = message,  // Это автоматически установит IsFileMessage = true через вычисляемое свойство
+                    MessageText = message,  
                     SentAt = DateTime.UtcNow,
                     IsMyMessage = true,
-                    // НЕ устанавливаем IsFileMessage - оно вычисляется из MessageText
                     FileName = fileResult.FileName,
                     FileType = fileType,
                     FileSize = fileSize,
@@ -1105,10 +1087,8 @@ namespace EducationalPlatform.Views
                     var message = group.Messages.FirstOrDefault(m => m.MessageId == targetMessage.MessageId);
                     if (message != null)
                     {
-                        // Сохраняем оригинальный цвет
                         var originalColor = message.BackgroundColor;
 
-                        // Подсвечиваем желтым
                         message.BackgroundColor = Colors.Yellow;
 
                         var index = GroupedMessages.IndexOf(group);
@@ -1121,7 +1101,6 @@ namespace EducationalPlatform.Views
                             }
                         }
 
-                        // Возвращаем оригинальный цвет через 2 секунды
                         await Task.Delay(2000);
                         message.BackgroundColor = originalColor;
 

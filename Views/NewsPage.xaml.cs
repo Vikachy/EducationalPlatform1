@@ -32,7 +32,7 @@ namespace EducationalPlatform.Views
             }
         }
 
-        public bool CanManageNews => _currentUser.RoleId == 4 || _currentUser.RoleId == 3; // ContentManager or Admin
+        public bool CanManageNews => _currentUser.RoleId == 4 || _currentUser.RoleId == 3; 
 
         public NewsPage(User currentUser, DatabaseService dbService, SettingsService settingsService)
         {
@@ -52,7 +52,6 @@ namespace EducationalPlatform.Views
 
             BindingContext = this;
 
-            // Показываем кнопку создания новости только для контент-менеджеров и админов
             if (CanManageNews)
             {
                 CreateNewsButton.IsVisible = true;
@@ -93,7 +92,6 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Показываем индикатор загрузки
                 if (LoadingOverlay != null)
                 {
                     await MainThread.InvokeOnMainThreadAsync(() =>
@@ -105,7 +103,6 @@ namespace EducationalPlatform.Views
                 var languageCode = _currentUser.LanguagePref ?? "ru";
                 var forTeens = _currentUser.InterfaceStyle == "teen";
 
-                // Загружаем все новости
                 _allNews = await _dbService.GetAllNewsAsync(languageCode, forTeens);
 
                 Console.WriteLine($"✅ Загружено {_allNews.Count} новостей");
@@ -137,7 +134,6 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Сначала фильтруем по категории
                 var filtered = _currentFilter switch
                 {
                     "courses" => _allNews.Where(n => n.Category == "courses").ToList(),
@@ -146,7 +142,6 @@ namespace EducationalPlatform.Views
                     _ => _allNews.ToList()
                 };
 
-                // Затем по поисковому запросу
                 if (!string.IsNullOrWhiteSpace(_searchText))
                 {
                     var searchLower = _searchText.ToLower();
@@ -157,7 +152,6 @@ namespace EducationalPlatform.Views
                     ).ToList();
                 }
 
-                // Обновляем коллекцию
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     NewsItems.Clear();
@@ -186,7 +180,6 @@ namespace EducationalPlatform.Views
 
                     if (news != null)
                     {
-                        // Открываем детальную страницу новости
                         await Navigation.PushAsync(new NewsDetailPage(news, _currentUser, _dbService, _settingsService));
                     }
                 }
@@ -296,16 +289,13 @@ namespace EducationalPlatform.Views
         {
             if (sender is Button button)
             {
-                // Сбрасываем все кнопки
                 ResetFilterButtons();
 
-                // Выделяем выбранную кнопку
                 button.BackgroundColor = (Color)Application.Current.Resources["PrimaryColor"];
                 button.TextColor = Colors.White;
                 button.BorderColor = (Color)Application.Current.Resources["PrimaryColor"];
                 button.BorderWidth = 0;
 
-                // Устанавливаем фильтр
                 _currentFilter = button.Text switch
                 {
                     string s when s.Contains("Курсы") || s.Contains("Courses") => "courses",

@@ -40,7 +40,6 @@ namespace EducationalPlatform.Views
 
             try
             {
-                // Создаем обращение в базе данных
                 bool success = await CreateSupportTicket(
                     TicketTypePicker.SelectedItem.ToString() ?? "Другое",
                     SubjectEntry.Text,
@@ -51,7 +50,6 @@ namespace EducationalPlatform.Views
                 {
                     await DisplayAlert("Успех", "Ваше обращение отправлено! Мы свяжемся с вами в ближайшее время.", "OK");
                     
-                    // Очищаем форму
                     TicketTypePicker.SelectedItem = null;
                     SubjectEntry.Text = "";
                     DescriptionEditor.Text = "";
@@ -75,7 +73,6 @@ namespace EducationalPlatform.Views
                 
                 if (ticketCreated)
                 {
-                    // Отправляем email на адрес из App.xaml.cs
                     var emailService = new EmailService();
                     string supportEmail = Preferences.Get("SenderEmail", "mituxina85@gmail.com");
                     
@@ -93,7 +90,6 @@ Email пользователя: {_currentUser.Email}
 ---
 Это письмо отправлено автоматически из системы Educational Platform.";
 
-                    // Отправляем email администратору
                     bool emailSent = await emailService.SendSupportTicketEmailAsync(supportEmail, emailSubject, emailBody);
                     
                     if (!emailSent)

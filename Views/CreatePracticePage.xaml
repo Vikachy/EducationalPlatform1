@@ -102,7 +102,7 @@
                                         BackgroundColor="Transparent"
                                         Margin="15,0"
                                         FontSize="16"
-                                        HeightRequest="50"
+                                        HeightRequest="70"
                                         Title="Выберите тип ответа">
                                     <Picker.Items>
                                         <x:String>text</x:String>

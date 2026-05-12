@@ -15,10 +15,9 @@ namespace EducationalPlatform.Views
         public ObservableCollection<TodayTask> TodayTasks { get; set; }
         public ObservableCollection<NewsItem> NewsItems { get; set; }
 
-        // Свойства для проверки ролей
         public bool IsTeacher => _currentUser?.RoleId == 2;
         public bool IsAdmin => _currentUser?.RoleId == 3;
-        public bool IsContentManager => _currentUser?.RoleId == 4 || _currentUser?.RoleId == 3; // ContentManager или Admin
+        public bool IsContentManager => _currentUser?.RoleId == 4 || _currentUser?.RoleId == 3; 
         public bool IsStudent => _currentUser?.RoleId == 1;
 
         public MainDashboardPage()
@@ -45,12 +44,10 @@ namespace EducationalPlatform.Views
 
             UserSessionService.CurrentUser = _currentUser;
 
-            // Подписываемся на события
             _settingsService.ThemeChanged += OnThemeChanged;
             _localizationService.LanguageChanged += OnLanguageChanged;
             UserSessionService.AvatarChanged += OnGlobalAvatarChanged;
 
-            // Подписываемся на MessagingCenter для обновления рамки и эмодзи
             MessagingCenter.Subscribe<ShopPage, int?>(this, "FrameChanged", async (sender, frameItemId) =>
             {
                 Console.WriteLine($"📢 Получено событие FrameChanged: {frameItemId}");
@@ -69,10 +66,8 @@ namespace EducationalPlatform.Views
                 await LoadEquippedItems();
             });
 
-            // Загружаем тексты сразу
             UpdateTexts();
 
-            // Загружаем данные
             Task.Run(async () => await InitializeDashboard());
         }
 
@@ -80,12 +75,10 @@ namespace EducationalPlatform.Views
         {
             base.OnAppearing();
 
-            // Обновляем видимость панелей в зависимости от роли
             UpdateUIBasedOnRole();
 
             if (_currentUser != null)
             {
-                // При каждом появлении страницы перезагружаем аватар и экипировку
                 Task.Run(async () => {
                     await LoadUserAvatar();
                     await LoadEquippedItems();
@@ -99,23 +92,19 @@ namespace EducationalPlatform.Views
 
         private void UpdateUIBasedOnRole()
         {
-            // Панель преподавателя (учитель, админ, контент-менеджер)
             if (TeacherPanel != null)
                 TeacherPanel.IsVisible = IsTeacher || IsAdmin || IsContentManager;
 
             if (TeacherButtonsLayout != null)
                 TeacherButtonsLayout.IsVisible = IsTeacher || IsAdmin || IsContentManager;
 
-            // Кнопка контент-менеджера
             if (ContentManagerButton != null)
                 ContentManagerButton.IsVisible = IsContentManager;
 
-            // Кнопка админ-панели (только для администратора)
             var adminPanelButton = this.FindByName<Button>("AdminPanelButton");
             if (adminPanelButton != null)
                 adminPanelButton.IsVisible = IsAdmin;
 
-            // Кнопка оценок (только для учеников)
             var gradesButton = this.FindByName<Border>("GradesButton");
             if (gradesButton != null)
                 gradesButton.IsVisible = IsStudent;
@@ -128,7 +117,6 @@ namespace EducationalPlatform.Views
             _localizationService.LanguageChanged -= OnLanguageChanged;
             UserSessionService.AvatarChanged -= OnGlobalAvatarChanged;
 
-            // Отписываемся от MessagingCenter
             MessagingCenter.Unsubscribe<ShopPage, int?>(this, "FrameChanged");
             MessagingCenter.Unsubscribe<ShopPage, string?>(this, "EmojiChanged");
             MessagingCenter.Unsubscribe<ShopPage>(this, "InventoryUpdated");
@@ -164,7 +152,6 @@ namespace EducationalPlatform.Views
                 StatsLabel.Text = $"{_localizationService.GetText("Streak")}: {_currentUser.StreakDays} 🔥 | " +
                                  $"{_localizationService.GetText("Currency")}: {_currentUser.GameCurrency} 💰";
 
-            // Обновляем заголовки
             var myCoursesLabel = this.FindByName<Label>("MyCoursesLabel");
             if (myCoursesLabel != null)
                 myCoursesLabel.Text = _localizationService.GetText("MyActiveCourses");
@@ -181,7 +168,6 @@ namespace EducationalPlatform.Views
             if (quickActionsLabel != null)
                 quickActionsLabel.Text = _localizationService.GetText("QuickAccess");
 
-            // Обновляем кнопки быстрого доступа
             var allCoursesBtn = this.FindByName<Button>("AllCoursesBtn");
             if (allCoursesBtn != null)
                 allCoursesBtn.Text = _localizationService.GetText("AllCourses") + " →";
@@ -368,7 +354,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // НАВИГАЦИЯ
         private async void OnMyCourseSelected(object sender, SelectionChangedEventArgs e)
         {
             if (e.CurrentSelection.FirstOrDefault() is MyCourse selectedCourse)
@@ -521,7 +506,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Методы для преподавателя и администратора
         private async void OnTeacherManagementClicked(object sender, EventArgs e)
         {
             if (IsTeacher || IsAdmin || IsContentManager)
@@ -759,7 +743,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Метод для контент-менеджера
         private async void OnContentManagerClicked(object sender, EventArgs e)
         {
             if (IsContentManager)
@@ -768,7 +751,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Метод для администратора
         private async void OnAdminDashboardClicked(object sender, EventArgs e)
         {
             if (IsAdmin)

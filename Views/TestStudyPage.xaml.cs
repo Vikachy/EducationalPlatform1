@@ -15,7 +15,7 @@ namespace EducationalPlatform.Views
         private List<Question> _questions;
         private int _currentQuestionIndex = 0;
         private Dictionary<int, object> _userAnswers = new();
-        private Dictionary<CheckBox, int> _checkBoxAnswerMap = new(); // Связь CheckBox -> AnswerId
+        private Dictionary<CheckBox, int> _checkBoxAnswerMap = new();
         private System.Timers.Timer _timer;
         private TimeSpan _timeLeft;
         private int _attemptId;
@@ -35,14 +35,12 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Получаем информацию о тесте
                 var testMeta = await _dbService.GetTestMetaByLessonAsync(_lessonId);
                 if (testMeta != null)
                 {
                     _testId = testMeta.TestId;
                     TitleLabel.Text = testMeta.Title;
 
-                    // Получаем вопросы теста
                     _questions = await GetTestQuestionsAsync(_testId);
 
                     if (!_questions.Any())
@@ -52,17 +50,13 @@ namespace EducationalPlatform.Views
                         return;
                     }
 
-                    // Получаем ID курса
                     var courseId = await GetCourseIdByLessonAsync(_lessonId);
                     if (courseId.HasValue) _courseId = courseId.Value;
 
-                    // Начинаем попытку теста
                     _attemptId = await StartTestAttemptAsync(_testId, _currentUser.UserId, null) ?? 0;
 
-                    // Запускаем таймер
                     StartTimer(testMeta.TimeLimitMinutes);
 
-                    // Показываем первый вопрос
                     ShowQuestion(0);
                 }
                 else
@@ -80,10 +74,9 @@ namespace EducationalPlatform.Views
 
         private void StartTimer(int timeLimitMinutes)
         {
-            // Добавляем проверку на корректное значение времени
             if (timeLimitMinutes <= 0)
             {
-                timeLimitMinutes = 30; // значение по умолчанию
+                timeLimitMinutes = 30; 
             }
 
             _timeLeft = TimeSpan.FromMinutes(timeLimitMinutes);
@@ -103,7 +96,7 @@ namespace EducationalPlatform.Views
                 if (_timeLeft.TotalSeconds <= 0)
                 {
                     _timer.Stop();
-                    FinishTest(); // Автоматическое завершение при истечении времени
+                    FinishTest();
                 }
                 else
                 {
@@ -126,18 +119,14 @@ namespace EducationalPlatform.Views
             _currentQuestionIndex = questionIndex;
             var question = _questions[questionIndex];
 
-            // Обновляем прогресс
             ProgressLabel.Text = $"{questionIndex + 1} из {_questions.Count}";
 
-            // Показываем текст вопроса
             QuestionTextLabel.Text = question.QuestionText;
 
-            // Очищаем предыдущие варианты ответов
             AnswerOptionsStack.Children.Clear();
             TextAnswerSection.IsVisible = false;
-            _checkBoxAnswerMap.Clear(); // Очищаем карту связей
+            _checkBoxAnswerMap.Clear(); 
 
-            // Показываем варианты ответов в зависимости от типа вопроса
             switch (question.QuestionType.ToLower())
             {
                 case "single":
@@ -151,10 +140,8 @@ namespace EducationalPlatform.Views
                     break;
             }
 
-            // Восстанавливаем сохраненный ответ
             RestoreUserAnswer(question.QuestionId);
 
-            // Обновляем кнопки навигации
             UpdateNavigationButtons();
         }
 
@@ -213,7 +200,6 @@ namespace EducationalPlatform.Views
                     Children = { checkBox, label }
                 };
 
-                // Сохраняем связь между CheckBox и AnswerId
                 _checkBoxAnswerMap[checkBox] = option.AnswerId;
 
                 checkBox.CheckedChanged += (s, e) => OnMultipleAnswerSelected(option.AnswerId, e.Value);
@@ -237,7 +223,6 @@ namespace EducationalPlatform.Views
 
                 if (savedAnswer is int singleAnswer)
                 {
-                    // Восстанавливаем одиночный выбор
                     foreach (var child in AnswerOptionsStack.Children)
                     {
                         if (child is Frame frame && frame.Content is RadioButton radioButton)
@@ -252,7 +237,6 @@ namespace EducationalPlatform.Views
                 }
                 else if (savedAnswer is List<int> multipleAnswers)
                 {
-                    // Восстанавливаем множественный выбор
                     foreach (var child in AnswerOptionsStack.Children)
                     {
                         if (child is Frame frame && frame.Content is HorizontalStackLayout stackLayout)
@@ -348,27 +332,21 @@ namespace EducationalPlatform.Views
             {
                 _timer?.Stop();
 
-                // Получаем метаданные теста, чтобы узнать проходной балл
                 var testMeta = await _dbService.GetTestMetaByLessonAsync(_lessonId);
-                int passingScore = testMeta?.PassingScore ?? 60; // По умолчанию 60, если не указано
+                int passingScore = testMeta?.PassingScore ?? 60; 
 
-                // Вычисляем результат с проверкой правильных ответов
                 int score = await CalculateScoreWithValidation();
 
-                // Сохраняем попытку
                 await CompleteTestAttemptAsync(_attemptId, score);
 
-                // Сохраняем ответы студента в базу данных
                 await SaveStudentAnswersAsync();
 
-                // Обновляем прогресс курса
                 if (_courseId > 0)
                 {
                     var status = score >= passingScore ? "completed" : "in_progress";
                     await UpdateProgressWithScoreAsync(_currentUser.UserId, _courseId, _lessonId, status, score);
                 }
 
-                // НАЧИСЛЯЕМ ВАЛЮТУ за успешное выполнение (по проходному баллу учителя)
                 if (score >= passingScore)
                 {
                     bool awarded = await _dbService.AwardCurrencyForCompletionAsync(
@@ -376,7 +354,7 @@ namespace EducationalPlatform.Views
                         _lessonId,
                         "test",
                         score,
-                        passingScore); // Передаем проходной балл для расчета награды
+                        passingScore); 
 
                     if (awarded)
                     {
@@ -388,7 +366,6 @@ namespace EducationalPlatform.Views
                     Console.WriteLine($"ℹ️ Студент не набрал проходной балл: {score} из {passingScore}");
                 }
 
-                // Показываем результаты
                 ShowTestResults(score, passingScore);
             }
             catch (Exception ex)
@@ -397,10 +374,8 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Обновленный метод ShowTestResults с учетом проходного балла
         private void ShowTestResults(int score, int passingScore)
         {
-            // Скрываем вопросы и показываем результаты
             if (AnswerOptionsStack != null) AnswerOptionsStack.IsVisible = false;
             if (TextAnswerSection != null) TextAnswerSection.IsVisible = false;
             if (PrevQuestionButton != null) PrevQuestionButton.IsVisible = false;
@@ -465,7 +440,6 @@ namespace EducationalPlatform.Views
                         {
                             var correctAnswers = question.AnswerOptions.Where(a => a.IsCorrect).Select(a => a.AnswerId).ToList();
 
-                            // Для множественного выбора: все правильные должны быть выбраны и никаких лишних
                             return correctAnswers.Count == selectedAnswerIds.Count &&
                                    correctAnswers.All(ca => selectedAnswerIds.Contains(ca));
                         }
@@ -474,11 +448,9 @@ namespace EducationalPlatform.Views
                     case "text":
                         if (userAnswer is string textAnswer)
                         {
-                            // Для текстовых ответов проверяем по ключевым словам или точному совпадению
                             var correctAnswer = question.AnswerOptions.FirstOrDefault(a => a.IsCorrect);
                             if (correctAnswer != null)
                             {
-                                // Простая проверка: точное совпадение или наличие ключевых слов
                                 return textAnswer.Trim().Equals(correctAnswer.AnswerText?.Trim(), StringComparison.OrdinalIgnoreCase) ||
                                        textAnswer.ToLower().Contains(correctAnswer.AnswerText?.ToLower() ?? "");
                             }
@@ -505,7 +477,6 @@ namespace EducationalPlatform.Views
                         var userAnswer = _userAnswers[question.QuestionId];
                         bool isCorrect = await CheckAnswerCorrectness(question, userAnswer);
 
-                        // Сохраняем ответ студента в базу данных
                         await SaveStudentAnswerToDatabase(question.QuestionId, userAnswer, isCorrect);
                     }
                 }
@@ -520,7 +491,6 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // В реальном приложении нужно вызвать соответствующий метод DatabaseService
                 await _dbService.SaveStudentAnswerAsync(_attemptId, questionId, userAnswer, isCorrect);
             }
             catch (Exception ex)
@@ -531,7 +501,6 @@ namespace EducationalPlatform.Views
 
         private void ShowTestResults(int score)
         {
-            // Скрываем вопросы и показываем результаты
             AnswerOptionsStack.IsVisible = false;
             TextAnswerSection.IsVisible = false;
             PrevQuestionButton.IsVisible = false;
@@ -577,7 +546,6 @@ namespace EducationalPlatform.Views
             _timer?.Dispose();
         }
 
-        // РЕАЛЬНЫЕ МЕТОДЫ РАБОТЫ С БАЗОЙ ДАННЫХ
         private async Task<List<Question>> GetTestQuestionsAsync(int testId)
         {
             try

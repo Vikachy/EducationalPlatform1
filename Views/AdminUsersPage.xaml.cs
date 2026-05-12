@@ -94,7 +94,6 @@ namespace EducationalPlatform.Views
 
                 Console.WriteLine($"📊 Загружено пользователей: {userList.Count}");
 
-                // Статистика
                 var totalUsers = userList.Count;
                 var activeUsers = userList.Count(u => u.IsActive);
                 var newUsers = userList.Count(u => u.RegistrationDate.Date == DateTime.Today);
@@ -136,12 +135,10 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // ДОБАВЛЯЕМ МЕТОД ApplyFilter
         private void ApplyFilter()
         {
             var filtered = _allUsers.AsEnumerable();
 
-            // Поиск по тексту
             if (_searchEntry != null && !string.IsNullOrWhiteSpace(_searchEntry.Text))
             {
                 var searchText = _searchEntry.Text.ToLower();
@@ -153,15 +150,14 @@ namespace EducationalPlatform.Views
                     (u.FullName?.ToLower().Contains(searchText) ?? false));
             }
 
-            // Фильтр по роли
             if (_roleFilter != null && _roleFilter.SelectedIndex > 0)
             {
                 int roleId = _roleFilter.SelectedIndex switch
                 {
-                    1 => 1, // Студенты
-                    2 => 2, // Преподаватели
-                    3 => 3, // Администраторы
-                    4 => 4, // Контент-менеджеры
+                    1 => 1,
+                    2 => 2,
+                    3 => 3, 
+                    4 => 4,
                     _ => 0
                 };
 
@@ -169,7 +165,6 @@ namespace EducationalPlatform.Views
                     filtered = filtered.Where(u => u.RoleId == roleId);
             }
 
-            // Фильтр по статусу
             if (_statusFilter != null && _statusFilter.SelectedIndex > 0)
             {
                 bool isActive = _statusFilter.SelectedIndex == 1;
@@ -178,7 +173,6 @@ namespace EducationalPlatform.Views
 
             Users = new ObservableCollection<AdminUserModel>(filtered);
 
-            // Обновляем CollectionView
             if (_usersCollectionView != null)
             {
                 _usersCollectionView.ItemsSource = null;

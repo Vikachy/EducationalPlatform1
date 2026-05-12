@@ -25,7 +25,6 @@ namespace EducationalPlatform.Views
         private byte[]? _selectedFileBytes;
         private bool _isSubmitting = false;
 
-        // Элементы управления - объявляем как свойства с атрибутом [Bindable]
         private Grid? _loadingOverlay;
         private ActivityIndicator? _loadingIndicator;
         private Label? _loadingLabel;
@@ -39,7 +38,6 @@ namespace EducationalPlatform.Views
         private Label? _selectedFileSizeLabel;
         private Button? _submitButton;
 
-        // Элементы из XAML
         private Label? _titleLabel;
         private Label? _descriptionLabel;
         private Border? _codeSection;
@@ -108,7 +106,6 @@ namespace EducationalPlatform.Views
             PageTitle = _lessonTitle;
             Title = PageTitle;
 
-            // Инициализируем элементы управления
             InitializeControls();
 
             BindingContext = this;
@@ -116,10 +113,8 @@ namespace EducationalPlatform.Views
             if (_attachmentsCollection != null)
                 _attachmentsCollection.ItemsSource = Attachments;
 
-            // Подписываемся на изменение макета
             this.SizeChanged += (s, e) =>
             {
-                // При изменении размера страницы проверяем видимость секций
                 SetupAnswerInterface();
             };
 
@@ -130,7 +125,6 @@ namespace EducationalPlatform.Views
 
         private void InitializeControls()
         {
-            // Находим все элементы по имени из XAML
             _loadingOverlay = this.FindByName<Grid>("LoadingOverlay");
             _loadingIndicator = this.FindByName<ActivityIndicator>("LoadingIndicator");
             _loadingLabel = this.FindByName<Label>("LoadingLabel");
@@ -165,7 +159,6 @@ namespace EducationalPlatform.Views
             _gradedByLabel = this.FindByName<Label>("GradedByLabel");
             _attachmentsSection = this.FindByName<Border>("AttachmentsSection");
 
-            // Проверяем, что все важные элементы найдены
             Console.WriteLine($"📌 Проверка элементов управления:");
             Console.WriteLine($"   TitleLabel: {(_titleLabel != null ? "✅" : "❌")}");
             Console.WriteLine($"   DescriptionLabel: {(_descriptionLabel != null ? "✅" : "❌")}");
@@ -184,7 +177,6 @@ namespace EducationalPlatform.Views
 
                 var practice = await _dbService.GetPracticeExerciseAsync(_lessonId);
 
-                // Добавляем отладочный вывод
                 Console.WriteLine($"📌 Загружена практика: ID={_lessonId}");
                 Console.WriteLine($"   Practice объект: {(practice == null ? "null" : "не null")}");
 
@@ -199,14 +191,12 @@ namespace EducationalPlatform.Views
                     return;
                 }
 
-                // Выводим все поля для отладки
                 Console.WriteLine($"   Title: {practice.Title}");
                 Console.WriteLine($"   Description: {practice.Description}");
                 Console.WriteLine($"   AnswerType: {practice.AnswerType}");
                 Console.WriteLine($"   Hint: {practice.Hint}");
                 Console.WriteLine($"   StarterCode: {(string.IsNullOrEmpty(practice.StarterCode) ? "null" : "есть")}");
 
-                // Устанавливаем заголовок страницы
                 if (!string.IsNullOrEmpty(practice.Title))
                 {
                     PageTitle = practice.Title;
@@ -218,7 +208,6 @@ namespace EducationalPlatform.Views
                     }
                 }
 
-                // Устанавливаем описание
                 if (_descriptionLabel != null)
                 {
                     _descriptionLabel.Text = !string.IsNullOrEmpty(practice.Description)
@@ -227,16 +216,13 @@ namespace EducationalPlatform.Views
                     _descriptionLabel.TextColor = Color.FromArgb("#333");
                 }
 
-                // Сохраняем ожидаемый ответ и тип
                 _expectedAnswer = practice.ExpectedOutput ?? "";
                 _answerType = practice.AnswerType?.ToLower() ?? "text";
 
                 Console.WriteLine($"📌 Тип ответа: {_answerType}");
 
-                // Настраиваем интерфейс в зависимости от типа ответа
                 SetupAnswerInterface();
 
-                // Показываем стартовый код если есть
                 if (!string.IsNullOrEmpty(practice.StarterCode))
                 {
                     if (_starterCodeEditor != null)
@@ -256,7 +242,6 @@ namespace EducationalPlatform.Views
                         _codeSection.IsVisible = false;
                 }
 
-                // Показываем подсказку если есть
                 if (!string.IsNullOrEmpty(practice.Hint))
                 {
                     if (_hintLabel != null)
@@ -279,7 +264,6 @@ namespace EducationalPlatform.Views
                 OnPropertyChanged(nameof(PageTitle));
                 ShowLoading(false);
 
-                // Принудительно обновляем макет
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     this.InvalidateMeasure();
@@ -300,7 +284,6 @@ namespace EducationalPlatform.Views
 
         private void SetupAnswerInterface()
         {
-            // Сначала скрываем все секции
             if (_textAnswerSection != null)
                 _textAnswerSection.IsVisible = false;
 
@@ -310,7 +293,6 @@ namespace EducationalPlatform.Views
             if (_fileAnswerSection != null)
                 _fileAnswerSection.IsVisible = false;
 
-            // Показываем нужную секцию в зависимости от типа ответа
             switch (_answerType.ToLower())
             {
                 case "text":
@@ -330,7 +312,6 @@ namespace EducationalPlatform.Views
                         _fileAnswerSection.IsVisible = true;
                     Console.WriteLine("📎 Показана секция для загрузки файла");
 
-                    // Дополнительно проверяем, что секция действительно видима
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
                         if (_fileAnswerSection != null)
@@ -339,7 +320,6 @@ namespace EducationalPlatform.Views
                             _fileAnswerSection.Opacity = 1;
                             _fileAnswerSection.InputTransparent = false;
 
-                            // Принудительно обновляем макет родительского элемента
                             var parent = _fileAnswerSection.Parent as VisualElement;
                             parent?.InvalidateMeasure();
                         }
@@ -351,7 +331,6 @@ namespace EducationalPlatform.Views
                     break;
             }
 
-            // Принудительно обновляем макет всей страницы
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 (this as VisualElement)?.InvalidateMeasure();
@@ -404,7 +383,6 @@ namespace EducationalPlatform.Views
                     await stream.CopyToAsync(ms);
                     _selectedFileBytes = ms.ToArray();
 
-                    // Обновляем UI
                     if (_selectedFileNameLabel != null)
                         _selectedFileNameLabel.Text = result.FileName;
 
@@ -469,13 +447,11 @@ namespace EducationalPlatform.Views
                 {
                     ShowResult(true, "✅ Работа успешно отправлена на проверку!");
 
-                    // Обновляем прогресс курса
                     if (_courseId > 0)
                     {
                         await _dbService.UpdateProgressAsync(_currentUser.UserId, _courseId, "in_progress");
                     }
 
-                    // Блокируем кнопку повторной отправки
                     if (_submitButton != null)
                         _submitButton.IsEnabled = false;
                 }
@@ -517,14 +493,12 @@ namespace EducationalPlatform.Views
                     break;
 
                 case "file":
-                    // Проверяем, выбран ли файл
                     if (_selectedFileBytes == null || _selectedFile == null)
                     {
                         await DisplayAlert("Ошибка", "Выберите файл с решением", "OK");
                         return false;
                     }
 
-                    // Проверка размера файла (макс 50 МБ)
                     if (_selectedFileBytes.Length > 50 * 1024 * 1024)
                     {
                         await DisplayAlert("Ошибка", "Файл слишком большой (максимум 50 МБ)", "OK");
@@ -567,7 +541,6 @@ namespace EducationalPlatform.Views
                         break;
                 }
 
-                // Сохраняем в базу данных
                 bool success = await _dbService.SavePracticeSubmissionAsync(
                     _lessonId,
                     _currentUser.UserId,
@@ -597,17 +570,14 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Создаем папку для отправленных работ
                 var submissionsFolder = Path.Combine(FileSystem.AppDataDirectory, "PracticeSubmissions");
                 if (!Directory.Exists(submissionsFolder))
                     Directory.CreateDirectory(submissionsFolder);
 
-                // Генерируем уникальное имя файла
                 string fileExtension = Path.GetExtension(_selectedFile!.FileName);
                 string fileName = $"submission_{_currentUser.UserId}_{_lessonId}_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
                 string fullPath = Path.Combine(submissionsFolder, fileName);
 
-                // Сохраняем файл
                 await File.WriteAllBytesAsync(fullPath, _selectedFileBytes!);
 
                 Console.WriteLine($"✅ Файл сохранен: {fullPath}");
@@ -667,7 +637,6 @@ namespace EducationalPlatform.Views
                         if (_gradedByLabel != null)
                             _gradedByLabel.Text = currentSubmission.TeacherName ?? "Преподаватель";
 
-                        // Блокируем кнопку отправки, если работа уже проверена
                         if (_submitButton != null)
                             _submitButton.IsEnabled = false;
                     });

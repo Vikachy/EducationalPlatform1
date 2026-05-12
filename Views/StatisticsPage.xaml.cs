@@ -123,12 +123,10 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                // Загружаем статистику из базы данных
                 var stats = await _dbService.GetUserStatisticsAsync(_currentUser.UserId);
 
                 if (stats != null)
                 {
-                    // Получаем общее количество курсов отдельно
                     var progressList = await _dbService.GetStudentProgressAsync(_currentUser.UserId);
                     TotalCourses = progressList?.Count ?? 0;
 
@@ -136,16 +134,14 @@ namespace EducationalPlatform.Views
                     AverageScore = stats.AverageScore;
                     CompletionRate = stats.CompletionRate;
                     CurrentStreak = stats.CurrentStreak;
-                    LongestStreak = stats.CurrentStreak; // Используем CurrentStreak как LongestStreak
+                    LongestStreak = stats.CurrentStreak; 
                     TotalDays = stats.TotalDays;
 
-                    // Время в часах
                     var totalMinutes = await _dbService.GetTotalLearningMinutesAsync(_currentUser.UserId);
                     TotalTimeSpent = totalMinutes / 60;
                 }
                 else
                 {
-                    // Если статистика не найдена, устанавливаем значения по умолчанию
                     TotalCourses = 0;
                     CompletedCourses = 0;
                     TotalTimeSpent = 0;
@@ -156,7 +152,6 @@ namespace EducationalPlatform.Views
                     TotalDays = 0;
                 }
 
-                // Загружаем последние достижения
                 var achievements = await _dbService.GetRecentAchievementsAsync(_currentUser.UserId, 5);
                 RecentAchievements.Clear();
                 if (achievements != null)

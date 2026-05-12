@@ -27,15 +27,12 @@ namespace EducationalPlatform.Views
             ActiveCourses = new ObservableCollection<ActiveCourse>();
             BindingContext = this;
 
-            // Устанавливаем глобального пользователя
             UserSessionService.CurrentUser = _currentUser;
 
-            // Подписываемся на события
             _settingsService.ThemeChanged += OnThemeChanged;
             _localizationService.LanguageChanged += OnLanguageChanged;
             UserSessionService.AvatarChanged += OnGlobalAvatarChanged;
 
-            // Подписываемся на события магазина
             MessagingCenter.Subscribe<ShopPage>(this, "InventoryUpdated", async (sender) =>
             {
                 Console.WriteLine($"📢 Получено событие InventoryUpdated в ProfilePage");
@@ -43,7 +40,6 @@ namespace EducationalPlatform.Views
                 await LoadUserData();
             });
 
-            // Загружаем данные
             Task.Run(async () =>
             {
                 await LoadUserData();
@@ -56,7 +52,6 @@ namespace EducationalPlatform.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            // Перезагружаем данные при каждом показе страницы
             Task.Run(async () =>
             {
                 await LoadUserAvatar();
@@ -94,7 +89,6 @@ namespace EducationalPlatform.Views
 
         private void UpdatePageAppearance()
         {
-            // Обновление внешнего вида при смене темы
             LoadEquippedItems();
         }
 
@@ -106,7 +100,6 @@ namespace EducationalPlatform.Views
                 ? $"С нами с {_currentUser.RegistrationDate:dd.MM.yyyy}"
                 : $"Member since {_currentUser.RegistrationDate:dd.MM.yyyy}";
 
-            // Обновляем звание
             string title = GetUserTitle(_currentUser.StreakDays, _currentUser.GameCurrency);
             UserTitleLabel.Text = title;
         }
@@ -172,7 +165,6 @@ namespace EducationalPlatform.Views
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    // Применяем рамку
                     var frameBorder = this.FindByName<Border>("AvatarFrameBorder");
                     if (frameBorder != null)
                     {
@@ -200,7 +192,6 @@ namespace EducationalPlatform.Views
                         }
                     }
 
-                    // Применяем эмодзи к имени
                     string baseName = $"{_currentUser.FirstName} {_currentUser.LastName}";
                     UserNameLabel.Text = !string.IsNullOrEmpty(equipped.EmojiIcon)
                         ? $"{baseName} {equipped.EmojiIcon}"
@@ -270,13 +261,10 @@ namespace EducationalPlatform.Views
             {
                 Console.WriteLine($"🔍 Загружаем активные курсы для пользователя {_currentUser.UserId}");
 
-                // Очищаем список перед загрузкой
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     ActiveCourses.Clear();
                 });
-
-                // Загружаем прогресс
                 _userProgress = await _dbService.GetStudentProgressAsync(_currentUser.UserId);
 
                 Console.WriteLine($"📊 Всего записей прогресса: {_userProgress.Count}");
@@ -286,12 +274,10 @@ namespace EducationalPlatform.Views
                     Console.WriteLine("⚠️ Нет записей прогресса в БД");
                     await MainThread.InvokeOnMainThreadAsync(() =>
                     {
-                        // Можно показать заглушку
                     });
                     return;
                 }
 
-                // Фильтруем только незавершенные курсы
                 var activeCourses = _userProgress
                     .Where(p => p.Status != "completed")
                     .OrderByDescending(p => p.Score)
@@ -319,7 +305,6 @@ namespace EducationalPlatform.Views
                         });
                     }
 
-                    // Принудительно обновляем CollectionView
                     ActiveCoursesCollectionView.ItemsSource = null;
                     ActiveCoursesCollectionView.ItemsSource = ActiveCourses;
 
@@ -333,7 +318,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // НАВИГАЦИЯ
         private async void OnBackClicked(object sender, EventArgs e)
         {
             await Navigation.PushAsync(new MainDashboardPage(_currentUser, _dbService, _settingsService));
@@ -389,7 +373,6 @@ namespace EducationalPlatform.Views
                     return;
                 }
 
-                // Показываем все достижения в диалоге
                 var achievementsList = Achievements.Select(a =>
                     $"{a.Icon} {a.Name}\n   {a.Description}").ToList();
 
@@ -424,7 +407,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Остальные методы On... без изменений
         private async void OnSettingsClicked(object sender, EventArgs e) => await Navigation.PushAsync(new SettingsPage(_currentUser, _dbService, _settingsService));
         private async void OnEditProfileClicked(object sender, EventArgs e) => await Navigation.PushAsync(new EditProfilePage(_currentUser, _dbService, _settingsService));
         private async void OnShopClicked(object sender, EventArgs e) => await Navigation.PushAsync(new ShopPage(_currentUser, _dbService, _settingsService));

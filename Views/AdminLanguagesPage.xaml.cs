@@ -17,7 +17,6 @@ namespace EducationalPlatform.Views
         private Entry? _searchEntry;
         private CollectionView? _languagesCollectionView;
 
-        // ДОБАВЛЯЕМ НЕДОСТАЮЩИЕ ПОЛЯ
         private Label? _totalLanguagesLabel;
         private Label? _activeLanguagesLabel;
         private Label? _usedLanguagesLabel;
@@ -67,7 +66,6 @@ namespace EducationalPlatform.Views
             _searchEntry = this.FindByName<Entry>("SearchEntry");
             _languagesCollectionView = this.FindByName<CollectionView>("LanguagesCollectionView");
 
-            // ИНИЦИАЛИЗИРУЕМ НЕДОСТАЮЩИЕ ПОЛЯ
             _totalLanguagesLabel = this.FindByName<Label>("TotalLanguagesLabel");
             _activeLanguagesLabel = this.FindByName<Label>("ActiveLanguagesLabel");
             _usedLanguagesLabel = this.FindByName<Label>("UsedLanguagesLabel");
@@ -99,14 +97,12 @@ namespace EducationalPlatform.Views
 
                 var langList = languages.ToList();
 
-                // Подсчет статистики
                 int totalLanguages = langList.Count;
                 int activeLanguages = langList.Count(l => l.IsActive);
                 int usedLanguages = langList.Count(l => l.CoursesCount > 0);
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    // ОБНОВЛЯЕМ ЗНАЧЕНИЯ
                     if (_totalLanguagesLabel != null)
                         _totalLanguagesLabel.Text = totalLanguages.ToString();
 
@@ -139,7 +135,6 @@ namespace EducationalPlatform.Views
         {
             var filtered = _allLanguages.AsEnumerable();
 
-            // Поиск по названию
             if (_searchEntry != null && !string.IsNullOrWhiteSpace(_searchEntry.Text))
             {
                 var searchText = _searchEntry.Text.ToLower();
@@ -194,7 +189,6 @@ namespace EducationalPlatform.Views
 
                         if (language.CoursesCount > 0)
                         {
-                            // Мягкое удаление - просто деактивируем
                             await connection.ExecuteAsync(
                                 "UPDATE ProgrammingLanguages SET IsActive = 0 WHERE LanguageId = @LanguageId",
                                 new { LanguageId = language.LanguageId });
@@ -204,7 +198,6 @@ namespace EducationalPlatform.Views
                         }
                         else
                         {
-                            // Полное удаление
                             await connection.ExecuteAsync(
                                 "DELETE FROM ProgrammingLanguages WHERE LanguageId = @LanguageId",
                                 new { LanguageId = language.LanguageId });

@@ -75,7 +75,6 @@ namespace EducationalPlatform.Views
         {
             var lessons = await _dbService.GetCourseLessonsAsync(_courseId);
 
-            // Обновляем коллекции на главном потоке
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 TheoryCollection.ItemsSource = lessons.Where(l => l.LessonType == "theory").ToList();
@@ -90,7 +89,7 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                if (_currentUser.RoleId == 1) // Студент
+                if (_currentUser.RoleId == 1) 
                 {
                     var groups = await _dbService.GetStudentGroupChatsAsync(_currentUser.UserId);
 
@@ -142,7 +141,6 @@ namespace EducationalPlatform.Views
             TestsLabel.Text = $"📝 Тесты ({testCount})";
         }
 
-        // Обработчики выбора уроков
         private async void OnTheorySelected(object sender, SelectionChangedEventArgs e)
         {
             await HandleLessonSelection(sender, e, (lesson) =>
@@ -157,7 +155,6 @@ namespace EducationalPlatform.Views
 
         private async void OnTestSelected(object sender, SelectionChangedEventArgs e)
         {
-            // ИЗМЕНЕНИЕ: теперь тесты ведут на TestStudyPage вместо TestPage
             await HandleLessonSelection(sender, e, (lesson) =>
                 new TestStudyPage(_currentUser, _dbService, _settingsService, lesson.LessonId));
         }
@@ -183,7 +180,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // Обработчики чатов
         private async void OnGroupChatSelected(object sender, SelectionChangedEventArgs e)
         {
             if (e.CurrentSelection.FirstOrDefault() is StudentGroupChatItem group)
@@ -196,7 +192,6 @@ namespace EducationalPlatform.Views
                         GroupName = group.GroupName
                     };
 
-                    // Переход на соответствующую страницу чата в зависимости от роли
                     if (IsStudent)
                     {
                         await Navigation.PushAsync(new GroupChatPage(studyGroup, _currentUser, _dbService, _settingsService));
@@ -222,11 +217,11 @@ namespace EducationalPlatform.Views
         {
             try
             {
-                if (IsStudent) // Студент
+                if (IsStudent) 
                 {
                     await OpenStudentChatsPage();
                 }
-                else if (IsTeacher) // Преподаватель
+                else if (IsTeacher) 
                 {
                     await OpenTeacherChatsPage();
                 }
@@ -241,7 +236,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // СТУДЕНТ: переход на страницу всех чатов студента
         private async Task OpenStudentChatsPage()
         {
             try
@@ -254,7 +248,6 @@ namespace EducationalPlatform.Views
             }
         }
 
-        // ПРЕПОДАВАТЕЛЬ: переход на страницу групп преподавателя
         private async Task OpenTeacherChatsPage()
         {
             try
@@ -277,7 +270,6 @@ namespace EducationalPlatform.Views
             await Navigation.PopAsync();
         }
 
-        // Свойства для удобства
         private bool IsStudent => _currentUser.RoleId == 1;
         private bool IsTeacher => _currentUser.RoleId == 2;
     }
