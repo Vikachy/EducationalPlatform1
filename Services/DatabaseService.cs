@@ -22,7 +22,7 @@ namespace EducationalPlatform.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=HUWAEI-NOTEBOOK\\MSQLEXPRESS;Database=EducationalPlatform;User Id=sa;Password=123;TrustServerCertificate=true;Encrypt=False;";
+            _connectionString = "Server=DESKTOP-PB5UMP0\\SQLEXPRESS;Database=EducationalPlatform;User Id=sa;Password=tir18js;TrustServerCertificate=true;Encrypt=False;";
         }
 
         // Проверка: состоит ли пользователь в какой-либо активной учебной группе
